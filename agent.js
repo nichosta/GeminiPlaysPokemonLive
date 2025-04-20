@@ -4,8 +4,10 @@ import * as ramState from './ramState.js';
 import * as CONFIGS from './CONFIGS.js';
 import { pressButtons } from './buttonPress.js';
 import { readAndClearFile } from './readInputFile.js';
-import { getMapName } from './constant/map_map.js';
 import { getPlayerX, getPlayerY, getCurrentMapBank, getCurrentMapNumber, getMainMapCollisionData } from './mapData.js';
+
+// Constants mapping imports
+import { getMapName } from './constant/map_map.js';
 
 // Import Google AI SDK
 import { GoogleGenAI } from "@google/genai";

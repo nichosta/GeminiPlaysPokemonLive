@@ -35,5 +35,5 @@ Also, Gemini 2.5 Pro wrote probably over 75% of this code (not to mention all th
 ## Contact Me
 
 For questions, help requests, troubleshooting, to contribute, I can be contacted:
-By email: [nicholas.philpott.costa@gmail.com]
-On Discord: `ixoth`
+- By email: [nicholas.philpott.costa@gmail.com]
+- On Discord: `ixoth`
