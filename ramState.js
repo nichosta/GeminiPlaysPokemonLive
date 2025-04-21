@@ -5,11 +5,20 @@ import { getSpeciesName } from './constant/species_map.js';
 
 // --- Party Pokémon Data Functions ---
 
-const PARTY_COUNT_ADDR = 0x02024280; // Number of Pokémon in the party (u8) [1]
+const IN_BATTLE_BIT_ADDR = 0x03003529; // Location of the bitmask determining if the player is in battle
+const IN_BATTLE_BITMASK = 0x02; // Bitmask to determine if the player is in battle
+
 const PARTY_BASE_ADDR = 0x02024284; // Base address for party Pokémon data [1]
 const POKEMON_DATA_SIZE = 100; // Size of each Pokémon structure [1]
 
 // Offsets within the 100-byte Pokémon structure (Unencrypted part)
+// --- Constants for Pokémon Data Structure ---
+const PID_OFFSET = 0x00; // u32 [1]
+const OTID_OFFSET = 0x04; // u32 [1]
+// Encrypted Block Offset (Contains Species, Item, Moves, EVs, IVs etc.)
+const ENCRYPTED_BLOCK_OFFSET = 0x20; // 48 bytes [1]
+const ENCRYPTED_BLOCK_SIZE = 48;
+const SUBSTRUCTURE_SIZE = 12;
 const NICKNAME_OFFSET = 0x08; // 10 bytes [1]
 const STATUS_OFFSET = 0x50; // 4 bytes (u32) [1]
 const LEVEL_OFFSET = 0x54; // 1 byte (u8) [1]
@@ -21,16 +30,17 @@ const SPEED_OFFSET = 0x5E; // 2 bytes (u16) [1]
 const SP_ATTACK_OFFSET = 0x60; // 2 bytes (u16) [1]
 const SP_DEFENSE_OFFSET = 0x62; // 2 bytes (u16) [1]
 
-// Encrypted Block Offset (Contains Species, Item, Moves, EVs, IVs etc.)
-const ENCRYPTED_BLOCK_OFFSET = 0x20; // 48 bytes [1]
+const PARTY_SIZE = 6;               // Maximum number of Pokémon in a party
+const SPECIES_NONE = 0;             // The species ID representing an empty slot
 
 /**
- * Gets the number of Pokémon currently in the player's party.
- * @returns {Promise<number>} The number of Pokémon in the party (0-6).
+ * Checks if the player is currently in a battle.
+ * @returns {Promise<boolean>} True if in battle, false otherwise.
  */
-export async function getPartyCount() {
-    // The count is stored as an 8-bit integer.
-    return await readUint8(PARTY_COUNT_ADDR);
+export async function isInBattle() {
+    const bitmask = await readUint8(IN_BATTLE_BIT_ADDR);
+    // Check if the bit corresponding to in-battle is set
+    return (bitmask & IN_BATTLE_BITMASK) !== 0;
 }
 
 /**
@@ -152,13 +162,6 @@ async function getPokemonStatusCondition(slot) {
     return await readUint32(baseAddr + STATUS_OFFSET);
 }
 
-// --- Constants for Pokémon Data Structure ---
-const PID_OFFSET = 0x00; // u32 [1]
-const OTID_OFFSET = 0x04; // u32 [1]
-// const ENCRYPTED_BLOCK_OFFSET = 0x20; // 48 bytes [1] // Already defined above
-const ENCRYPTED_BLOCK_SIZE = 48;
-const SUBSTRUCTURE_SIZE = 12;
-
 // --- Decryption and Unshuffling Logic ---
 
 /**
@@ -228,32 +231,124 @@ const SUBSTRUCTURE_ORDER = [
  * Unshuffles the decrypted 12-byte substructures based on PID.
  * @param {ArrayBuffer} decryptedBuffer - The 48 decrypted bytes.
  * @param {number} pid - The Pokémon's 32-bit Personality Value.
- * @returns {{G: ArrayBuffer, A: ArrayBuffer, E: ArrayBuffer, M: ArrayBuffer}} Object containing the four substructures in logical order.
+ * @returns {{G: ArrayBuffer | null, A: ArrayBuffer | null, E: ArrayBuffer | null, M: ArrayBuffer | null}} Object containing the four substructures.
  */
 function unshuffleSubstructures(decryptedBuffer, pid) {
-    const orderIndex = pid % 24; // [2]
+    // --- Re-include your corrected unshuffleSubstructures implementation here ---
+     if (!decryptedBuffer || decryptedBuffer.byteLength !== ENCRYPTED_BLOCK_SIZE) {
+        console.error("Invalid decrypted buffer provided to unshuffleSubstructures.");
+        return { G: null, A: null, E: null, M: null };
+    }
+    const orderIndex = pid % 24;
     const orderString = SUBSTRUCTURE_ORDER[orderIndex];
     const unshuffled = { G: null, A: null, E: null, M: null };
 
     for (let i = 0; i < orderString.length; i++) {
-        const substructureType = orderString[i]; // 'G', 'A', 'E', or 'M'
+        const substructureType = orderString[i];
         const sourceOffset = i * SUBSTRUCTURE_SIZE;
-        // Slice the 12 bytes for this substructure from the decrypted buffer
-        unshuffled = decryptedBuffer.slice(sourceOffset, sourceOffset + SUBSTRUCTURE_SIZE);
+        if (sourceOffset + SUBSTRUCTURE_SIZE <= decryptedBuffer.byteLength) {
+            const substructureSlice = decryptedBuffer.slice(sourceOffset, sourceOffset + SUBSTRUCTURE_SIZE);
+            unshuffled[substructureType] = substructureSlice;
+        } else {
+             console.error(`Substructure slicing out of bounds for type ${substructureType} at offset ${sourceOffset}`);
+        }
     }
-
     return unshuffled;
+    // --- End of unshuffleSubstructures implementation ---
 }
 
-
-// --- Data Extraction Functions for Decrypted Substructures ---
-// Note: These functions expect the 12-byte ArrayBuffer for the specific substructure.
-
-/** Gets Species Name from Growth substructure. */
-function getSpecies(growthBuffer) { // Offset 0, u16 [2]
+/**
+ * Gets Species ID from the Growth substructure ArrayBuffer.
+ * @param {ArrayBuffer} growthBuffer - The 12-byte Growth substructure.
+ * @returns {number} The species ID.
+ * @throws {Error} If the buffer is invalid.
+ */
+function getSpeciesId(growthBuffer) {
+    if (!growthBuffer || growthBuffer.byteLength < 2) { // Need at least 2 bytes for u16
+        throw new Error("Invalid Growth buffer provided to getSpeciesId.");
+    }
     const view = new DataView(growthBuffer);
-    return getSpeciesName(view.getUint16(0, true)); // Little-endian
+    return view.getUint16(0, true); // Offset 0, u16, little-endian [2]
 }
+
+/**
+ * Calculates the number of Pokémon currently in the player's party.
+ * It iterates through the party slots (0 to 5) and checks the species ID
+ * of each Pokémon. The count stops when an empty slot (Species ID 0) is found
+ * or when all 6 slots have been checked.
+ *
+ * @export
+ * @returns {Promise<number>} The number of Pokémon in the party (0-6).
+ */
+export async function getPartyCount() {
+    let count = 0;
+    while (count < PARTY_SIZE) {
+        try {
+            const baseAddr = getPartyPokemonBaseAddress(count);
+
+            // Optimization: Check PID first. If PID is 0, the slot is usually empty.
+            const pid = await readUint32(baseAddr + PID_OFFSET);
+            if (pid === 0) {
+                // console.debug(`[getPartyCount] Slot ${count} has PID 0. Assuming empty.`);
+                break; // Found an empty slot
+            }
+
+            // If PID is not 0, proceed to read data needed for species ID check
+            const otid = await readUint32(baseAddr + OTID_OFFSET);
+            const encryptedBlockBuffer = await readRange(baseAddr + ENCRYPTED_BLOCK_OFFSET, ENCRYPTED_BLOCK_SIZE);
+
+            console.log(encryptedBlockBuffer);
+
+            // Validate the read operation
+            if (!encryptedBlockBuffer || encryptedBlockBuffer.byteLength !== ENCRYPTED_BLOCK_SIZE) {
+                 console.warn(`[getPartyCount] Could not read valid encrypted block for slot ${count}. Stopping count.`);
+                 break; // Stop counting if data is unreadable
+            }
+
+            // Decrypt and unshuffle to get the Growth substructure
+            const decryptedBlock = decryptBlock(encryptedBlockBuffer, pid, otid);
+            const substructures = unshuffleSubstructures(decryptedBlock, pid);
+
+            // Check if Growth substructure exists
+            if (!substructures.G) {
+                console.warn(`[getPartyCount] Could not find Growth substructure for slot ${count} after unshuffling (PID: ${pid}). Stopping count.`);
+                break; // Stop counting if data structure seems corrupt
+            }
+
+            // Get the species ID from the Growth substructure
+            const speciesId = getSpeciesId(substructures.G);
+
+            // console.debug(`[getPartyCount] Slot ${count}: PID=${pid}, SpeciesID=${speciesId}`);
+
+            // Check if the species ID indicates an empty slot
+            if (speciesId === SPECIES_NONE) {
+                // console.debug(`[getPartyCount] Slot ${count} has SpeciesID ${SPECIES_NONE}. Found end of party.`);
+                break; // Found an empty slot
+            }
+
+            // If species is valid (not SPECIES_NONE), increment count and check next slot
+            count++;
+
+        } catch (error) {
+            // Log error and stop counting to prevent issues on persistent errors
+            console.error(`[getPartyCount] Error checking party slot ${count}:`, error);
+            break; // Stop counting if an error occurs reading/processing a slot
+        }
+    }
+    // console.log(`[getPartyCount] Calculated party count: ${count}`);
+    return count; // Return the final count
+}
+
+/**
+ * Gets the species name of a Pokémon in the specified party slot.
+ * @param {ArrayBuffer} growthBuffer - The 12-byte Growth substructure.
+ * @returns {string} The Pokémon's species name.
+ */
+function getSpecies(growthBuffer) {
+    const speciesId = getSpeciesId(growthBuffer);
+    return getSpeciesName(speciesId);
+}
+
 
 /** Gets Held Item ID from Growth substructure. */
 function getHeldItem(growthBuffer) { // Offset 2, u16 [2]
@@ -445,3 +540,17 @@ export async function getPokemonData(slot) {
         return null;
     }
 }
+
+// Testing code to get the party
+(async () => {
+    try {
+        const partyCount = await getPartyCount();
+        console.log(`Party Count: ${partyCount}`);
+        for (let i = 0; i < partyCount; i++) {
+            const pokemonData = await getPokemonData(i);
+            console.log(`Pokemon ${i + 1}:`, pokemonData);
+        }
+    } catch (error) {
+        console.error("Error in testing code:", error);
+    }
+})();

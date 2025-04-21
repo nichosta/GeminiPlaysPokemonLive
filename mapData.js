@@ -1,5 +1,7 @@
 import { readUint8, readUint16, readUint32, readRange } from "./httpMemoryReader.js";
 
+//#region Pointer and address constants
+
 const PLAYER_OBJECT_POINTER_ADDR = 0x03005008; // Address of pointer to player object in IWRAM
 const PLAYER_X_OFFSET = 0x000;
 const PLAYER_Y_OFFSET = 0x002;
@@ -19,6 +21,8 @@ const MAP_LAYOUT_DATA_OFFSET = 0x0C // Offset ... to map data array pointer
 
 const MAP_BANK_ADDR = 0x02031DBC;
 const MAP_NUMBER_ADDR = 0x02031DBD;
+
+//#endregion
 
 //#region Map addressing functions
 
@@ -105,17 +109,8 @@ async function getBackupMapHeight() {
  */
 async function getBackupMapTiles(mapWidth, mapHeight) {
     let mapTiles = mapWidth * mapHeight * 2;
-
-    let range = [];
     
-    let offset = 0;
-
-    while (mapTiles > 1024) {
-        range = range.concat(await readRange(BACKUP_MAP_DATA_ADDR + offset, 1024));
-        mapTiles -= 1024;
-        offset += 1024;
-    }
-    range = range.concat(await readRange(BACKUP_MAP_DATA_ADDR + offset, mapTiles));
+    let range = await readRange(BACKUP_MAP_DATA_ADDR, mapTiles);
 
     return range;
 }
@@ -166,16 +161,7 @@ async function getMainMapTiles(mapWidth, mapHeight) {
 
     let mapTiles = mapWidth * mapHeight * 2;
 
-    let range = [];
-    
-    let offset = 0;
-
-    while (mapTiles > 1024) {
-        range = range.concat(await readRange(mapDataAddress + offset, 1024));
-        mapTiles -= 1024;
-        offset += 1024;
-    }
-    range = range.concat(await readRange(mapDataAddress + offset, mapTiles));
+    let range = await readRange(mapDataAddress, mapTiles);
 
     return range;
 }
@@ -350,7 +336,7 @@ export async function getMainMapCollisionData() {
     let width = await getMainMapWidth();
     let height = await getMainMapHeight();
 
-    // console.info(`Map dimensions: ${width}x${height}`);
+    console.info(`Map dimensions: ${width}x${height}`);
 
     // Get the set of tiles composing the main map
     let tiles = await getMainMapTiles(width, height);
@@ -361,3 +347,15 @@ export async function getMainMapCollisionData() {
     // Get the collision map (note this will be smaller than height * width due to truncating border tiles)
     return processMemoryDataToTilemap(tiles, width * 2, playerX, playerY);
 }
+
+//#endregion
+
+// Testing main map collision data
+(async () => {
+    try {
+        const collisionData = await getBackupMapCollisionData();
+        console.log("Main Map Collision Data:\n", collisionData);
+    } catch (error) {
+        console.error("Error getting main map collision data:", error);
+    }
+})();
