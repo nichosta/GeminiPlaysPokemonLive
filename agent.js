@@ -5,6 +5,7 @@ import * as CONFIGS from "./CONFIGS.js";
 import { pressButtons } from "./buttonPress.js";
 import { readAndClearFile } from "./readInputFile.js";
 import {
+    getPlayerFacingDirection,
     getPlayerX,
     getPlayerY,
     getCurrentMapBank,
@@ -63,7 +64,7 @@ async function getGameInfoText() {
       Current Map Name: ${getMapName(
         mapBank,
         mapNum
-    )}, Location: (${playerX}, ${playerY})
+    )}, Location: (${playerX}, ${playerY}) - Facing direction: ${await getPlayerFacingDirection()}
       Map Collision Data:\n${await getMainMapCollisionData()}
       Party Count: ${partyCount}
       Pokemon:
@@ -72,7 +73,7 @@ async function getGameInfoText() {
             : "No available pokemon"
         }
       `;
-    return gameInfo.replace(/\n\s+/g, "\n");;
+    return gameInfo.replace(/\n +/g, "\n");;
 }
 
 /**

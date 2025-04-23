@@ -22,6 +22,10 @@ const MAP_LAYOUT_DATA_OFFSET = 0x0C // Offset ... to map data array pointer
 const MAP_BANK_ADDR = 0x02031DBC;
 const MAP_NUMBER_ADDR = 0x02031DBD;
 
+const FACING_DIRECTION_ADDR = 0x02036E54 // 4 lowest bits only
+const FACING_DIRECTION_MASK = 0x03;
+const FACING_DIRECTION_MAP = [[0, "Down"], [1, "Up"], [2, "Left"], [3, "Right"]];
+
 //#endregion
 
 //#region Map addressing functions
@@ -45,6 +49,19 @@ export async function getCurrentMapNumber() {
 //#endregion
 
 //#region Player Object Functions
+
+/**
+ * Gets the direction the player is facing.
+ * @returns {Promise<string>} The direction the player is facing.
+ */
+export async function getPlayerFacingDirection() {
+    const direction = await readUint8(FACING_DIRECTION_ADDR);
+    const maskedDirection = direction & FACING_DIRECTION_MASK;
+    const foundDirection = FACING_DIRECTION_MAP.find(
+        ([key]) => key === maskedDirection
+    );
+    return foundDirection ? foundDirection[1] : "Unknown";
+}
 
 /**
  * Gets the base address of the player/camera object structure in EWRAM.

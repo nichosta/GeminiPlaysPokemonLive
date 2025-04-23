@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  */
 export async function getGameImageBase64() {
   try {
-    const screenshotPath = path.join(__dirname, 'screenshots', 'screenshot.png');
+    const screenshotPath = path.join(__dirname, '..', 'screenshots', 'screenshot.png');
     await fetch(`http://localhost:5000/core/screenshot?path=${screenshotPath}`, { method: 'POST' });
     const base64 = fs.readFileSync(screenshotPath, { encoding: 'base64' });
     return `data:image/png;base64,${base64}`;
