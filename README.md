@@ -11,14 +11,14 @@ Unique to this project is that additional outside information is added to the pr
 GeminiPlaysPokemonLive has the following dependencies:
 - `@google/genai`: The API used for interfacing with Gemini. If you want, you can switch this out for a different API, e.g. OpenRouter, Anthropic, but you will likely have to change the prompt format.
 - [mGBA](https://mgba.io/): The mGBA Game Boy Advance emulator.
-- [mGBA-http](https://github.com/nikouu/mGBA-http/): Used for interacting with the emulator from the JS code.
+- [mGBA-http](https://github.com/nikouu/mGBA-http/): Used for interacting with the emulator from the JS code. Make sure you have version 0.4.0, as it contains a fix necessary to run the memory reading code.
 - [tmi.js](https://github.com/tmijs/tmi.js): Used for interacting with Twitch chat.
 
 ## Running the Agent
 
 To run the agent, you will need to:
 1.  Install the dependencies: `npm install`
-2.  Start mGBA and run a compatible ROM (LeafGreen might also work, I haven't checked)
+2.  Start mGBA and run a compatible ROM (LeafGreen might also work without changes, I haven't checked. RSE may work due to similar memory layouts, but names are hardcoded to FRLG's so expect many things to be wrong.)
 3.  Start the mGBA-http server and script on the emulator [see here for details](https://github.com/nikouu/mGBA-http?tab=readme-ov-file#quick-start-guide)
 4.  Set the `GOOGLE_API_KEY` environment variable to your Google AI API key
 5.  Run `node twitchbot.js`.

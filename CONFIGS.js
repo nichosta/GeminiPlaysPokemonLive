@@ -22,7 +22,7 @@ const SYSTEM_PROMPT_RAM_DATA = `
 In addition to the screenshot you recieve, you are given information sourced directly from the emulator's memory.
 The information is as follows:
 The name of your current map
-Your current X and Y position on the map 
+Your current X and Y position on the map. Note that the top left corner of the map is 0, 0; and going down increases the Y while going right increases the X.
 An ASCII representation of your current map, marked with 1s for impassable tiles, .s for passable tiles, and @ for your position.
 General information about your current Pokemon party.
 (More information may be provided in the future; if there is anything you feel is important, feel free to request it.) 

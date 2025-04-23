@@ -349,13 +349,3 @@ export async function getMainMapCollisionData() {
 }
 
 //#endregion
-
-// Testing main map collision data
-(async () => {
-    try {
-        const collisionData = await getBackupMapCollisionData();
-        console.log("Main Map Collision Data:\n", collisionData);
-    } catch (error) {
-        console.error("Error getting main map collision data:", error);
-    }
-})();

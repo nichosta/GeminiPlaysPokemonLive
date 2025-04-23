@@ -1,5 +1,6 @@
 import { readUint8, readUint16, readUint32, readRange } from "./httpMemoryReader.js";
 import { getSpeciesName } from './constant/species_map.js';
+import { getMoveName } from './constant/moves_map.js';
 
 // TODO Disclaimer: I haven't gotten to test most of these functions yet, so don't rely on them to work.
 
@@ -191,7 +192,7 @@ async function getPokemonOTID(slot) {
  */
 async function getEncryptedBlock(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readRange(baseAddr + ENCRYPTED_BLOCK_OFFSET, ENCRYPTED_BLOCK_SIZE);
+    return Uint8Array.from(await readRange(baseAddr + ENCRYPTED_BLOCK_OFFSET, ENCRYPTED_BLOCK_SIZE)).buffer;
 }
 
 /**
@@ -295,9 +296,7 @@ export async function getPartyCount() {
 
             // If PID is not 0, proceed to read data needed for species ID check
             const otid = await readUint32(baseAddr + OTID_OFFSET);
-            const encryptedBlockBuffer = await readRange(baseAddr + ENCRYPTED_BLOCK_OFFSET, ENCRYPTED_BLOCK_SIZE);
-
-            console.log(encryptedBlockBuffer);
+            const encryptedBlockBuffer = Uint8Array.from(await readRange(baseAddr + ENCRYPTED_BLOCK_OFFSET, ENCRYPTED_BLOCK_SIZE)).buffer;
 
             // Validate the read operation
             if (!encryptedBlockBuffer || encryptedBlockBuffer.byteLength !== ENCRYPTED_BLOCK_SIZE) {
@@ -472,15 +471,15 @@ export async function getPokemonData(slot) {
         const otid = await getPokemonOTID(slot);
         const encryptedBlock = await getEncryptedBlock(slot);
 
-        if (!encryptedBlock || encryptedBlock.byteLength!== ENCRYPTED_BLOCK_SIZE) {
+        if (!encryptedBlock || encryptedBlock.byteLength !== ENCRYPTED_BLOCK_SIZE) {
             console.error(`Failed to read encrypted block for slot ${slot}`);
             return null;
         }
 
-        const level = getPokemonLevel(slot);
-        const statusCondition = getPokemonStatusCondition(slot);
-        const currentHP = getPokemonCurrentHP(slot);
-        const maxHP = getPokemonMaxHP(slot);
+        const level = await getPokemonLevel(slot);
+        const statusCondition = await getPokemonStatusCondition(slot);
+        const currentHP = await getPokemonCurrentHP(slot);
+        const maxHP = await getPokemonMaxHP(slot);
 
         const decryptedBlock = decryptBlock(encryptedBlock, pid, otid);
         const substructures = unshuffleSubstructures(decryptedBlock, pid);
@@ -500,10 +499,10 @@ export async function getPokemonData(slot) {
             friendship: getFriendship(substructures.G),
             ppBonuses: getPPBonuses(substructures.G),
             moves: [
-                getMove(substructures.A, 0),
-                getMove(substructures.A, 1),
-                getMove(substructures.A, 2),
-                getMove(substructures.A, 3)
+                getMoveName(getMove(substructures.A, 0)),
+                getMoveName(getMove(substructures.A, 1)),
+                getMoveName(getMove(substructures.A, 2)),
+                getMoveName(getMove(substructures.A, 3)),
             ],
             currentPP: [
                 getCurrentPP(substructures.A, 0),
@@ -540,17 +539,3 @@ export async function getPokemonData(slot) {
         return null;
     }
 }
-
-// Testing code to get the party
-(async () => {
-    try {
-        const partyCount = await getPartyCount();
-        console.log(`Party Count: ${partyCount}`);
-        for (let i = 0; i < partyCount; i++) {
-            const pokemonData = await getPokemonData(i);
-            console.log(`Pokemon ${i + 1}:`, pokemonData);
-        }
-    } catch (error) {
-        console.error("Error in testing code:", error);
-    }
-})();

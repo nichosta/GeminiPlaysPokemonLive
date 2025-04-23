@@ -357,3 +357,48 @@ const MOVE_NAMES = `
 #define MOVE_DOOM_DESIRE 353
 #define MOVE_PSYCHO_BOOST 354
 `
+
+/**
+ * Parses C preprocessor move definitions into a JavaScript Map.
+ * @param {string} definitionString - The string containing the #define statements.
+ * @returns {Map<number, string>} - A Map where keys are move IDs (numbers)
+ *                                   and values are move names (strings, e.g., "POUND").
+ */
+function parseMoveDefinitions(definitionString) {
+    const map = new Map();
+    const lines = definitionString.split('\n');
+    // Regex to capture MOVE_NAME and ID
+    const defineRegex = /^#define\s+MOVE_(\w+)\s+(\d+)/;
+
+    for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('#define')) {
+            const match = trimmedLine.match(defineRegex);
+            if (match) {
+                // match[1] is the captured name (e.g., "POUND")
+                // match[2] is the captured ID string (e.g., "1")
+                const moveName = match[1];
+                const moveId = parseInt(match[2], 10);
+
+                if (!isNaN(moveId)) {
+                    map.set(moveId, moveName);
+                } else {
+                    console.warn(`Could not parse move ID from line: ${trimmedLine}`);
+                }
+            }
+        }
+    }
+    return map;
+}
+
+// Create the lookup map by parsing the string
+const moveMap = parseMoveDefinitions(MOVE_NAMES);
+
+/**
+ * @description Gets the move name from the move ID.
+ * @param {number} moveId - The move ID.
+ * @returns {string | undefined} The move name or undefined if not found.
+ */
+export function getMoveName(moveId) {
+    return moveMap.get(moveId);
+}
