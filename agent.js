@@ -1,6 +1,6 @@
 // Imports from other files
-import { getGameImageBase64, parseDataURI } from "./screenshot.js";
-import { getPartyCount, getPokemonData } from "./pokemonData.js";
+import { getGameImageBase64, parseDataURI } from "./gamestate/screenshot.js";
+import { getPartyCount, getPokemonData } from "./gamestate/pokemonData.js";
 import * as CONFIGS from "./CONFIGS.js";
 import { pressButtons } from "./buttonPress.js";
 import { readAndClearFile } from "./readInputFile.js";
@@ -10,7 +10,7 @@ import {
     getCurrentMapBank,
     getCurrentMapNumber,
     getMainMapCollisionData,
-} from "./mapData.js";
+} from "./gamestate/mapData.js";
 
 // Constants mapping imports
 import { getMapName } from "./constant/map_map.js";

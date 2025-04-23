@@ -1,6 +1,6 @@
 import { readUint8, readUint16, readUint32, readRange } from "./httpMemoryReader.js";
-import { getSpeciesName } from './constant/species_map.js';
-import { getMoveName } from './constant/moves_map.js';
+import { getSpeciesName } from '../constant/species_map.js';
+import { getMoveName } from '../constant/moves_map.js';
 
 // TODO Disclaimer: I haven't gotten to test most of these functions yet, so don't rely on them to work.
 
