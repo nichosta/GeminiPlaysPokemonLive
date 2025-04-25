@@ -1,7 +1,7 @@
 // Imports from other files
 import { getGameImageBase64, parseDataURI } from "./gamestate/screenshot.js";
 import { getPartyCount, getPokemonData } from "./gamestate/pokemonData.js";
-import { getBagInfo, prettyPrintBag } from "./gamestate/bagData.js";
+import { getBagContents, prettyPrintBag } from "./gamestate/bagData.js";
 import * as CONFIGS from "./CONFIGS.js";
 import { pressButtons } from "./buttonPress.js";
 import { readAndClearFile } from "./readInputFile.js";
@@ -57,7 +57,7 @@ async function getGameInfoText() {
         }
     }
 
-    let bagInfo = await getBagInfo();
+    let bagInfo = await getBagContents();
     let prettyBagInfo = prettyPrintBag(bagInfo);
 
     let playerX = await getPlayerX();
