@@ -1,6 +1,7 @@
 // Imports from other files
 import { getGameImageBase64, parseDataURI } from "./gamestate/screenshot.js";
 import { getPartyCount, getPokemonData } from "./gamestate/pokemonData.js";
+import { getBagInfo, prettyPrintBag } from "./gamestate/bagData.js";
 import * as CONFIGS from "./CONFIGS.js";
 import { pressButtons } from "./buttonPress.js";
 import { readAndClearFile } from "./readInputFile.js";
@@ -55,6 +56,10 @@ async function getGameInfoText() {
         `);
         }
     }
+
+    let bagInfo = await getBagInfo();
+    let prettyBagInfo = prettyPrintBag(bagInfo);
+
     let playerX = await getPlayerX();
     let playerY = await getPlayerY();
     let mapBank = await getCurrentMapBank();
@@ -72,7 +77,8 @@ async function getGameInfoText() {
             ? pokemonInfo.join("\n")
             : "No available pokemon"
         }
-      `;
+      ${prettyBagInfo}
+        `;
     return gameInfo.replace(/\n +/g, "\n");;
 }
 
