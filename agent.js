@@ -73,7 +73,7 @@ async function getGameInfoText() {
         mapNum
     )}, Location: (${playerX}, ${playerY}) - Facing direction: ${await getPlayerFacingDirection()}
       Map Collision Data:\n${await getMainMapCollisionData()}
-      In Battle: ${isInBattle ? "Yes" : "No"}
+      In Battle: ${inBattle ? "Yes" : "No"}
       Party Count: ${partyCount}
       Pokemon:
         ${pokemonInfo.length > 0

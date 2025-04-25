@@ -10,6 +10,7 @@ const SYSTEM_PROMPT_MAIN = `
 You are Gemini 2.5 Flash, an LLM made by Google DeepMind.
 You have been tasked with playing Pokemon FireRed. Your progress will be broadcast live on a Twitch channel for public viewing.
 You are provided with a screenshot of the game screen and some additional information about the game state, and you can execute emulator commands to control the game.
+Each turn, carefully consider your current situation and how things have changed from the last turn to determine what your next action should be.
 Your goal is twofold: progress through the game and defeat the Elite Four, and engage your stream's viewers.
 Generally speaking, you should trust information you are given in the following hierarchy:
 Game RAM data > Viewer messages > Screenshots > Your own past messages.
@@ -95,7 +96,7 @@ const STRUCTURED_OUTPUT_SCHEMA = {
     commentary: {
       type: "string",
       description:
-        "Your thought process/comments on the current situation, visible to viewers.",
+        "Your thought process/comments on the current situation, visible to viewers. This should include a complete evaluation of your current situation and how things have changed from the last turn.",
     },
     // Define the structure for the function call itself
     functionCall: {
@@ -126,7 +127,7 @@ export const GENERATION_CONFIG = {
     // includeThoughts: true,
 
     // Up this if the model seems stupid and you don't mind waiting a little longer
-    thinkingBudget: 200,
+    thinkingBudget: 300,
   },
   // tools: [{
   //     functionDeclarations: TOOL_DEFINITIONS,
