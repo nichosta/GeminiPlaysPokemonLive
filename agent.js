@@ -1,6 +1,6 @@
 // Imports from other files
 import { getGameImageBase64, parseDataURI } from "./gamestate/screenshot.js";
-import { getPartyCount, getPokemonData } from "./gamestate/pokemonData.js";
+import { getPartyCount, getPokemonData, isInBattle } from "./gamestate/pokemonData.js";
 import { getBagContents, prettyPrintBag } from "./gamestate/bagData.js";
 import * as CONFIGS from "./CONFIGS.js";
 import { pressButtons } from "./buttonPress.js";
@@ -65,12 +65,15 @@ async function getGameInfoText() {
     let mapBank = await getCurrentMapBank();
     let mapNum = await getCurrentMapNumber();
 
+    let inBattle = await isInBattle();
+
     const gameInfo = `
       Current Map Name: ${getMapName(
         mapBank,
         mapNum
     )}, Location: (${playerX}, ${playerY}) - Facing direction: ${await getPlayerFacingDirection()}
       Map Collision Data:\n${await getMainMapCollisionData()}
+      In Battle: ${isInBattle ? "Yes" : "No"}
       Party Count: ${partyCount}
       Pokemon:
         ${pokemonInfo.length > 0
