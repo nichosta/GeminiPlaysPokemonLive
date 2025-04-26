@@ -1,4 +1,5 @@
-import { readUint8, readUint16, readUint32, readRange } from "./httpMemoryReader.js";
+import { readUint8, readUint16, readUint32, readRange, bytesToInt16LE } from "./httpMemoryReader.js";
+import { getMapName } from "../constant/map_map.js";
 
 //#region Pointer and address constants
 
@@ -12,19 +13,34 @@ const BACKUP_MAP_LAYOUT_HEIGHT_OFFSET = 0x04;
 
 const BACKUP_MAP_DATA_ADDR = 0x02031DFC; // Address of tile data for backup map (constant)
 
-const CURRENT_MAP_HEADER_ADDR = 0x02036DFC; // Address of current map header struct 
+const CURRENT_MAP_HEADER_ADDR = 0x02036DFC; // Address of current map header struct
 const MAP_HEADER_MAP_LAYOUT_OFFSET = 0x00; // Offset from above to pointer to current map layout struct
+const MAP_HEADER_MAP_EVENTS_OFFSET = 0x04; // Offset from map header to pointer to MapEvents struct
 
 const MAP_LAYOUT_WIDTH_OFFSET = 0x00 // Offset from start of map layout struct to map width
 const MAP_LAYOUT_HEIGHT_OFFSET = 0x04 // Offset ... to map height (yes, these are u32s for some reason)
 const MAP_LAYOUT_DATA_OFFSET = 0x0C // Offset ... to map data array pointer
+
+// MapEvents struct offsets
+const MAP_EVENTS_WARP_COUNT_OFFSET = 0x01; // Offset to warpCount (u8)
+const MAP_EVENTS_WARPS_POINTER_OFFSET = 0x08; // Offset to warps pointer (const struct WarpEvent *)
+
+// WarpEvent struct offsets and size (Size = 8 bytes)
+const WARP_EVENT_SIZE = 8;
+const WARP_EVENT_X_OFFSET = 0x00; // s16
+const WARP_EVENT_Y_OFFSET = 0x02; // s16
+const WARP_EVENT_ELEVATION_OFFSET = 0x04; // u8 (unused for now)
+const WARP_EVENT_WARP_ID_OFFSET = 0x05; // u8 (unused for now)
+const WARP_EVENT_MAP_NUM_OFFSET = 0x06; // u8 (destination map number)
+const WARP_EVENT_MAP_GROUP_OFFSET = 0x07; // u8 (destination map bank/group)
+
 
 const MAP_BANK_ADDR = 0x02031DBC;
 const MAP_NUMBER_ADDR = 0x02031DBD;
 
 const FACING_DIRECTION_ADDR = 0x02036E54 // 4 lowest bits only
 const FACING_DIRECTION_MASK = 0x03;
-const FACING_DIRECTION_MAP = [[0, "Down"], [1, "Up"], [2, "Left"], [3, "Right"]];
+const FACING_DIRECTION_MAP = new Map([[0, "down"], [1, "up"], [2, "left"], [3, "right"]]); // Use Map for clarity, lowercase for consistency
 
 //#endregion
 
@@ -35,7 +51,7 @@ const FACING_DIRECTION_MAP = [[0, "Down"], [1, "Up"], [2, "Left"], [3, "Right"]]
  * @returns {Promise<number>} The map bank number.
  */
 export async function getCurrentMapBank() {
-    return await readUint8(MAP_BANK_ADDR); // [6]
+    return await readUint8(MAP_BANK_ADDR);
 }
 
 /**
@@ -43,7 +59,7 @@ export async function getCurrentMapBank() {
  * @returns {Promise<number>} The map number.
  */
 export async function getCurrentMapNumber() {
-    return await readUint8(MAP_NUMBER_ADDR); // [6]
+    return await readUint8(MAP_NUMBER_ADDR);
 }
 
 //#endregion
@@ -52,15 +68,12 @@ export async function getCurrentMapNumber() {
 
 /**
  * Gets the direction the player is facing.
- * @returns {Promise<string>} The direction the player is facing.
+ * @returns {Promise<string>} The direction the player is facing (lowercase).
  */
 export async function getPlayerFacingDirection() {
     const direction = await readUint8(FACING_DIRECTION_ADDR);
     const maskedDirection = direction & FACING_DIRECTION_MASK;
-    const foundDirection = FACING_DIRECTION_MAP.find(
-        ([key]) => key === maskedDirection
-    );
-    return foundDirection ? foundDirection[1] : "Unknown";
+    return FACING_DIRECTION_MAP.get(maskedDirection) ?? "unknown"; // More concise lookup, lowercase
 }
 
 /**
@@ -69,7 +82,6 @@ export async function getPlayerFacingDirection() {
  * @returns {Promise<number>} The base address (pointer value).
  */
 async function getPlayerObjectBaseAddress() {
-    // Pointers in GBA are typically 32-bit
     return await readUint32(PLAYER_OBJECT_POINTER_ADDR);
 }
 
@@ -122,16 +134,13 @@ async function getBackupMapHeight() {
  * Reads a range of bytes from BACKUP_MAP_DATA_ADDR.
  * @param {number} mapWidth - The width of the map.
  * @param {number} mapHeight - The height of the map.
- * @returns {Promise<Array>} The map tiles.
+ * @returns {Promise<number[]>} The map tiles as an array of bytes.
  */
 async function getBackupMapTiles(mapWidth, mapHeight) {
-    let mapTiles = mapWidth * mapHeight * 2;
-    
-    let range = await readRange(BACKUP_MAP_DATA_ADDR, mapTiles);
-
+    let mapTileBytes = mapWidth * mapHeight * 2;
+    let range = await readRange(BACKUP_MAP_DATA_ADDR, mapTileBytes);
     return range;
 }
-
 //#endregion
 
 //#region Main Map Functions
@@ -148,7 +157,7 @@ async function getMainMapLayoutBaseAddress() {
 /**
  * Gets the width of the current map layout.
  * Reads a u32 value from the map layout struct + MAP_LAYOUT_WIDTH_OFFSET.
- * @returns {Promise<number>} The width of the map layout.
+ * @returns {Promise<number>} The width of the map layout in tiles.
  */
 async function getMainMapWidth() {
     const baseAddress = await getMainMapLayoutBaseAddress();
@@ -158,7 +167,7 @@ async function getMainMapWidth() {
 /**
  * Gets the height of the current map layout.
  * Reads a u32 value from the map layout struct + MAP_LAYOUT_HEIGHT_OFFSET.
- * @returns {Promise<number>} The height of the map layout.
+ * @returns {Promise<number>} The height of the map layout in tiles.
  */
 async function getMainMapHeight() {
     const baseAddress = await getMainMapLayoutBaseAddress();
@@ -166,203 +175,308 @@ async function getMainMapHeight() {
 }
 
 /**
- * Gets the current map tiles.
+ * Gets the current map tiles as raw bytes.
  * Reads a range of bytes from the map data address.
- * @param {number} mapWidth - The width of the map.
- * @param {number} mapHeight - The height of the map.
- * @returns {Promise<Array>} The map tiles.
+ * @param {number} mapWidth - The width of the map in tiles.
+ * @param {number} mapHeight - The height of the map in tiles.
+ * @returns {Promise<number[]>} The map tiles as an array of bytes.
  */
 async function getMainMapTiles(mapWidth, mapHeight) {
     const baseAddress = await getMainMapLayoutBaseAddress();
     const mapDataAddress = await readUint32(baseAddress + MAP_LAYOUT_DATA_OFFSET);
 
-    let mapTiles = mapWidth * mapHeight * 2;
+    let mapTileBytes = mapWidth * mapHeight * 2; // Each tile is 2 bytes
 
-    let range = await readRange(mapDataAddress, mapTiles);
+    let range = await readRange(mapDataAddress, mapTileBytes);
 
     return range;
 }
 
 //#endregion
 
-//#region Tilemap processing function
+//#region Map Events Functions
 
 /**
- * Processes memory data (an array of hex numbers) to extract and display a tile map
- * based on specific bits within 16-bit words derived from the data.
- *
- * @param {number[]} memory_data - A flat array of numbers, where each number is a
- * byte (e.g., [255, 3, 0, 26, ...]).
- * @returns {string} The formatted tile map as a multi-line string.
- * Returns an empty string if input is invalid or results in no map data.
+ * Gets the base address of the MapEvents structure for the current map.
+ * Reads the pointer at CURRENT_MAP_HEADER_ADDR + MAP_HEADER_MAP_EVENTS_OFFSET.
+ * @returns {Promise<number>} The base address (pointer value) of the MapEvents struct.
  */
-function processMemoryDataToTilemap(memory_data, width, playerX, playerY) {
+async function getMapEventsBaseAddress() {
+    return await readUint32(CURRENT_MAP_HEADER_ADDR + MAP_HEADER_MAP_EVENTS_OFFSET);
+}
+
+/**
+ * Retrieves the warp events for the current map.
+ * Reads the MapEvents structure to find the count and location of warp definitions.
+ *
+ * @returns {Promise<Array<{x: number, y: number, destMapNum: number, destMapGroup: number}>>}
+ *          An array of warp event objects, each containing the warp's coordinates (x, y)
+ *          and its destination map number and group (bank). Returns an empty array if
+ *          no warps are found or if there's an error reading the data.
+ */
+export async function getCurrentMapWarps() {
+    try {
+        const mapEventsBaseAddress = await getMapEventsBaseAddress();
+        if (!mapEventsBaseAddress) {
+            console.warn("Could not read MapEvents base address.");
+            return [];
+        }
+
+        // Read the number of warps
+        const warpCount = await readUint8(mapEventsBaseAddress + MAP_EVENTS_WARP_COUNT_OFFSET);
+        if (warpCount === 0) {
+            return [];
+        }
+
+        // Read the pointer to the array of WarpEvent structures
+        const warpsBaseAddress = await readUint32(mapEventsBaseAddress + MAP_EVENTS_WARPS_POINTER_OFFSET);
+        if (!warpsBaseAddress) {
+            console.warn("Could not read Warps base address.");
+            return [];
+        }
+
+        // Calculate the total size of the warp data to read
+        const totalWarpDataSize = warpCount * WARP_EVENT_SIZE;
+
+        // Read the entire block of warp data in one go
+        const warpDataBytes = await readRange(warpsBaseAddress, totalWarpDataSize);
+
+        if (!warpDataBytes || warpDataBytes.length !== totalWarpDataSize) {
+             console.error(`Error reading warp data: Expected ${totalWarpDataSize} bytes, got ${warpDataBytes?.length ?? 0}`);
+             return [];
+        }
+
+        const warps = [];
+        for (let i = 0; i < warpCount; i++) {
+            const currentOffset = i * WARP_EVENT_SIZE;
+
+            // Extract data for the current warp using offsets
+            const x = bytesToInt16LE(
+                warpDataBytes[currentOffset + WARP_EVENT_X_OFFSET],
+                warpDataBytes[currentOffset + WARP_EVENT_X_OFFSET + 1]
+            );
+            const y = bytesToInt16LE(
+                warpDataBytes[currentOffset + WARP_EVENT_Y_OFFSET],
+                warpDataBytes[currentOffset + WARP_EVENT_Y_OFFSET + 1]
+            );
+            const destMapNum = warpDataBytes[currentOffset + WARP_EVENT_MAP_NUM_OFFSET];
+            const destMapGroup = warpDataBytes[currentOffset + WARP_EVENT_MAP_GROUP_OFFSET];
+
+            warps.push({ x, y, destMapNum, destMapGroup });
+        }
+        return warps;
+
+    } catch (error) {
+        console.error("Error fetching current map warps:", error);
+        return []; // Return empty array on error
+    }
+}
+
+
+//#endregion
+
+//#region Tilemap processing function (Modified)
+
+/**
+ * Processes raw map tile byte data into a structured collision map object.
+ *
+ * @param {number[]} memory_data - Flat array of bytes representing the map tiles (2 bytes per tile).
+ * @param {number} mapWidthTiles - The width of the map in tiles.
+ * @returns {{width: number, height: number, tile_passability: object, map_data: number[][]}|null}
+ *          An object containing:
+ *          - width: The width of the map in tiles.
+ *          - height: The height of the map in tiles.
+ *          - tile_passability: A mapping {0: "walkable", 1: "blocked"}.
+ *          - map_data: A 2D array where each number represents the collision type
+ *                      (0 for walkable, 1 for blocked).
+ *          Returns null if input is invalid or processing fails.
+ */
+function processMemoryDataToCollisionMap(memory_data, mapWidthTiles) {
     // --- Input Validation ---
     if (!Array.isArray(memory_data) || memory_data.length === 0) {
-      console.error("Invalid input: memory_data must be a non-empty array.");
-      return "";
+        console.error("Invalid input: memory_data must be a non-empty array.");
+        return null;
+    }
+    if (typeof mapWidthTiles !== 'number' || mapWidthTiles <= 0) {
+        console.error("Invalid input: mapWidthTiles must be a positive number.");
+        return null;
+    }
+    if (memory_data.length % 2 !== 0) {
+        console.warn("Warning: memory_data length is not an even number. Tiles might be incomplete.");
+        // Proceed, but the last byte will be ignored if mapWidthTiles calculation works out.
     }
 
-    // Turn data into hex strings
-    memory_data = memory_data.map(byte =>
-        byte.toString(16).padStart(2, '0').toUpperCase()
-    );
-  
-    // --- Step 1: Reshape flat data into a grid ---
-    // Group the flat memory_data array into rows of a specific width.
-    const grid = [];
-    const rowWidth = width; // Each row consists of (width) hex strings (bytes)
-    for (let i = 0; i < memory_data.length; i += rowWidth) {
-      // Slice the flat array into chunks representing rows
-      grid.push(memory_data.slice(i, i + rowWidth));
+    const bytesPerRow = mapWidthTiles * 2;
+    const expectedTiles = memory_data.length / 2;
+    const mapHeightTiles = Math.ceil(expectedTiles / mapWidthTiles); // Calculate height based on data and width
+
+    if (memory_data.length < bytesPerRow * mapHeightTiles) {
+         console.warn(`Warning: memory_data length (${memory_data.length}) is less than expected for ${mapWidthTiles}x${mapHeightTiles} map (${bytesPerRow * mapHeightTiles} bytes). Map might be truncated.`);
     }
-  
-    // --- Step 2: Group bytes into pairs (words) within each row ---
-    // Each row (width bytes) is further processed into width/2 pairs (16-bit words).
-    const byte_grid = grid.map(row => {
-      const rowPairs = [];
-      for (let j = 0; j < row.length; j += 2) {
-        // Ensure we always take pairs of bytes. Slice handles array boundaries.
-        if (j + 1 < row.length) {
-             rowPairs.push(row.slice(j, j + 2)); // Push the pair ['XX', 'YY']
-        } else if (j < row.length) {
-             // This case handles an odd number of bytes in the last row, if memory_data.length % width != 0
-             // Depending on the data format, this might be an error or require specific handling.
-             console.warn(`Warning: Row ending with an incomplete pair at index ${j}. Element: ${row[j]}`);
-             // Optionally push the single element or handle as needed: rowPairs.push([row[j]]);
-        }
-      }
-      return rowPairs; // Return the array of pairs for this row
-    });
-  
-    // --- Step 3: Filter out specific marker pairs ---
-    // Remove pairs that exactly match ['FF', '03'], which might represent empty space or delimiters.
-    const formatted_grid = byte_grid.map(row =>
-      // Use filter to keep only the pairs that DO NOT match ['FF', '03']
-      row.filter(pair => !(pair.length === 2 && pair[0] === 'FF' && pair[1] === '03'))
-    );
-  
-    // --- Step 4: Remove empty rows ---
-    // After filtering, some rows might become empty. Remove them.
-    const full_map = formatted_grid.filter(row => row.length > 0); // Keep only rows with pairs left
-  
-    // --- Step 5: Process each pair to generate map characters ---
-    const tilemap = full_map.map(row => // Iterate through the valid rows
-      row.map(pair => { // Iterate through the pairs in the current row
-        // 5a. Reverse byte order and combine into a hex string
-        // Example: ['1A', '00'] becomes ['00', '1A'], then joined to "001A".
-        // This often handles endianness conversion (little-endian to big-endian interpretation).
-        const reversedPair = pair.slice().reverse(); // Use slice() to create a copy before reversing
-        const cellHex = reversedPair.join(''); // e.g., "001A"
 
-        // 5b. Convert hex string to integer, then to 16-bit binary string
-        const intValue = parseInt(cellHex, 16); // Convert hex string to a base-10 integer
-        if (isNaN(intValue)) {
-           // Handle cases where the hex string was invalid (e.g., contained non-hex characters)
-           console.warn(`Invalid hex value encountered in pair: ${pair} -> "${cellHex}"`);
-           return '?'; // Return a placeholder for invalid data
-        }
-        // Convert integer to binary string and pad with leading zeros to ensure 16 bits
-        const binaryString = intValue.toString(2).padStart(16, '0');
-  
-        // 5c. Extract specific bits for collision/type information
-        const collisionBits = binaryString.slice(4, 6); // Extracts the two characters, e.g., "01"
-  
-        // 5d. Map the extracted bits to corresponding map characters
-        let character;
-        switch (collisionBits) {
-          case '00': character = '.'; break;
-          case '01': character = '1'; break;
-          case '10': character = '2'; break;
-          case '11': character = '3'; break;
-          default:
-            // This case should technically not be reachable if binaryString is correct.
-            console.warn(`Unexpected collision bits extracted: ${collisionBits} from ${binaryString}`);
-            character = '?'; // Placeholder for unexpected bit patterns
-        }
-        return character; // Return the character ('.', '1', '2', '3', or '?') for this pair
-      })
-    );
 
-    // Add an AT sign at the player's position
-    tilemap[playerY][playerX] = '@';
-  
-    // --- Step 6: Format the tilemap into a final output string ---
-    // Join the characters in each row, then join the rows with newline characters.
-    const outputString = tilemap.map(row => row.join(' ')).join('\n');
-  
-    return outputString; // Return the final multi-line string representation of the map
+    const collisionMap = [];
+    let currentByteIndex = 0;
+
+    for (let y = 0; y < mapHeightTiles; y++) {
+        const row = [];
+        for (let x = 0; x < mapWidthTiles; x++) {
+            const byte1Index = currentByteIndex;
+            const byte2Index = currentByteIndex + 1;
+
+            // Ensure we don't read past the end of the data
+            if (byte2Index >= memory_data.length) {
+                console.warn(`Warning: Ran out of data at tile (${x}, ${y}). Filling with 'blocked'.`);
+                row.push(1); // Assume incomplete tile is blocked
+                currentByteIndex += 2; // Still advance index
+                continue;
+            }
+
+            const byte1 = memory_data[byte1Index];
+            const byte2 = memory_data[byte2Index];
+
+            // Combine bytes into a 16-bit value (Little Endian: byte2 is high, byte1 is low)
+            const tileValue = (byte2 << 8) | byte1;
+
+            // Extract collision bits (bits 10 and 11)
+            // Shift right by 10 to get bits 10-15 in the lower positions.
+            // Mask with 0x3 (binary 11) to isolate bits 10 and 11.
+            const collisionBits = (tileValue >> 10) & 0x3;
+
+            // Map collision bits to simple passability: 0 = walkable, 1 = blocked
+            // Based on common Pokemon GBA knowledge:
+            // 0 (00) = Walkable
+            // 1 (01), 2 (10), 3 (11) = Various types of impassable/collision
+            const passability = (collisionBits === 0) ? 0 : 1;
+            row.push(passability);
+
+            currentByteIndex += 2; // Move to the next tile (2 bytes)
+        }
+        collisionMap.push(row);
+    }
+
+     // Determine the actual height based on rows created
+    const actualHeight = collisionMap.length;
+    // Width should ideally match mapWidthTiles, but check the first row just in case
+    const actualWidth = collisionMap[0]?.length ?? 0;
+
+    if (actualWidth !== mapWidthTiles) {
+        console.warn(`Processed map width (${actualWidth}) does not match input width (${mapWidthTiles}).`);
+    }
+
+
+    return {
+        width: actualWidth, // Use actual processed width
+        height: actualHeight, // Use actual processed height
+        tile_passability: {
+            "0": "walkable",
+            "1": "blocked",
+            // Add more mappings here if needed, e.g., based on collisionBits 1, 2, 3
+        },
+        map_data: collisionMap
+    };
+}
+//#endregion
+
+//#region Aggregate State Function (New)
+
+/**
+ * Retrieves the complete current map state in a structured JSON format.
+ *
+ * @returns {Promise<object|null>} A promise that resolves to an object containing
+ *          the map name, dimensions, collision data, player state, and warp points,
+ *          or null if a critical error occurs during data fetching.
+ *          The structure is:
+ *          {
+ *            "map_name": string,
+ *            "width": number,
+ *            "height": number,
+ *            "tile_passability": { "0": "walkable", "1": "blocked", ... },
+ *            "map_data": number[][], // 0=walkable, 1=blocked
+ *            "player_state": {
+ *              "position": [col: number, row: number],
+ *              "facing": string ("up", "down", "left", "right", "unknown")
+ *            },
+ *            "warps": [
+ *              { "position": [col: number, row: number], "destination": string }
+ *            ]
+ *          }
+ */
+export async function getMapStateJson() {
+    try {
+        const mapBank = await getCurrentMapBank();
+        const mapNumber = await getCurrentMapNumber();
+        const playerX = await getPlayerX();
+        const playerY = await getPlayerY();
+        const facingDirection = await getPlayerFacingDirection();
+        const rawWarps = await getCurrentMapWarps();
+        const mapWidth = await getMainMapWidth();
+        const mapHeight = await getMainMapHeight();
+
+        // Fetch map tiles using the obtained width and height
+        const mapTiles = await getMainMapTiles(mapWidth, mapHeight);
+
+        // Process tiles into collision map
+        const collisionData = processMemoryDataToCollisionMap(mapTiles, mapWidth);
+        if (!collisionData) {
+             console.error("Failed to process map tiles into collision data.");
+             return null; // Indicate failure
+        }
+
+        // Get map name
+        const mapName = getMapName(mapBank, mapNumber);
+
+        // Format warps to include destination names
+        const warps = rawWarps.map(warp => ({
+            position: [warp.x, warp.y],
+            destination: getMapName(warp.destMapGroup, warp.destMapNum)
+        }));
+
+        // Assemble the final JSON object
+        const mapState = {
+            map_name: mapName,
+            width: collisionData.width, // Use width from processed data
+            height: collisionData.height, // Use height from processed data
+            tile_passability: collisionData.tile_passability,
+            map_data: collisionData.map_data,
+            player_state: {
+                position: [playerX, playerY], // [col, row]
+                facing: facingDirection
+            },
+            warps: warps
+        };
+
+        return mapState;
+
+    } catch (error) {
+        console.error("Error getting complete map state:", error);
+        return null; // Return null on error
+    }
 }
 
 //#endregion
 
-//#region Collision data helper functions
+// New test code for getMapStateJson
+// (async () => {
+//     console.log("Fetching map state JSON...");
+//     try {
+//         const mapState = await getMapStateJson();
+//         if (mapState) {
+//             console.log("Map State JSON:");
+//             // Using JSON.stringify for pretty printing
+//             console.log(JSON.stringify(mapState, null, 2));
 
-// TODO: Need to figure out how to get "true" playerX and playerY as they relate to the backup map
-/**
- * @deprecated
- * @see getMainMapCollisionData Do not use this function until the player location issuese are fixed
- * Retrieves the collision data for the backup map.
- * This function fetches the map's width and height, then reads the tile data.
- * It then processes this data to generate a collision map, which is returned as a string.
- *
- * @returns {Promise<string>} A string representing the collision map.
- * Each character in the string represents a tile's collision type:
- *   - '.' : Walkable
- *   - '1' : Collision type 1
- *   - '2' : Collision type 2
- *   - '3' : Collision type 3
- *   - '?' : Unknown or invalid collision type
- * The string is formatted with newline characters to represent the map's rows.
- * @throws {Error} Throws an error if there is a problem fetching or processing the map data.
- */
-export async function getBackupMapCollisionData() {
-    // Get the height and width of the backup map
-    let width = await getBackupMapWidth();
-    let height = await getBackupMapHeight();
+//             // Optional: Log specific parts for quick checks
+//             // console.log("\nPlayer Position:", mapState.player_state.position);
+//             // console.log("Facing:", mapState.player_state.facing);
+//             // console.log("Warps:", mapState.warps);
+//             // console.log("Map Data Snippet (first 5 rows):");
+//             // mapState.map_data.slice(0, 5).forEach(row => console.log(row.join(' ')));
 
-    // console.info(`Map dimensions: ${width}x${height}`);
-
-    // Get the set of tiles composing the backup map
-    let tiles = await getBackupMapTiles(width, height);
-    
-    let playerX = await getPlayerX();
-    let playerY = await getPlayerY();
-
-    // Get the collision map (note this will be smaller than height * width due to truncating border tiles)
-    return processMemoryDataToTilemap(tiles, width * 2, playerX, playerY);
-}
-
-/**
- * Retrieves the collision data for the main map.
- * This function fetches the map's width and height, then reads the tile data.
- * It then processes this data to generate a collision map, which is returned as a string.
- *
- * @returns {Promise<string>} A string representing the collision map.
- * Each character in the string represents a tile's collision type:
- *   - '.' : Walkable
- *   - '1' : Collision type 1
- *   - '2' : Collision type 2
- *   - '3' : Collision type 3
- *   - '?' : Unknown or invalid collision type
- * The string is formatted with newline characters to represent the map's rows.
- * @throws {Error} Throws an error if there is a problem fetching or processing the map data.
- */
-export async function getMainMapCollisionData() {
-    // Get the height and width of the main map
-    let width = await getMainMapWidth();
-    let height = await getMainMapHeight();
-
-    console.info(`Map dimensions: ${width}x${height}`);
-
-    // Get the set of tiles composing the main map
-    let tiles = await getMainMapTiles(width, height);
-
-    let playerX = await getPlayerX();
-    let playerY = await getPlayerY();
-
-    // Get the collision map (note this will be smaller than height * width due to truncating border tiles)
-    return processMemoryDataToTilemap(tiles, width * 2, playerX, playerY);
-}
-
-//#endregion
+//         } else {
+//             console.log("Failed to retrieve map state JSON.");
+//         }
+//     } catch (error) {
+//         console.error("Error in getMapStateJson test code:", error);
+//     }
+// })();

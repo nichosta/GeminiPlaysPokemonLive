@@ -11,7 +11,7 @@ import {
     getPlayerY,
     getCurrentMapBank,
     getCurrentMapNumber,
-    getMainMapCollisionData,
+    getMapStateJson,
 } from "./gamestate/mapData.js";
 
 // Constants mapping imports
@@ -68,11 +68,7 @@ async function getGameInfoText() {
     let inBattle = await isInBattle();
 
     const gameInfo = `
-      Current Map Name: ${getMapName(
-        mapBank,
-        mapNum
-    )}, Location: (${playerX}, ${playerY}) - Facing direction: ${await getPlayerFacingDirection()}
-      Map Collision Data:\n${await getMainMapCollisionData()}
+      Map Data:\n${await JSON.stringify(await getMapStateJson())}
       In Battle: ${inBattle ? "Yes" : "No"}
       Party Count: ${partyCount}
       Pokemon:
