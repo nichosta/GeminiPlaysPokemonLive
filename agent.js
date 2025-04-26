@@ -60,15 +60,15 @@ async function getGameInfoText() {
     let bagInfo = await getBagContents();
     let prettyBagInfo = prettyPrintBag(bagInfo);
 
-    let playerX = await getPlayerX();
-    let playerY = await getPlayerY();
     let mapBank = await getCurrentMapBank();
     let mapNum = await getCurrentMapNumber();
+
+    let mapStateJSON = mapBank === 0 && mapNum === 0 ? { "map_name": "MAP_UNINITIALIZED" } : await getMapStateJson();
 
     let inBattle = await isInBattle();
 
     const gameInfo = `
-      Map Data:\n${await JSON.stringify(await getMapStateJson())}
+      Map Data:\n${JSON.stringify(mapStateJSON)}
       In Battle: ${inBattle ? "Yes" : "No"}
       Party Count: ${partyCount}
       Pokemon:
