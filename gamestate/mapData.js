@@ -456,27 +456,154 @@ export async function getMapStateJson() {
 
 //#endregion
 
-// New test code for getMapStateJson
-// (async () => {
-//     console.log("Fetching map state JSON...");
-//     try {
-//         const mapState = await getMapStateJson();
-//         if (mapState) {
-//             console.log("Map State JSON:");
-//             // Using JSON.stringify for pretty printing
-//             console.log(JSON.stringify(mapState, null, 2));
+/**
+ * Trims the full map state to a 15x10 viewport centered around the player.
+ * Adjusts player and warp coordinates to be relative to the viewport.
+ *
+ * @param {object} fullMapState - The complete map state object obtained from getMapStateJson.
+ * @returns {object|null} A new map state object containing only the data within the
+ *          player's viewport (15x10), or null if the input is invalid.
+ *          The structure mirrors getMapStateJson, but with trimmed data:
+ *          {
+ *            "map_name": string,
+ *            "width": 15, // Viewport width
+ *            "height": 10, // Viewport height
+ *            "tile_passability": { "0": "walkable", "1": "blocked", ... },
+ *            "map_data": number[][], // 10 rows x 15 columns
+ *            "player_state": {
+ *              "position": [col: number, row: number], // Relative to viewport
+ *              "facing": string
+ *            },
+ *            "warps": [ // Only warps within the viewport
+ *              { "position": [col: number, row: number], "destination": string } // Relative to viewport
+ *            ]
+ *          }
+ */
+function trimMapStateToViewport(fullMapState) {
+    if (!fullMapState || !fullMapState.player_state || !fullMapState.map_data) {
+        console.error("Invalid fullMapState provided for trimming.");
+        return null;
+    }
 
-//             // Optional: Log specific parts for quick checks
-//             // console.log("\nPlayer Position:", mapState.player_state.position);
-//             // console.log("Facing:", mapState.player_state.facing);
-//             // console.log("Warps:", mapState.warps);
-//             // console.log("Map Data Snippet (first 5 rows):");
-//             // mapState.map_data.slice(0, 5).forEach(row => console.log(row.join(' ')));
+    const VIEWPORT_WIDTH = 15;
+    const VIEWPORT_HEIGHT = 10;
 
-//         } else {
-//             console.log("Failed to retrieve map state JSON.");
-//         }
-//     } catch (error) {
-//         console.error("Error in getMapStateJson test code:", error);
-//     }
-// })();
+    const {
+        map_name,
+        width: fullWidth,
+        height: fullHeight,
+        tile_passability,
+        map_data: fullMapData,
+        player_state,
+        warps: fullWarps
+    } = fullMapState;
+
+    const [playerX, playerY] = player_state.position;
+    const facingDirection = player_state.facing;
+
+    // Determine the value representing a blocked tile (for out-of-bounds areas)
+    // Defaults to 1 if "blocked" mapping isn't found explicitly.
+    let blockedTileValue = 1;
+    for (const key in tile_passability) {
+        if (tile_passability[key] === "blocked") {
+            blockedTileValue = parseInt(key, 10); // Use the actual key mapped to "blocked"
+            break;
+        }
+    }
+
+    // Calculate the top-left corner of the viewport in the full map coordinates
+    const startX = playerX - Math.floor(VIEWPORT_WIDTH / 2);
+    const startY = playerY - Math.floor(VIEWPORT_HEIGHT / 2);
+
+    const trimmedMapData = [];
+    const trimmedWarps = [];
+
+    // Populate the trimmed map data
+    for (let y = 0; y < VIEWPORT_HEIGHT; y++) {
+        const row = [];
+        const currentMapY = startY + y;
+
+        for (let x = 0; x < VIEWPORT_WIDTH; x++) {
+            const currentMapX = startX + x;
+
+            // Check if the coordinate is within the bounds of the original map
+            if (currentMapY >= 0 && currentMapY < fullHeight &&
+                currentMapX >= 0 && currentMapX < fullWidth) {
+                // Check if the row itself exists (robustness for potentially sparse data)
+                 if (fullMapData[currentMapY]) {
+                    row.push(fullMapData[currentMapY][currentMapX] ?? blockedTileValue);
+                 } else {
+                    // This case should ideally not happen if fullMapData is correct
+                    console.warn(`Row ${currentMapY} missing in full map data.`);
+                    row.push(blockedTileValue);
+                 }
+            } else {
+                // Out of bounds, fill with the blocked tile value
+                row.push(blockedTileValue);
+            }
+        }
+        trimmedMapData.push(row);
+    }
+
+    // Filter and adjust warp coordinates
+    for (const warp of fullWarps) {
+        const [warpX, warpY] = warp.position;
+        const relativeX = warpX - startX;
+        const relativeY = warpY - startY;
+
+        // Check if the warp falls within the viewport bounds
+        if (relativeX >= 0 && relativeX < VIEWPORT_WIDTH &&
+            relativeY >= 0 && relativeY < VIEWPORT_HEIGHT) {
+            trimmedWarps.push({
+                position: [relativeX, relativeY],
+                destination: warp.destination
+            });
+        }
+    }
+
+    // Calculate player position relative to the viewport
+    // This should ideally be the center, but calculating ensures accuracy near edges.
+    const relativePlayerX = playerX - startX;
+    const relativePlayerY = playerY - startY;
+
+    // Assemble the trimmed state object
+    const trimmedMapState = {
+        map_name: map_name,
+        width: VIEWPORT_WIDTH,
+        height: VIEWPORT_HEIGHT,
+        tile_passability: tile_passability,
+        map_data: trimmedMapData,
+        player_state: {
+            // Clamp position just in case, though relative calculation should be correct
+            position: [
+                Math.max(0, Math.min(VIEWPORT_WIDTH - 1, relativePlayerX)),
+                Math.max(0, Math.min(VIEWPORT_HEIGHT - 1, relativePlayerY))
+            ],
+            facing: facingDirection
+        },
+        warps: trimmedWarps
+    };
+
+    return trimmedMapState;
+}
+
+/**
+ * Example usage: Fetches the full map state and then trims it.
+ * (This function would likely replace or be called by getMapStateJson
+ *  if the trimmed view is always desired, or called separately when needed)
+ */
+export async function getVisibleMapStateJson() {
+    try {
+        const fullState = await getMapStateJson();
+        if (!fullState) {
+            console.error("Failed to get full map state.");
+            return null;
+        }
+        const trimmedState = trimMapStateToViewport(fullState);
+        return trimmedState;
+
+    } catch (error) {
+        console.error("Error getting visible map state:", error);
+        return null;
+    }
+}
