@@ -3,7 +3,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 // Import player position functions from mapData.js
-import { getPlayerX, getPlayerY } from './mapData.js'; // Adjust path if necessary
+import { getPlayerX, getPlayerY } from './overworld/playerData.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCREENSHOTS_DIR = path.join(__dirname, '..', 'screenshots');

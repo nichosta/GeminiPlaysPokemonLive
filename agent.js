@@ -5,17 +5,8 @@ import { getBagContents, prettyPrintBag } from "./gamestate/bagData.js";
 import * as CONFIGS from "./CONFIGS.js";
 import { pressButtons } from "./buttonPress.js";
 import { readAndClearFile } from "./readInputFile.js";
-import {
-    getPlayerFacingDirection,
-    getPlayerX,
-    getPlayerY,
-    getCurrentMapBank,
-    getCurrentMapNumber,
-    getMapStateJson,
-} from "./gamestate/mapData.js";
-
-// Constants mapping imports
-import { getMapName } from "./constant/map_map.js";
+import { getVisibleMapStateJson } from "./gamestate/overworld/mapData.js";
+import { getCurrentMapBank, getCurrentMapNumber } from "./gamestate/overworld/playerData.js";
 
 // Import Google AI SDK
 import { GoogleGenAI } from "@google/genai";
@@ -63,7 +54,7 @@ async function getGameInfoText() {
     let mapBank = await getCurrentMapBank();
     let mapNum = await getCurrentMapNumber();
 
-    let mapStateJSON = mapBank === 0 && mapNum === 0 ? { "map_name": "MAP_UNINITIALIZED" } : await getMapStateJson();
+    let mapStateJSON = mapBank === 0 && mapNum === 0 ? { "map_name": "MAP_UNINITIALIZED" } : await getVisibleMapStateJson();
 
     let inBattle = await isInBattle();
 
