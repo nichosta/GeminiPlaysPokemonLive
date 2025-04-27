@@ -1,7 +1,7 @@
 // Choose a Gemini model that supports multimodal input (image + text)
 export const GOOGLE_MODEL_NAME = "gemini-2.5-flash-preview-04-17";
 // export const GOOGLE_MODEL_NAME = "gemini-2.5-pro-exp-03-25";
-export const HISTORY_LENGTH = 10; // Keep the last X pairs of user/model messages
+export const HISTORY_LENGTH = 15; // Keep the last X pairs of user/model messages
 export const LOOP_DELAY_MS = 5000; // Delay between loop iterations (e.g., 5 seconds) - ADJUST AS NEEDED!
 
 // Main system prompt, very important
@@ -11,7 +11,7 @@ You are Gemini 2.5 Flash, an LLM made by Google DeepMind.
 You have been tasked with playing Pokemon FireRed. Your progress will be broadcast live on a Twitch channel for public viewing.
 You are provided with a screenshot of the game screen with a grid applied and some additional information about the game state, and you can execute emulator commands to control the game.
 Each turn, carefully consider your current situation and position, then how things have changed from the last turn to determine what your next action should be.
-If you haven't made progress since the last turn (especially if your coordinates this turn are the same as the last), reconsider your approach.
+If you haven't made progress since the last turn (ESPECIALLY if your coordinates this turn are the same as the last), reconsider your approach.
 Your goal is twofold: progress through the game and defeat the Elite Four, and engage your stream's viewers.
 Generally speaking, you should trust information you are given in the following hierarchy:
 Game RAM data > Viewer messages > Screenshots > Your own past messages.

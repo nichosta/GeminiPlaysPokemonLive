@@ -192,7 +192,7 @@ async function runGameLoop() {
             // Combine system prompts and current game info into the text part
             const currentPromptText = `Current game state:\n${currentGameInfo}\nTwitch Messages: ${twitch_chat}\n`;
 
-            console.log(currentPromptText);
+            // console.log(currentPromptText);
 
             const currentUserPromptParts = [
                 {
