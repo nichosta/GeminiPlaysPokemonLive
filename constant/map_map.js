@@ -509,6 +509,12 @@ const MAP_NAMES = `
 
 // gMapGroup_IndoorSevenIslandRoute
 #define MAP_SEVEN_ISLAND_SEVAULT_CANYON_HOUSE (0 | (42 << 8)) // Chansey Dance house
+
+// Warps using this map will instead use the warp data stored in gSaveBlock1Ptr->dynamicWarp.
+// Used for warps that need to change destinations, e.g. when stepping off an elevator.
+#define MAP_DYNAMIC (0x7F | (0x7F << 8))
+
+#define MAP_UNDEFINED (0xFF | (0xFF << 8))
 `;
 
 /**

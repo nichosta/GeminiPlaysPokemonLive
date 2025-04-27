@@ -157,7 +157,7 @@ export async function getGameImageBase64() {
         finalImageProcessor.toBuffer()
     ]);
 
-    console.log(`Processed screenshot saved to: ${processedScreenshotPath} (${saveInfo.size} bytes)`);
+    // console.log(`Processed screenshot saved to: ${processedScreenshotPath} (${saveInfo.size} bytes)`);
 
     // 8. Encode the final buffer to base64
     const base64 = upscaledBuffer.toString('base64');
