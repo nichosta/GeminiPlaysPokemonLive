@@ -56,7 +56,7 @@ const PRESS_BUTTONS_ARGS_SCHEMA = {
         ],
       },
       minItems: 1,
-      maxItems: 6, // Ensure maxItems is enforced
+      maxItems: 6,
     },
   },
   required: ["buttons"],
