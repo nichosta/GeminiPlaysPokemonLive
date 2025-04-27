@@ -1,5 +1,5 @@
 // Imports from other files
-import { getGameImageBase64, parseDataURI } from "./gamestate/screenshot.js";
+import { getGameImagesBase64, parseDataURI } from "./gamestate/screenshot.js";
 import { getPartyCount, getPokemonData, isInBattle } from "./gamestate/pokemonData.js";
 import { getBagContents, prettyPrintBag } from "./gamestate/bagData.js";
 import * as CONFIGS from "./CONFIGS.js";
@@ -169,11 +169,20 @@ async function runGameLoop() {
             console.log("\n--- New Iteration ---");
 
             // 1. Get current game state
-            const currentImageBase64URI = await getGameImageBase64(); // Get full data URI
+            const { original: currentImageBase64URI, processed: currentImageBase64URIProcessed } = await getGameImagesBase64(); // Get full data URI
             const currentGameInfo = await getGameInfoText();
+            let mapBank = await getCurrentMapBank();
+            let mapNum = await getCurrentMapNumber();
+            let inBattle = await isInBattle();
 
-            // Parse the image data URI
-            const imageParts = parseDataURI(currentImageBase64URI);
+            // Parse the image data URI (use grid version if outside battle and game started, else use nongrid)
+            let imageParts;
+            if ((mapBank === 0 && mapNum === 0) || isInBattle) {
+                imageParts = parseDataURI(currentImageBase64URI);
+            } else {
+                imageParts = parseDataURI(currentImageBase64URIProcessed);
+            }
+            
             if (!imageParts) {
                 console.error("Skipping iteration due to invalid image data URI.");
                 await delay(LOOP_DELAY_MS);

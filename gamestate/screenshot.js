@@ -65,12 +65,18 @@ function createGridSvg(width, height, tileWidth, tileHeight, color, strokeWidth,
 
 
 /**
- * @description Gets the current game screenshot, fetches player position, upscales it,
- * draws an aligned grid overlay onto the upscaled image, saves the result,
- * and returns it as a base64 encoded string.
- * @returns {Promise<string | null>} Base64 encoded upscaled image string with prefix, or null on error.
+ * @typedef {Object} GameImages
+ * @property {string} original - Base64 encoded original screenshot string with data URI prefix.
+ * @property {string} processed - Base64 encoded processed (upscaled, gridded) screenshot string with data URI prefix.
  */
-export async function getGameImageBase64() {
+
+/**
+ * @description Gets the current game screenshot (both original and processed versions),
+ * fetches player position, upscales the image, draws an aligned grid overlay,
+ * saves the processed result, and returns both images as base64 encoded strings.
+ * @returns {Promise<GameImages | null>} An object containing base64 encoded original and processed image strings, or null on error.
+ */
+export async function getGameImagesBase64() {
   try {
     const originalScreenshotPath = path.join(SCREENSHOTS_DIR, 'screenshot.png');
     const processedScreenshotPath = path.join(SCREENSHOTS_DIR, OUTPUT_FILENAME);
@@ -89,21 +95,25 @@ export async function getGameImageBase64() {
         return null;
     }
 
-    // 1. Load the image and get metadata (original dimensions)
-    const image = sharp(originalScreenshotPath);
+    // 1. Read the original image file into a buffer
+    const originalBuffer = await fs.promises.readFile(originalScreenshotPath);
+    const originalBase64 = originalBuffer.toString('base64'); // Encode original now
+
+    // 2. Load the image from the buffer and get metadata
+    const image = sharp(originalBuffer); // Use the buffer directly
     const metadata = await image.metadata();
 
-    // 2. Calculate Upscaled Dimensions
+    // 3. Calculate Upscaled Dimensions
     const newWidth = metadata.width * UPSCALE_FACTOR;
     const newHeight = metadata.height * UPSCALE_FACTOR;
 
-    // 3. Upscale the image *first* using nearest neighbor
+    // 4. Upscale the image *first* using nearest neighbor
+    // Note: We start the processing chain from the 'image' instance created in step 2
     const upscaledImageProcessor = image.resize(newWidth, newHeight, {
         kernel: sharp.kernel.nearest
     });
 
     // --- Calculate Grid Offset (Based on Original Dimensions) ---
-    // This logic remains the same as it relates player tile position to the original screen layout
     const screenWidthTiles = metadata.width / GRID_TILE_WIDTH_PX;
     const screenHeightTiles = metadata.height / GRID_TILE_HEIGHT_PX;
     const centerTileScreenX = Math.floor(screenWidthTiles / 2);
@@ -115,64 +125,59 @@ export async function getGameImageBase64() {
     const screenTopLeftMapPixelX = screenTopLeftMapTileX * GRID_TILE_WIDTH_PX;
     const screenTopLeftMapPixelY = screenTopLeftMapTileY * GRID_TILE_HEIGHT_PX;
 
-    // Calculate base offset relative to the *original* pixel grid
     let baseOffsetX = (GRID_TILE_WIDTH_PX - (screenTopLeftMapPixelX % GRID_TILE_WIDTH_PX)) % GRID_TILE_WIDTH_PX;
     let baseOffsetY = (GRID_TILE_HEIGHT_PX - (screenTopLeftMapPixelY % GRID_TILE_HEIGHT_PX)) % GRID_TILE_HEIGHT_PX;
 
-    // Apply Manual Vertical Shift (relative to original grid)
     baseOffsetY += VERTICAL_GRID_SHIFT_PX;
-    // Ensure baseOffsetY wraps correctly (relative to original tile height)
     baseOffsetY = ((baseOffsetY % GRID_TILE_HEIGHT_PX) + GRID_TILE_HEIGHT_PX) % GRID_TILE_HEIGHT_PX;
     // --- End Original Offset Calculation ---
 
-    // 4. Scale the calculated offsets and tile sizes for the final grid
+    // 5. Scale the calculated offsets and tile sizes for the final grid
     const finalOffsetX = baseOffsetX * UPSCALE_FACTOR;
     const finalOffsetY = baseOffsetY * UPSCALE_FACTOR;
     const finalTileWidth = GRID_TILE_WIDTH_PX * UPSCALE_FACTOR;
     const finalTileHeight = GRID_TILE_HEIGHT_PX * UPSCALE_FACTOR;
 
-    // 5. Create the SVG grid overlay using the *upscaled* dimensions and parameters
+    // 6. Create the SVG grid overlay using the *upscaled* dimensions and parameters
     const gridSvg = createGridSvg(
-        newWidth,             // Use final width
-        newHeight,            // Use final height
-        finalTileWidth,       // Use scaled tile width
-        finalTileHeight,      // Use scaled tile height
-        GRID_LINE_COLOR,
-        GRID_LINE_WIDTH,      // Keep stroke width at 1 for sharpness
-        finalOffsetX,         // Use scaled X offset
-        finalOffsetY          // Use scaled Y offset
+        newWidth, newHeight, finalTileWidth, finalTileHeight,
+        GRID_LINE_COLOR, GRID_LINE_WIDTH, finalOffsetX, finalOffsetY
     );
     const gridBuffer = Buffer.from(gridSvg);
 
-    // 6. Composite the grid onto the *upscaled* image
-    const finalImageProcessor = upscaledImageProcessor.composite([{ // Use the processor from step 3
+    // 7. Composite the grid onto the *upscaled* image
+    const finalImageProcessor = upscaledImageProcessor.composite([{
         input: gridBuffer,
         top: 0,
         left: 0,
-    }]).flatten(); // Flatten is still good practice
+    }]).flatten();
 
-    // 7. Save the final image and get the buffer
-    const [saveInfo, upscaledBuffer] = await Promise.all([
+    // 8. Save the final image and get the processed buffer
+    const [saveInfo, processedBuffer] = await Promise.all([
         finalImageProcessor.toFile(processedScreenshotPath),
-        finalImageProcessor.toBuffer()
+        finalImageProcessor.toBuffer() // Get the processed buffer
     ]);
 
     // console.log(`Processed screenshot saved to: ${processedScreenshotPath} (${saveInfo.size} bytes)`);
 
-    // 8. Encode the final buffer to base64
-    const base64 = upscaledBuffer.toString('base64');
+    // 9. Encode the processed buffer to base64
+    const processedBase64 = processedBuffer.toString('base64');
 
-    // 9. Clean up original (optional)
-    // fs.unlinkSync(originalScreenshotPath);
+    // 10. Clean up original (optional)
+    // fs.unlinkSync(originalScreenshotPath); // Consider if you still want to delete the original file
 
-    // 10. Return the data URI
-    return `data:image/png;base64,${base64}`;
+    // 11. Return both data URIs in an object
+    return {
+        original: `data:image/png;base64,${originalBase64}`,
+        processed: `data:image/png;base64,${processedBase64}`
+    };
 
   } catch (error) {
-    console.error('Error getting game image with aligned grid:', error);
+    console.error('Error getting game images (original and processed):', error);
     return null;
   }
 }
+
 
 /**
  * @description Parses a data URI (like base64 image string) into mime type and raw data.
