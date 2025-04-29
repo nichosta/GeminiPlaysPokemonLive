@@ -7,6 +7,7 @@ import { pressButtons } from "./buttonPress.js";
 import { readAndClearFile } from "./readInputFile.js";
 import { getVisibleMapStateJson } from "./gamestate/overworld/mapData.js";
 import { getCurrentMapBank, getCurrentMapNumber } from "./gamestate/overworld/playerData.js";
+import { isScriptPtrSet } from "./gamestate/textReader.js";
 
 // Import Google AI SDK
 import { GoogleGenAI } from "@google/genai";
@@ -58,9 +59,12 @@ async function getGameInfoText() {
 
     let inBattle = await isInBattle();
 
+    let overworldTextboxOpen = await isScriptPtrSet();
+
     const gameInfo = `
       Map Data:\n${JSON.stringify(mapStateJSON)}
       In Battle: ${inBattle ? "Yes" : "No"}
+      Overworld Textbox Onscreen: ${overworldTextboxOpen ? "Yes" : "No"}
       Party Count: ${partyCount}
       Pokemon:
         ${pokemonInfo.length > 0
