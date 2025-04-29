@@ -275,6 +275,11 @@ async function runGameLoop() {
                                 parsedResponse.commentary ??
                                 "No thoughts in the previous turn.",
                         },
+                        {
+                            text:
+                                parsedResponse.prediction ??
+                                "No prediction in the previous turn.",
+                        }
                     ],
                 });
                 googleHistory.push({ role: "user", parts: [responseResult] });
