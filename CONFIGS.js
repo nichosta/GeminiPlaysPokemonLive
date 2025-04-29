@@ -77,7 +77,7 @@ const STRUCTURED_OUTPUT_SCHEMA = {
     prediction: {
       type: "string",
       description:
-        "A prediction of the next gamestate (be specific!), which you should compare to in the next turn to verify your actions are having the desired effect.",
+        "A prediction of the differences between the current and next gamestate, which you should compare to in the next turn to verify your actions are having the desired effect.",
     },
     // Define the structure for the function call itself
     functionCall: {
