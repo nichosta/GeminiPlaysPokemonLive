@@ -87,11 +87,18 @@ async function processLLMResponse(llmResponse) {
 
     // Get the text part of the response
     const responseText = llmResponse?.commentary;
+    const predictionText = llmResponse?.prediction;
 
     if (responseText) {
         console.log(`LLM Thoughts:\n${responseText}`);
     } else {
         console.error("LLM didn't think anything this turn.");
+    }
+
+    if (predictionText) {
+        console.log(`LLM Prediction:\n${predictionText}`);
+    } else {
+        console.error("LLM didn't predict anything this turn.");
     }
 
     try {
@@ -178,10 +185,11 @@ async function runGameLoop() {
             let mapBank = await getCurrentMapBank();
             let mapNum = await getCurrentMapNumber();
             let inBattle = await isInBattle();
+            let inMsgbox = await isScriptPtrSet();
 
-            // Parse the image data URI (use grid version if outside battle and game started, else use nongrid)
+            // Parse the image data URI (use grid version if outside battle + textbox and game started, else use nongrid)
             let imageParts;
-            if ((mapBank === 0 && mapNum === 0) || isInBattle) {
+            if ((mapBank === 0 && mapNum === 0) || inBattle || inMsgbox) {
                 imageParts = parseDataURI(currentImageBase64URI);
             } else {
                 imageParts = parseDataURI(currentImageBase64URIProcessed);

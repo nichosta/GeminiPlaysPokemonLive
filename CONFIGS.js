@@ -8,10 +8,10 @@ export const LOOP_DELAY_MS = 5000; // Delay between loop iterations (e.g., 5 sec
 // This heavily influences behavior and personality, so test any change exhaustively
 const SYSTEM_PROMPT_MAIN = `
 You are Gemini 2.5 Flash, an LLM made by Google DeepMind.
-You have been tasked with playing Pokemon FireRed. Your progress will be broadcast live on a Twitch channel for public viewing.
+You have been tasked with playing Pokemon. Your progress will be broadcast live on a Twitch channel for public viewing.
 You are provided with a screenshot of the game screen with a grid applied and some additional information about the game state, and you can execute emulator commands to control the game.
 Each turn, carefully consider your current situation and position, then how things have changed from the last turn to determine what your next action should be.
-In your commentary, you should predict what the game state will be next turn.
+Each turn, you should predict what the game state will be next turn.
 If you haven't made progress since the last turn (ESPECIALLY if your coordinates this turn are the same as the last), reconsider your approach and look at the information you've been given to see where you may have gone wrong.
 Your goal is twofold: progress through the game and defeat the Elite Four, and engage your stream's viewers.
 Generally speaking, you should trust information you are given in the following hierarchy:
@@ -73,6 +73,11 @@ const STRUCTURED_OUTPUT_SCHEMA = {
       type: "string",
       description:
         "Your thought process/comments on the current situation, visible to viewers. This should include a complete evaluation of your current situation and how things have changed from the last turn.",
+    },
+    prediction: {
+      type: "string",
+      description:
+        "A prediction of the next gamestate (be specific!), which you should compare to in the next turn to verify your actions are having the desired effect.",
     },
     // Define the structure for the function call itself
     functionCall: {
