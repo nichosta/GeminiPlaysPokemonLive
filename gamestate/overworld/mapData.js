@@ -1,14 +1,16 @@
-import { readUint8, readUint16, readUint32, readRange, bytesToInt16LE } from "../httpMemoryReader.js";
+import { readUint8, readUint16, readUint32, readRange } from "../httpMemoryReader.js";
 import { getMapName } from "../../constant/map_map.js";
+import { getEventObjectName } from "../../constant/event_object_map.js";
 import * as MAP_CONSTANTS from "./MAP_CONSTANTS.js";
 import { getCurrentMapBank, getCurrentMapNumber, getPlayerFacingDirection, getPlayerPosition } from "./playerData.js";
-import { getCurrentMapWarps } from "./mapEvents.js";
+import { getCurrentMapNpcs, getCurrentMapWarps } from "./mapEvents.js";
 import { getMainMapHeight, getMainMapTiles, getMainMapWidth } from "./mapLayouts.js";
 
 // --- Constants ---
 const TILE_WALKABLE = 'O';
 const TILE_BLOCKED = 'X';
 const TILE_WARP = 'W';
+const TILE_NPC = '!';
 
 const BASE_TILE_PASSABILITY = Object.freeze({
     [TILE_WALKABLE]: "walkable",
@@ -18,6 +20,7 @@ const BASE_TILE_PASSABILITY = Object.freeze({
 const VIEWPORT_TILE_PASSABILITY = Object.freeze({
     ...BASE_TILE_PASSABILITY,
     [TILE_WARP]: "warp",
+    [TILE_NPC]: "npc",
 });
 
 const MAX_VIEWPORT_WIDTH = 15;
@@ -111,12 +114,9 @@ function processMemoryDataToCollisionMap(memory_data, mapWidthTiles) {
         }
     }
 
-    // Determine the actual height/width based on rows/cols created
     const actualHeight = mapDataStrings.length;
-    // Use the input width as the intended width, rows might be shorter if data was insufficient
     const actualWidth = mapWidthTiles;
 
-    // Add warning if the number of rows doesn't match the calculated height based on numTiles
     if (actualHeight > 0 && actualHeight * mapWidthTiles < numTiles) {
          console.warn(`Processed map dimensions (${actualWidth}x${actualHeight}) contain fewer tiles (${actualHeight * mapWidthTiles}) than available (${numTiles}). Data might be non-rectangular or processing stopped early.`);
     } else if (actualHeight > 0 && actualHeight * mapWidthTiles > numTiles && mapDataStrings[actualHeight-1]?.length < mapWidthTiles) {
@@ -125,22 +125,32 @@ function processMemoryDataToCollisionMap(memory_data, mapWidthTiles) {
 
 
     return {
-        width: actualWidth, // Use the input width
-        height: actualHeight, // Use actual processed height
+        width: actualWidth,
+        height: actualHeight,
         tile_passability: BASE_TILE_PASSABILITY,
-        map_data: mapDataStrings // The 2D array of strings
+        map_data: mapDataStrings
     };
 }
 
 
 /**
  * Retrieves the complete current map state in a structured JSON format.
- * Includes absolute coordinates and uses 'O'/'X' for tile types.
+ * Includes absolute coordinates and uses 'O'/'X' for tile types in map_data.
  *
  * @returns {Promise<object|null>} A promise that resolves to an object containing
- *          the map name, dimensions, collision data, player state, and warp points,
- *          or null if a critical error occurs during data fetching.
- *          Structure defined in original JSDoc.
+ *          the map name, dimensions, collision data, player state, warp points,
+ *          and NPC data, or null if a critical error occurs during data fetching.
+ *          Structure:
+ *          {
+ *              map_name: string,
+ *              width: number,
+ *              height: number,
+ *              tile_passability: { "O": string, "X": string },
+ *              map_data: string[][], // e.g., ["0,0:X", "1,0:O"]
+ *              player_state: { position: [number, number], facing: string },
+ *              warps: Array<{ position: [number, number], destination: string }>,
+ *              npcs: Array<{ position: [number, number], type: string }>
+ *          }
  */
 export async function getMapStateJson() {
     try {
@@ -148,15 +158,16 @@ export async function getMapStateJson() {
         const mapNumber = await getCurrentMapNumber();
         const [ playerX, playerY ] = await getPlayerPosition();
         const facingDirection = await getPlayerFacingDirection();
-        const rawWarps = await getCurrentMapWarps(); // Fetch raw warps first
+        const rawWarps = await getCurrentMapWarps(); // Fetch raw warps
+        const rawNpcs = await getCurrentMapNpcs(); // Fetch raw NPCs
         const mapWidth = await getMainMapWidth();
         const mapHeight = await getMainMapHeight();
 
-        // Fetch map tiles using the obtained width and height
+        const mapName = getMapName(mapBank, mapNumber);
+
         // Ensure width/height are valid before fetching tiles
         if (mapWidth <= 0 || mapHeight <= 0) {
-             console.warn(`Invalid map dimensions fetched: ${mapWidth}x${mapHeight}. Returning minimal state.`);
-             const mapName = getMapName(mapBank, mapNumber);
+             console.warn(`Invalid map dimensions fetched: ${mapWidth}x${mapHeight} for ${mapName}. Returning minimal state.`);
              return {
                 map_name: mapName,
                 width: 0,
@@ -164,7 +175,8 @@ export async function getMapStateJson() {
                 tile_passability: BASE_TILE_PASSABILITY,
                 map_data: [],
                 player_state: { position: [playerX, playerY], facing: facingDirection },
-                warps: []
+                warps: [],
+                npcs: [],
              };
         }
 
@@ -173,33 +185,40 @@ export async function getMapStateJson() {
         // Process tiles into collision map ('O'/'X')
         const collisionData = processMemoryDataToCollisionMap(mapTiles, mapWidth);
         if (!collisionData) {
-             console.error("Failed to process map tiles into collision data.");
+             console.error(`Failed to process map tiles into collision data for ${mapName}.`);
              return null; // Indicate failure
         }
 
-        // Get map name
-        const mapName = getMapName(mapBank, mapNumber);
-
         // Format warps AFTER getting collision data, ensuring coordinates are valid
         const warps = rawWarps
-            .filter(warp => warp.x >= 0 && warp.x < collisionData.width && warp.y >= 0 && warp.y < collisionData.height) // Filter out warps outside processed bounds
+            .filter(warp => warp.x >= 0 && warp.x < collisionData.width && warp.y >= 0 && warp.y < collisionData.height)
             .map(warp => ({
                 position: [warp.x, warp.y],
-                destination: getMapName(warp.destMapGroup, warp.destMapNum)
+                destination: getMapName(warp.destMapGroup, warp.destMapNum) || `Unknown Map (${warp.destMapGroup}-${warp.destMapNum})`
+            }));
+
+        // Format npcs AFTER getting collision data, ensuring coordinates are valid
+        const npcs = rawNpcs
+            .filter(npc => npc.x >= 0 && npc.x < collisionData.width && npc.y >= 0 && npc.y < collisionData.height)
+            .map(npc => ({
+                position: [npc.x, npc.y],
+                type: getEventObjectName(npc.graphicsId) || `Unknown NPC (ID: ${npc.graphicsId})`,
+                isOffScreen: npc.isOffScreen,
             }));
 
         // Assemble the final JSON object
         const mapState = {
             map_name: mapName,
-            width: collisionData.width, // Use width from processed data
-            height: collisionData.height, // Use height from processed data
+            width: collisionData.width,
+            height: collisionData.height,
             tile_passability: collisionData.tile_passability, // Base passability ('O', 'X')
             map_data: collisionData.map_data, // Map data with 'O'/'X'
             player_state: {
                 position: [playerX, playerY], // [col, row]
                 facing: facingDirection
             },
-            warps: warps // Use filtered and formatted warps
+            warps: warps,
+            npcs: npcs,
         };
 
         return mapState;
@@ -218,24 +237,24 @@ export async function getMapStateJson() {
  */
 function isValidFullMapState(state) {
     if (!state || typeof state !== 'object') return false;
-    if (!state.player_state || !Array.isArray(state.player_state.position)) return false;
+    if (!state.player_state || !Array.isArray(state.player_state.position) || state.player_state.position.length !== 2) return false;
     if (typeof state.width !== 'number' || state.width < 0) return false;
     if (typeof state.height !== 'number' || state.height < 0) return false;
     if (!Array.isArray(state.map_data)) return false;
+    if (!Array.isArray(state.warps)) return false;
+    if (!Array.isArray(state.npcs)) return false;
 
-    // Check dimensions match data length only if height > 0
+    // Basic dimension/data consistency checks
     if (state.height > 0 && state.map_data.length !== state.height) {
         console.warn(`Map state height mismatch: expected ${state.height}, got ${state.map_data.length}`);
-        return false; // Treat mismatch as invalid for trimming
+        return false;
     }
-    // Check row length only if height > 0 and width > 0
     if (state.height > 0 && state.width > 0) {
          if (!Array.isArray(state.map_data[0]) || state.map_data[0].length !== state.width) {
             console.warn(`Map state width mismatch: expected ${state.width}, got ${state.map_data[0]?.length ?? 'undefined'}`);
-            return false; // Treat mismatch as invalid for trimming
+            return false;
          }
     }
-    // Allow width/height 0 with empty map_data
     if ((state.width === 0 || state.height === 0) && state.map_data.length !== 0) {
         console.warn(`Map state has zero dimension but non-empty map_data`);
         return false;
@@ -251,13 +270,16 @@ function isValidFullMapState(state) {
 
 /**
  * Trims the full map state to a viewport (max 15x10) centered around the player,
- * using absolute coordinates from the original map. Marks warp tiles as 'W'.
- * Adjusts dimensions to reflect the actual trimmed viewport bounds.
+ * using absolute coordinates from the original map. Marks warp tiles as 'W' and NPC tiles as '!'.
+ * Adjusts dimensions to reflect the actual trimmed viewport bounds. Also filters NPCs and Warps.
  *
  * @param {object} fullMapState - The complete map state object obtained from getMapStateJson.
  * @returns {object|null} A new map state object containing the data within the
  *          player's viewport, adjusted for map boundaries, or null if the input is invalid.
- *          Structure defined in original JSDoc, but with 'W' tile type added.
+ *          Structure includes map_name, width, height,
+ *          tile_passability (with 'X'/'O'/'W'/'!'),
+ *          map_data (with 'X'/'O'/'W'/'!' markers),
+ *          player_state, filtered warps, and filtered npcs.
  */
 function trimMapStateToViewport(fullMapState) {
     // --- Input Validation ---
@@ -270,163 +292,165 @@ function trimMapStateToViewport(fullMapState) {
         map_name,
         width: fullWidth,
         height: fullHeight,
-        map_data: fullMapData, // Expected format: string[][] e.g., ["0,0:X", "1,0:O"]
+        map_data: fullMapData,
         player_state,
-        warps: fullWarps = [] // Default to empty array if missing
+        warps: fullWarps = [],
+        npcs: fullNpcs = []
     } = fullMapState;
 
-    // Handle case where map is empty (width/height 0) gracefully
+    // Handle case where map is empty
     if (fullWidth === 0 || fullHeight === 0) {
-         console.warn("Trimming an empty map state.");
+         console.warn(`Trimming an empty map state for ${map_name}.`);
          return {
             map_name: map_name,
             width: 0,
             height: 0,
-            tile_passability: VIEWPORT_TILE_PASSABILITY, // Include W definition
+            tile_passability: VIEWPORT_TILE_PASSABILITY, // Use extended passability
             map_data: [],
-            player_state: player_state, // Keep original player state
-            warps: []
+            player_state: player_state,
+            warps: [],
+            npcs: []
         };
     }
 
     const [playerX, playerY] = player_state.position;
 
     // --- Calculate Viewport Boundaries ---
-    // Center viewport around player
     const halfWidth = Math.floor(MAX_VIEWPORT_WIDTH / 2);
     const halfHeight = Math.floor(MAX_VIEWPORT_HEIGHT / 2);
 
     const idealStartX = playerX - halfWidth;
     const idealStartY = playerY - halfHeight;
-    // Calculate end coordinates (exclusive) based on start and max size
     const idealEndX = idealStartX + MAX_VIEWPORT_WIDTH;
     const idealEndY = idealStartY + MAX_VIEWPORT_HEIGHT;
 
     // Clamp boundaries to actual map dimensions
     const actualStartX = Math.max(0, idealStartX);
     const actualStartY = Math.max(0, idealStartY);
-    const actualEndX = Math.min(fullWidth, idealEndX); // Exclusive
-    const actualEndY = Math.min(fullHeight, idealEndY); // Exclusive
+    const actualEndX = Math.min(fullWidth, idealEndX);
+    const actualEndY = Math.min(fullHeight, idealEndY);
 
-    // Calculate actual viewport dimensions
     const actualViewportWidth = actualEndX - actualStartX;
     const actualViewportHeight = actualEndY - actualStartY;
 
     // --- Check for invalid dimensions after clamping ---
     if (actualViewportWidth <= 0 || actualViewportHeight <= 0) {
-        // This might happen if player coords are somehow outside valid map range,
-        // despite map dimensions being > 0.
-        console.warn(`Calculated viewport has zero or negative dimensions (${actualViewportWidth}x${actualViewportHeight}). Player: [${playerX}, ${playerY}], Map: ${fullWidth}x${fullHeight}. Returning minimal valid state.`);
+        console.warn(`Calculated viewport has zero or negative dimensions (${actualViewportWidth}x${actualViewportHeight}) for ${map_name}. Player: [${playerX}, ${playerY}], Map: ${fullWidth}x${fullHeight}. Returning minimal valid state.`);
          return {
             map_name: map_name,
             width: 0,
             height: 0,
-            tile_passability: VIEWPORT_TILE_PASSABILITY, // Include W definition
+            tile_passability: VIEWPORT_TILE_PASSABILITY,
             map_data: [],
-            player_state: player_state, // Use original player state
-            warps: []
+            player_state: player_state,
+            warps: [],
+            npcs: [],
         };
     }
 
     // --- Filter Warps and Create Lookup Set ---
     const trimmedWarps = [];
-    const warpLocations = new Set(); // Set for quick lookup: "x,y"
+    const warpLocations = new Set(); // "x,y"
 
     for (const warp of fullWarps) {
-        // Ensure warp position is valid before accessing
-        if (warp && Array.isArray(warp.position) && warp.position.length === 2) {
+        if (warp?.position?.length === 2) {
             const [warpX, warpY] = warp.position;
-
-            // Check if the warp falls within the *actual* viewport bounds
             if (warpX >= actualStartX && warpX < actualEndX &&
                 warpY >= actualStartY && warpY < actualEndY)
             {
-                // Keep the original absolute warp position
                 trimmedWarps.push({
                     position: [warpX, warpY],
-                    destination: warp.destination || "Unknown Destination" // Add fallback
+                    destination: warp.destination || "Unknown Destination"
                 });
-                warpLocations.add(`${warpX},${warpY}`); // Add to lookup set
+                warpLocations.add(`${warpX},${warpY}`);
             }
         } else {
-             console.warn("Skipping invalid warp object:", warp);
+             console.warn("Skipping invalid warp object during trimming:", warp);
         }
     }
 
-    // --- Populate Trimmed Data (Marking Warps) ---
-    const trimmedMapData = [];
+    // --- Filter NPCs and Create Lookup Set ---
+    const trimmedNpcs = [];
+    const npcLocations = new Set(); // "x,y"
+    for (const npc of fullNpcs) {
+        if (npc?.position?.length === 2) {
+            const [npcX, npcY] = npc.position;
+            if (!npc.isOffScreen)
+            {
+                trimmedNpcs.push({
+                    position: [npcX, npcY],
+                    type: npc.type // Already formatted
+                });
+                npcLocations.add(`${npcX},${npcY}`);
+            }
+        } else {
+             console.warn("Skipping invalid NPC object during trimming:", npc);
+        }
+    }
 
-    // Iterate over the *actual* map coordinates within the calculated viewport
+    // --- Populate Trimmed Data (Marking Warps & NPCs) ---
+    const trimmedMapData = [];
     for (let currentMapY = actualStartY; currentMapY < actualEndY; currentMapY++) {
         const row = [];
-        // Ensure the row exists in the source data
         const sourceRow = fullMapData[currentMapY];
         if (!sourceRow) {
-             console.warn(`Missing expected row ${currentMapY} in fullMapData during trimming.`);
-             continue; // Skip this row if missing
+             console.warn(`Missing expected row ${currentMapY} in fullMapData during trimming for ${map_name}.`);
+             continue;
         }
 
         for (let currentMapX = actualStartX; currentMapX < actualEndX; currentMapX++) {
-            let tileType = TILE_BLOCKED; // Default to Blocked
+            let tileType = TILE_BLOCKED; // Default
             const coordString = `${currentMapX},${currentMapY}`;
 
-            // Check if the current tile is a warp location first
+            // Priority: Warp > NPC > Base Tile
             if (warpLocations.has(coordString)) {
-                tileType = TILE_WARP; // Mark as Warp
+                tileType = TILE_WARP;
+            } else if (npcLocations.has(coordString)) {
+                tileType = TILE_NPC;
             } else {
-                // Get the original tile string from the full map data
-                const originalTileString = sourceRow[currentMapX]; // Access validated sourceRow
-
+                const originalTileString = sourceRow[currentMapX];
                 if (typeof originalTileString === 'string' && originalTileString.includes(':')) {
-                    const parts = originalTileString.split(':');
-                    const typeFromData = parts[parts.length - 1]; // Get last part after ':'
-
-                    // Validate it's one of the expected base types
+                    const typeFromData = originalTileString.split(':')[1]; // Get part after ':'
                     if (typeFromData === TILE_WALKABLE || typeFromData === TILE_BLOCKED) {
                          tileType = typeFromData;
                     } else {
-                         console.warn(`Unexpected tile type '${typeFromData}' found at (${currentMapX}, ${currentMapY}). Defaulting to '${TILE_BLOCKED}'.`);
-                         // Keep default TILE_BLOCKED
+                         console.warn(`Unexpected base tile type '${typeFromData}' at (${currentMapX}, ${currentMapY}) for ${map_name}. Defaulting to '${TILE_BLOCKED}'.`);
                     }
                 } else {
-                    // Fallback if data is missing/malformed for this coordinate
-                    console.warn(`Missing or invalid tile string at full map coords (${currentMapX}, ${currentMapY}) within calculated bounds. Defaulting to '${TILE_BLOCKED}'.`);
-                    // Keep default TILE_BLOCKED
+                    console.warn(`Missing or invalid base tile string at (${currentMapX}, ${currentMapY}) for ${map_name}. Defaulting to '${TILE_BLOCKED}'.`);
                 }
             }
-
-            // Push the string with *absolute* map coordinates "x,y:T"
             row.push(`${coordString}:${tileType}`);
         }
-         // Only add non-empty rows (should always be non-empty if width > 0)
         if (row.length > 0) {
             trimmedMapData.push(row);
         }
     }
 
     // --- Assemble the Trimmed State Object ---
-    const trimmedMapState = {
+    return {
         map_name: map_name,
-        width: actualViewportWidth,   // Use actual calculated width
-        height: actualViewportHeight, // Use actual calculated height
+        width: actualViewportWidth,
+        height: actualViewportHeight,
         tile_passability: VIEWPORT_TILE_PASSABILITY, // Use extended passability map
-        map_data: trimmedMapData,     // Contains data only for the actual viewport area
-        player_state: player_state,   // Keep original player state (absolute coords)
-        warps: trimmedWarps           // Warps filtered to viewport (absolute coords)
+        map_data: trimmedMapData,     // Contains 'X'/'O'/'W'/'!' markers
+        player_state: player_state,   // Absolute coords
+        warps: trimmedWarps,          // Filtered, absolute coords
+        npcs: trimmedNpcs             // Filtered, absolute coords
     };
-
-    return trimmedMapState;
 }
 
 
 /**
  * Retrieves the current map state trimmed to a viewport around the player.
- * Warp locations within the viewport are marked as 'W' in the map_data.
+ * Warp locations within the viewport are marked as 'W' and NPC locations as '!'
+ * in the map_data. Includes NPCs and Warps visible within the viewport.
  *
  * @returns {Promise<object|null>} A promise that resolves to an object containing
- *          the map name, dimensions, collision data, player state, and warp points,
- *          trimmed to a viewport (max 15x10) centered around the player.
- *          Coordinates remain *absolute*. Returns null if a critical error occurs.
+ *          the map name, dimensions, collision data (including 'W'/'!' markers),
+ *          player state, filtered warp points, and filtered NPCs, trimmed to a
+ *          viewport (max 15x10) centered around the player. Coordinates remain
+ *          *absolute*. Returns null if a critical error occurs.
  */
 export async function getVisibleMapStateJson() {
     try {
@@ -436,11 +460,10 @@ export async function getVisibleMapStateJson() {
             return null;
         }
 
-        // trimMapStateToViewport handles validation and empty states
         const trimmedState = trimMapStateToViewport(fullState);
-        // trimMapStateToViewport returns null on invalid input state
         if (!trimmedState) {
-             console.error("Failed to trim map state to viewport, possibly due to invalid full state.");
+             // Error logged in trimMapStateToViewport
+             console.error("Failed to trim map state to viewport.");
              return null;
         }
 
@@ -451,3 +474,14 @@ export async function getVisibleMapStateJson() {
         return null;
     }
 }
+
+// Testing GetVisibleMapSTateJson
+(async () => {
+    const visibleMapState = await getVisibleMapStateJson();
+    if (visibleMapState) {
+        console.log("Visible Map State:");
+        console.log(JSON.stringify(visibleMapState, null, 2));
+    } else {
+        console.error("Failed to get visible map state.");
+    }
+})();

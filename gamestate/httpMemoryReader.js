@@ -108,14 +108,3 @@ export async function readRange(address, length) {
     // console.debug(`[readRange] Total bytes received: ${allBytes.length}.`);
     return allBytes;
 }
-
-// --- Helper function to read signed 16-bit little-endian integer from byte array ---
-export function bytesToInt16LE(byte1, byte2) {
-    if (byte1 === undefined || byte2 === undefined) {
-        console.warn("Attempted to read Int16LE from incomplete byte pair.");
-        return 0; // Or throw an error, depending on desired handling
-    }
-    const unsigned = byte1 | (byte2 << 8);
-    // Check if the sign bit (most significant bit) is set
-    return (unsigned & 0x8000) ? unsigned - 0x10000 : unsigned;
-}
