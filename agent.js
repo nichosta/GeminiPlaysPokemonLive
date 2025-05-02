@@ -281,10 +281,6 @@ async function runGameLoop() {
                 { text: currentPromptText },
             ];
 
-            const imagelessPromptParts = [
-                { text: currentPromptText },
-            ]
-
             // 3. Construct the full message history for the API call
             const messagesForApi = [
                 ...googleHistory, // Add past user/model turns
@@ -335,7 +331,6 @@ async function runGameLoop() {
                 let responseResult = await processLLMResponse(parsedResponse);
 
                 // Add current user turn and model response to history
-                googleHistory.push({ role: "user", parts: imagelessPromptParts });
                 googleHistory.push({
                     role: "model",
                     parts: [
@@ -358,10 +353,9 @@ async function runGameLoop() {
                 });
                 googleHistory.push({ role: "user", parts: [responseResult] });
 
-                // Manage history length (remove oldest user/model/response set)
-                // Keep 3 * HISTORY_LENGTH items (user + model + response turn = 3 items)
-                while (googleHistory.length > CONFIGS.HISTORY_LENGTH * 3) {
-                    googleHistory.shift(); // Remove oldest user message
+                // Manage history length (remove oldest model/response set)
+                // Keep 2 * HISTORY_LENGTH items (model + response turn = 2 items)
+                while (googleHistory.length > CONFIGS.HISTORY_LENGTH * 2) {
                     googleHistory.shift(); // Remove oldest model message
                     googleHistory.shift(); // Remove oldest response message
                 }
