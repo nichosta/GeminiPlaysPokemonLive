@@ -41,13 +41,6 @@ export const WARP_EVENT_WARP_ID_OFFSET = 0x05; // Offset to warp ID (u8)
 export const WARP_EVENT_MAP_NUM_OFFSET = 0x06; // Offset to destination map number (u8)
 export const WARP_EVENT_MAP_GROUP_OFFSET = 0x07; // Offset to destination map group/bank (u8)
 
-// NPC Object Template struct (Size = 0x18 / 24 bytes) - From Map Events (DEPRECATED for live NPCs)
-// export const NPC_OBJECT_SIZE = 24; // Use OBJECT_EVENT_SIZE instead for live data
-// export const NPC_OBJECT_GRAPHICS_ID_OFFSET = 0x01;
-// export const NPC_OBJECT_KIND_OFFSET = 0x03;
-// export const NPC_OBJECT_X_OFFSET = 0x04; // Template X
-// export const NPC_OBJECT_Y_OFFSET = 0x06; // Template Y
-
 // --- Live Object Events (Player + NPCs currently on screen/active) ---
 export const OBJECT_EVENTS_ADDR = 0x02036E38; // Base address of gObjectEvents array
 export const OBJECT_EVENT_COUNT = 16;         // Number of objects to read (Player + 15 NPCs)
@@ -61,16 +54,15 @@ export const OBJECT_EVENT_Y_OFFSET = 0x12;          // Offset to current Y coord
 // export const OBJECT_EVENT_FACING_DIR_OFFSET = 0x19; // Offset to facing direction (u8), lower nibble matters (Not needed for current request)
 
 // ObjectEvent flags (bit indices within the u32 flags field at offset 0x00)
-export const OBJECT_EVENT_OFFSCREEN_BIT = 14; // Bit 14 (0x40) indicates off-screen status
+export const OBJECT_EVENT_OFFSCREEN_BIT = 14; // Bit 14 (0x40) indicates off-screen status (technically this gives an extra tile of buffer but I don't care)
 
 // --- Current Map Location ---
 export const MAP_BANK_ADDR = 0x02031DBC; // Address of current map bank/group (u8)
 export const MAP_NUMBER_ADDR = 0x02031DBD; // Address of current map number (u8)
 
 // --- Player State ---
-export const FACING_DIRECTION_ADDR = 0x02036E54; // Address containing player facing direction (among other things) - May be derivable from ObjectEvent[0] now
-export const FACING_DIRECTION_MASK = 0x03; // Mask to isolate the 2 lowest bits for direction (DEPRECATED if using ObjectEvent facing dir)
-// Maps the raw direction value (0-3) to a string representation (DEPRECATED if using ObjectEvent facing dir)
+export const FACING_DIRECTION_ADDR = 0x02036E54; // Address containing player facing direction (among other things)
+export const FACING_DIRECTION_MASK = 0x03; // Mask to isolate the 2 lowest bits for direction
 export const FACING_DIRECTION_MAP = new Map([
     [0, "down"],
     [1, "up"],

@@ -128,11 +128,6 @@ export async function getCurrentMapNpcs() {
             // Check the off-screen flag (bit 9)
             const isOffScreen = (flags >> MAP_CONSTANTS.OBJECT_EVENT_OFFSCREEN_BIT) & 1;
 
-            // // Skip if off-screen
-            // if (isOffScreen) {
-            //     continue;
-            // }
-
             // --- Extract required NPC data ---
 
             // Graphics ID (u8)

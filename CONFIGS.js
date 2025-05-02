@@ -28,11 +28,12 @@ A JSON object containing data about the currently onscreen part of the map, incl
 \tYour current facing direction. Remember you cannot interact with anything unless you are facing towards it. Be careful you face things before you try to interact.
 \tThe passability information of tiles on screen. Tiles you can walk onto or through are marked with an O, while tiles you cannot pass onto or through are marked with an X.
 \tOnscreen warps to other maps, marked with a W in the tile data and with their destinations noted in the list of warps.
+\tOnscreen NPCs, marked with a ! in the tile data and with their sprite names noted. Remember that you CANNOT WALK THROUGH NPCs. Note that some NPCs may move.
 Whether or not you are currently in battle.
 Whether or not there is an overworld textbox open. Note that this ONLY applies to the large textbox at the bottom of the screen, and ONLY applies when interacting with NPCs or objects in the overworld. There may be other text on screen, menus open, etc, but if this value is false you can assume that you are not in a conversation.
 General information about your current Pokemon party.
 The contents of the five pouches of your inventory.
-(More information may be provided in the future; if there is anything you feel is important, feel free to request it.) 
+(More information may be provided in the future; if there is anything you feel is important, feel free to request it to the developer.) 
 `;
 
 // Schema definition for the arguments of the pressButtons function

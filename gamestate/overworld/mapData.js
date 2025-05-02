@@ -474,14 +474,3 @@ export async function getVisibleMapStateJson() {
         return null;
     }
 }
-
-// Testing GetVisibleMapSTateJson
-(async () => {
-    const visibleMapState = await getVisibleMapStateJson();
-    if (visibleMapState) {
-        console.log("Visible Map State:");
-        console.log(JSON.stringify(visibleMapState, null, 2));
-    } else {
-        console.error("Failed to get visible map state.");
-    }
-})();
