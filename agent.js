@@ -12,8 +12,13 @@ import { isScriptPtrSet } from "./gamestate/textReader.js";
 // Import Google AI SDK
 import { GoogleGenAI } from "@google/genai";
 
+// Import Node.js file system module
+import { promises as fs } from 'fs'; // <-- Add this line
+import path from 'path'; // <-- Add this for path joining
+
 // --- Configuration ---
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY; // Get Google AI API key from environment variable
+const HISTORY_FILE_PATH = path.join(process.cwd(), 'chat_history.json'); // <-- Define history file path
 
 if (!GOOGLE_API_KEY) {
     console.error("Error: GOOGLE_API_KEY environment variable not set.");
@@ -23,13 +28,58 @@ if (!GOOGLE_API_KEY) {
 // --- Google AI SDK Initialization ---
 const genAI = new GoogleGenAI({ apiKey: GOOGLE_API_KEY });
 
+// --- History Management ---
+// History format for Google AI SDK: Array of { role: "user" | "model", parts: [{ text?: string, inlineData?: { mimeType: string, data: string } }] }
+let googleHistory = [];
+
+/**
+ * @description Saves the current chat history to a JSON file.
+ * @param {Array} history The chat history array to save.
+ * @returns {Promise<void>}
+ */
+async function saveHistory(history) {
+    try {
+        const historyJson = JSON.stringify(history, null, 2); // Pretty print JSON
+        await fs.writeFile(HISTORY_FILE_PATH, historyJson, 'utf8');
+        console.log(`Chat history saved to ${HISTORY_FILE_PATH}`);
+    } catch (error) {
+        console.error(`Error saving chat history to ${HISTORY_FILE_PATH}:`, error);
+    }
+}
+
+/**
+ * @description Loads chat history from a JSON file.
+ * @returns {Promise<Array>} The loaded history array, or an empty array if loading fails.
+ */
+async function loadHistory() {
+    try {
+        await fs.access(HISTORY_FILE_PATH); // Check if file exists
+        const historyJson = await fs.readFile(HISTORY_FILE_PATH, 'utf8');
+        const loadedHistory = JSON.parse(historyJson);
+        console.log(`Chat history loaded from ${HISTORY_FILE_PATH}`);
+        // Basic validation (check if it's an array)
+        if (Array.isArray(loadedHistory)) {
+            return loadedHistory;
+        } else {
+            console.warn(`Invalid history format found in ${HISTORY_FILE_PATH}. Starting fresh.`);
+            return [];
+        }
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            console.log(`History file ${HISTORY_FILE_PATH} not found. Starting fresh.`);
+        } else {
+            console.error(`Error loading chat history from ${HISTORY_FILE_PATH}:`, error);
+        }
+        return []; // Return empty history on any error
+    }
+}
+
+
 /**
  * @description Gets the current game state information (RAM data) as a formatted string.
  * @returns {Promise<string>} Formatted string containing party, inventory, location, etc.
  */
 async function getGameInfoText() {
-    // TODO: Implement logic to get structured info from RAM/mGBA-http
-    // Example: Fetch data, format it clearly
     console.log("--- Getting Game Info ---");
     let partyCount = await getPartyCount();
     let pokemonInfo = [];
@@ -88,6 +138,7 @@ async function processLLMResponse(llmResponse) {
     // Get the text part of the response
     const responseText = llmResponse?.commentary;
     const predictionText = llmResponse?.prediction;
+    const navigationText = llmResponse?.navigation;
 
     if (responseText) {
         console.log(`LLM Thoughts:\n${responseText}`);
@@ -99,6 +150,12 @@ async function processLLMResponse(llmResponse) {
         console.log(`LLM Prediction:\n${predictionText}`);
     } else {
         console.error("LLM didn't predict anything this turn.");
+    }
+
+    if (navigationText && navigationText.toUpperCase() !== "N/A") {
+        console.log(`LLM Navigation:\n${navigationText}`);
+    } else {
+        console.error("LLM didn't have a navigation plan for the next turn.");
     }
 
     try {
@@ -158,9 +215,6 @@ async function processLLMResponse(llmResponse) {
 
 // --- Main Application Logic ---
 
-// History format for Google AI SDK: Array of { role: "user" | "model", parts: [{ text?: string, inlineData?: { mimeType: string, data: string } }] }
-let googleHistory = [];
-
 /**
  * @description Delays execution for a specified number of milliseconds.
  * @param {number} ms Time to delay in milliseconds.
@@ -170,11 +224,16 @@ function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-console.log(
-    `Starting game loop with model ${CONFIGS.GOOGLE_MODEL_NAME}. Delay: ${CONFIGS.LOOP_DELAY_MS}ms`
-);
-
 async function runGameLoop() {
+    // Load history at the start
+    googleHistory = await loadHistory(); // <-- Load history here
+
+    console.log(
+        `Starting game loop with model ${CONFIGS.GOOGLE_MODEL_NAME}. Delay: ${CONFIGS.LOOP_DELAY_MS}ms`
+    );
+    console.log(`Initial history length: ${googleHistory.length}`);
+
+
     while (true) {
         try {
             console.log("\n--- New Iteration ---");
@@ -194,10 +253,10 @@ async function runGameLoop() {
             } else {
                 imageParts = parseDataURI(currentImageBase64URIProcessed);
             }
-            
+
             if (!imageParts) {
                 console.error("Skipping iteration due to invalid image data URI.");
-                await delay(LOOP_DELAY_MS);
+                await delay(CONFIGS.LOOP_DELAY_MS); // Use config value
                 continue; // Skip this loop iteration
             }
 
@@ -257,7 +316,17 @@ async function runGameLoop() {
                 console.error("Block Details:", result.promptFeedback.safetyRatings);
             } else {
                 // Process the valid response
-                let parsedResponse = JSON.parse(result.text);
+                let parsedResponse;
+                try {
+                    parsedResponse = JSON.parse(result.text);
+                } catch (parseError) {
+                    console.error("Error parsing LLM response text:", parseError);
+                    console.error("Raw LLM response text:", result.text);
+                    // Handle the error, maybe skip this turn or try to recover
+                    await delay(CONFIGS.LOOP_DELAY_MS); // Wait before retrying
+                    continue;
+                }
+
 
                 console.log(
                     `Total tokens used: ${result.usageMetadata.totalTokenCount}`
@@ -279,6 +348,11 @@ async function runGameLoop() {
                             text:
                                 parsedResponse.prediction ??
                                 "No prediction in the previous turn.",
+                        },
+                        {
+                            text:
+                                parsedResponse.navigation ??
+                                "No navigation in the previous turn.",
                         }
                     ],
                 });
@@ -291,10 +365,14 @@ async function runGameLoop() {
                     googleHistory.shift(); // Remove oldest model message
                     googleHistory.shift(); // Remove oldest response message
                 }
+
+                // Save the updated history
+                await saveHistory(googleHistory);
             }
         } catch (error) {
             console.error("Error during game loop iteration:", error);
             // Decide how to handle unexpected errors (e.g., stop, wait longer)
+            await saveHistory(googleHistory);
         }
 
         // 6. Wait before the next iteration

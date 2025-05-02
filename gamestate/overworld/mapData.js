@@ -430,8 +430,8 @@ function trimMapStateToViewport(fullMapState) {
     // --- Assemble the Trimmed State Object ---
     return {
         map_name: map_name,
-        width: actualViewportWidth,
-        height: actualViewportHeight,
+        width: fullWidth,
+        height: fullHeight,
         tile_passability: VIEWPORT_TILE_PASSABILITY, // Use extended passability map
         map_data: trimmedMapData,     // Contains 'X'/'O'/'W'/'!' markers
         player_state: player_state,   // Absolute coords

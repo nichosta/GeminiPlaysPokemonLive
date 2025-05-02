@@ -1,7 +1,9 @@
+import { type } from "os";
+
 // Choose a Gemini model that supports multimodal input (image + text)
 export const GOOGLE_MODEL_NAME = "gemini-2.5-flash-preview-04-17";
 // export const GOOGLE_MODEL_NAME = "gemini-2.5-pro-exp-03-25";
-export const HISTORY_LENGTH = 15; // Keep the last X pairs of user/model messages
+export const HISTORY_LENGTH = 20; // Keep the last X pairs of user/model messages
 export const LOOP_DELAY_MS = 5000; // Delay between loop iterations (e.g., 5 seconds) - ADJUST AS NEEDED!
 
 // Main system prompt, very important
@@ -11,7 +13,7 @@ You are Gemini 2.5 Flash, an LLM made by Google DeepMind.
 You have been tasked with playing Pokemon. Your progress will be broadcast live on a Twitch channel for public viewing.
 You are provided with a screenshot of the game screen with a grid applied and some additional information about the game state, and you can execute emulator commands to control the game.
 Each turn, carefully consider your current situation and position, then how things have changed from the last turn to determine what your next action should be.
-Each turn, you should predict what the game state will be next turn.
+Each turn, you should predict how the game state will change next turn.
 If you haven't made progress since the last turn (ESPECIALLY if your coordinates this turn are the same as the last), reconsider your approach and look at the information you've been given to see where you may have gone wrong.
 Your goal is twofold: progress through the game and defeat the Elite Four, and engage your stream's viewers.
 Generally speaking, you should trust information you are given in the following hierarchy:
@@ -26,8 +28,8 @@ A JSON object containing data about the currently onscreen part of the map, incl
 \tThe name of your current map
 \tYour current X and Y position on the map. Note that the top left corner of the map is 0, 0; and going down increases the Y while going right increases the X.
 \tYour current facing direction. Remember you cannot interact with anything unless you are facing towards it. Be careful you face things before you try to interact.
-\tThe passability information of tiles on screen. Tiles you can walk onto or through are marked with an O, while tiles you cannot pass onto or through are marked with an X.
-\tOnscreen warps to other maps, marked with a W in the tile data and with their destinations noted in the list of warps.
+\tThe collision information of tiles on screen. Tiles you can walk onto or through are marked with an O, while tiles you cannot pass onto or through are marked with an X. Use this information to navigate around obstructions.
+\tOnscreen warps to other maps, marked with a W in the tile data and with their destinations noted in the list of warps. Note some warps require you to take an additional action while standing on their tile to be triggered.
 \tOnscreen NPCs, marked with a ! in the tile data and with their sprite names noted. Remember that you CANNOT WALK THROUGH NPCs. Note that some NPCs may move.
 Whether or not you are currently in battle.
 Whether or not there is an overworld textbox open. Note that this ONLY applies to the large textbox at the bottom of the screen, and ONLY applies when interacting with NPCs or objects in the overworld. There may be other text on screen, menus open, etc, but if this value is false you can assume that you are not in a conversation.
@@ -79,6 +81,11 @@ const STRUCTURED_OUTPUT_SCHEMA = {
       type: "string",
       description:
         "A prediction of the differences between the current and next gamestate, which you should compare to in the next turn to verify your actions are having the desired effect.",
+    },
+    navigation: {
+      type: "string",
+      description:
+        "Your navigation plan for the next turn if you are actionable in the overworld. Make use of the collision data to navigate around obstacles and reach your destination. Write N/A here if this does not apply."
     },
     // Define the structure for the function call itself
     functionCall: {
