@@ -116,7 +116,7 @@ export const GENERATION_CONFIG = {
     // includeThoughts: true,
 
     // Up this if the model seems stupid and you don't mind waiting a little longer
-    thinkingBudget: 2000,
+    thinkingBudget: 3000,
   },
   responseMimeType: "application/json",
   responseSchema: STRUCTURED_OUTPUT_SCHEMA,
