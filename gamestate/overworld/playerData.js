@@ -1,4 +1,4 @@
-import * as MAP_CONSTANTS from "./MAP_CONSTANTS.js";
+import * as MAP_CONSTANTS from "./constants.js";
 import { readUint8, readUint16, readUint32 } from "../httpMemoryReader.js";
 
 /**

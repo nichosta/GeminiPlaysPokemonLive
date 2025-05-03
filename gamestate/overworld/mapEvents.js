@@ -3,7 +3,7 @@ import {
     readUint32,
     readRange,
 } from "../httpMemoryReader.js";
-import * as MAP_CONSTANTS from "./MAP_CONSTANTS.js";
+import * as MAP_CONSTANTS from "./constants.js";
 
 /**
  * Gets the base address of the MapEvents structure for the current map.

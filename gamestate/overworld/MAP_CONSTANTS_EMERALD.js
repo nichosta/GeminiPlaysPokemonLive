@@ -1,4 +1,4 @@
-// Note: ! in the commend means the value is different from the FRLG one
+// Note: ! in the comment means the value is different from the FRLG one
 
 // --- Player Object ---
 export const PLAYER_OBJECT_POINTER_ADDR = 0x03005D8C; //! Address of pointer to player object structure in IWRAM

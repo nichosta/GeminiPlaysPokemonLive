@@ -1,5 +1,5 @@
 import { readUint32, readRange } from '../httpMemoryReader.js';
-import * as MAP_CONSTANTS from "./MAP_CONSTANTS.js";
+import * as MAP_CONSTANTS from "./constants.js";
 
 // Assuming BYTES_PER_TILE might be useful elsewhere, add it to MAP_CONSTANTS
 // Otherwise, define it here: const BYTES_PER_TILE = 2;
