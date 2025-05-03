@@ -58,5 +58,5 @@ export const SPECIES_NONE = 0; // The species ID representing an empty slot
 // --- Script Context Constants ---
 // There's probably horrific issues this is going to cause down the line, but I noticed this pointer only seems to be set
 // when there's an overworld text box open, so...
-export const SCRIPT_CONTEXT_ADDRESS = 0x03000EB0; // Pointer to the sGlobalScriptContext object with script state
+export const SCRIPT_CONTEXT_ADDRESS = 0x03000E40; // Pointer to the sGlobalScriptContext object with script state
 export const SCRIPT_CONTEXT_POINTER_OFFSET = 0x08; // Offset from start of sGlobalScriptContext to pointer to scriptPtr

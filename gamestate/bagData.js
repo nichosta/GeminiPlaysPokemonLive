@@ -1,7 +1,7 @@
 // gamestate/bagData.js
 import { readUint16, readUint32, readRange } from "./httpMemoryReader.js"; // readUint16 was missing from imports, added it
 import { getItemName } from '../constant/item_map.js';
-import * as GAMESTATE_CONSTANTS from "./gamestateConstants.js";
+import * as GAMESTATE_CONSTANTS from "./constants.js";
 
 // --- Core Functions ---
 
@@ -59,7 +59,7 @@ async function getPocketInfo(pocketIndex) {
         const pointer = view.getUint32(0, true); // Offset 0, u32, little-endian
         const capacity = view.getUint32(4, true); // Offset 4, u32, little-endian
 
-        // console.debug(`[getPocketInfo] Pocket ${pocketIndex} (${POCKET_NAMES[pocketIndex]}): Pointer=0x${pointer.toString(16)}, Capacity=${capacity}`);
+        // console.debug(`[getPocketInfo] Pocket ${pocketIndex} (${GAMESTATE_CONSTANTS.POCKET_NAMES[pocketIndex]}): Pointer=0x${pointer.toString(16)}, Capacity=${capacity}`);
 
         if (pointer === 0) {
             console.warn(`[getPocketInfo] Pocket ${pocketIndex} pointer is null. The pocket might be inaccessible or empty.`);
@@ -87,7 +87,7 @@ async function readPocketItems(pocketIndex, securityKey) {
 
     // If pointer is 0 or capacity is 0, the pocket is empty or inaccessible
     if (pocketInfo.pointer === 0 || pocketInfo.capacity === 0) {
-        // console.debug(`[readPocketItems] Pocket ${pocketIndex} (${POCKET_NAMES[pocketIndex]}) is empty or inaccessible (Pointer: ${pocketInfo.pointer}, Capacity: ${pocketInfo.capacity}).`);
+        // console.debug(`[readPocketItems] Pocket ${pocketIndex} (${GAMESTATE_CONSTANTS.POCKET_NAMES[pocketIndex]}) is empty or inaccessible (Pointer: ${pocketInfo.pointer}, Capacity: ${pocketInfo.capacity}).`);
         return [];
     }
 
@@ -140,7 +140,7 @@ async function readPocketItems(pocketIndex, securityKey) {
             // console.debug(`[readPocketItems] Pocket ${pocketIndex}, Slot ${i}: ID=${itemId} (${itemName}), EncQty=0x${encryptedQuantity.toString(16)}, DecQty=${quantity}`);
         }
 
-        // console.debug(`[readPocketItems] Found ${items.length} items in pocket ${pocketIndex} (${POCKET_NAMES[pocketIndex]})`);
+        // console.debug(`[readPocketItems] Found ${items.length} items in pocket ${pocketIndex} (${GAMESTATE_CONSTANTS.POCKET_NAMES[pocketIndex]})`);
         return items;
 
     } catch (error) {
@@ -164,7 +164,7 @@ export async function getBagContents() {
         const securityKey = await getSecurityKey();
 
         for (let i = 0; i < GAMESTATE_CONSTANTS.POCKET_COUNT; i++) {
-            const pocketName = POCKET_NAMES[i];
+            const pocketName = GAMESTATE_CONSTANTS.POCKET_NAMES[i];
             // console.debug(`[getBagContents] Reading pocket: ${pocketName} (Index ${i})`);
             try {
                 const items = await readPocketItems(i, securityKey);

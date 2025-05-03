@@ -9,14 +9,14 @@ const gameVersion = process.env.POKEMON_GAME_VERSION?.toUpperCase() || 'FRLG';
 let selectedConstants;
 
 if (gameVersion === 'EMERALD') {
-    console.log("Using Emerald constants.");
+    console.log("Using Emerald gamestate constants.");
     selectedConstants = EMERALD_CONSTANTS;
 } else {
     // Default to FRLG for any other value or if undefined
     if (gameVersion !== 'FRLG') {
         console.warn(`Unknown POKEMON_GAME_VERSION "${process.env.POKEMON_GAME_VERSION}". Defaulting to FRLG constants.`);
     } else {
-         console.log("Using FRLG constants.");
+         console.log("Using FRLG gamestate constants.");
     }
     selectedConstants = FRLG_CONSTANTS;
 }

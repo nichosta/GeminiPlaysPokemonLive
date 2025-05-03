@@ -1,7 +1,7 @@
 import { readUint8, readUint16, readUint32, readRange } from "./httpMemoryReader.js";
 import { getSpeciesName } from '../constant/species_map.js';
 import { getMoveName } from '../constant/moves_map.js';
-import * as GAMESTATE_CONSTANTS from "./gamestateConstants.js";
+import * as GAMESTATE_CONSTANTS from "./constants.js";
 
 /**
  * Checks if the player is currently in a battle.

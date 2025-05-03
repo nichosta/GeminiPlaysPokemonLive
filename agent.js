@@ -160,7 +160,6 @@ async function processLLMResponse(llmResponse) {
             // Log the full response if there's no function call for context
             console.log("Full LLM Response (no function call):", JSON.stringify(llmResponse, null, 2));
             return {
-                success: true, // Not an error, just no action to take
                 text: "No tool call in this response. You may disregard this message if this was intentional.",
             };
         }
@@ -187,14 +186,14 @@ async function processLLMResponse(llmResponse) {
                         await pressButtons(args.buttons);
                     } else {
                         console.warn("Tool 'pressButtons' called with invalid args:", args);
-                        return { success: false, message: "Tool 'pressButtons' called with invalid args." };
+                        return { text: "Tool 'pressButtons' called with invalid args." };
                     }
-                    return { success: true, message: "Successfully executed 'pressButtons' tool." };
+                    return { text: "Successfully executed 'pressButtons' tool." };
                 default:
                     console.warn(
                         `Received unknown tool name: ${responseFunctionCall.name}`
                     );
-                    return { success: false, message: `Unknown tool name: ${responseFunctionCall.name}` };
+                    return { text: `Unknown tool name: ${responseFunctionCall.name}` };
             }
             // --- End Tool Execution Logic ---
         } else {
@@ -212,7 +211,7 @@ async function processLLMResponse(llmResponse) {
     } catch (error) {
         // Log other types of errors during processing
         console.error("Error processing LLM response:", error);
-        return { success: false, message: "Unspecified error processing LLM response." };
+        return { text: "Unspecified error processing LLM response." };
     }
 }
 

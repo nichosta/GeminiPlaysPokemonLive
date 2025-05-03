@@ -1,4 +1,4 @@
-import * as GAMESTATE_CONSTANTS from "./gamestateConstants.js";
+import * as GAMESTATE_CONSTANTS from "./constants.js";
 import { readUint32 } from "./httpMemoryReader.js";
 
 /**

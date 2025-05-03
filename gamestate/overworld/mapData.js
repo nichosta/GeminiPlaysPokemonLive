@@ -1,6 +1,6 @@
 import { readUint8, readUint16, readUint32, readRange } from "../httpMemoryReader.js";
 import { getMapName } from "../../constant/map_map.js";
-import { getEventObjectName } from "../../constant/event_object_map_frlg.js";
+import { getEventObjectName } from "../../constant/event_object_map.js";
 import * as MAP_CONSTANTS from "./constants.js";
 import { getCurrentMapBank, getCurrentMapNumber, getPlayerFacingDirection, getPlayerPosition } from "./playerData.js";
 import { getCurrentMapNpcs, getCurrentMapWarps } from "./mapEvents.js";
