@@ -2,3 +2,4 @@ extra
 node_modules
 screenshots/*
 chat_history.json
+twitch_chat.txt
