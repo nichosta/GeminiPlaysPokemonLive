@@ -74,6 +74,24 @@ async function loadHistory() {
     }
 }
 
+/**
+ * @description Formats the data for a single Pokemon into a readable string.
+ * @param {object} pokemon The Pokemon data object.
+ * @returns {string} Formatted string for the Pokemon.
+ */
+function formatPokemonInfo(pokemon) {
+    if (!pokemon) return "Invalid Pokemon data";
+    return `
+  Species: ${pokemon.species}
+  Level: ${pokemon.level}
+  HP: ${pokemon.currentHP}/${pokemon.maxHP}
+  Moves:
+    \t${pokemon.moves[0]} (PP ${pokemon.currentPP[0]})
+    \t${pokemon.moves[1]} (PP ${pokemon.currentPP[1]})
+    \t${pokemon.moves[2]} (PP ${pokemon.currentPP[2]})
+    \t${pokemon.moves[3]} (PP ${pokemon.currentPP[3]})
+`;
+}
 
 /**
  * @description Gets the current game state information (RAM data) as a formatted string.
@@ -85,17 +103,7 @@ async function getGameInfoText() {
     let pokemonInfo = [];
     if (partyCount > 0) {
         for (let i = 0; i < partyCount; i++) {
-            let pokemon = await getPokemonData(i);
-            pokemonInfo.push(`
-            Species: ${pokemon.species}
-            Level: ${pokemon.level}
-            HP: ${pokemon.currentHP}/${pokemon.maxHP}
-            Moves:
-            \t${pokemon.moves[0]} (PP ${pokemon.currentPP[0]})
-            \t${pokemon.moves[1]} (PP ${pokemon.currentPP[1]})
-            \t${pokemon.moves[2]} (PP ${pokemon.currentPP[2]})
-            \t${pokemon.moves[3]} (PP ${pokemon.currentPP[3]})
-        `);
+            pokemonInfo.push(formatPokemonInfo(await getPokemonData(i)));
         }
     }
 
@@ -122,7 +130,8 @@ async function getGameInfoText() {
             : "No available pokemon"
         }
       ${prettyBagInfo}
-        `;
+    `;
+    // Remove leading spaces from lines created by template literal indentation
     return gameInfo.replace(/\n +/g, "\n");;
 }
 
@@ -130,7 +139,7 @@ async function getGameInfoText() {
  * @description Processes the LLM's response, assuming it contains a tool call.
  * If parsing fails, logs the raw text response.
  * @param {string} llmResponse The response from the LLM.
- * @returns {Promise<void>}
+ * @returns {Promise<{success: boolean, message: string}>} Object indicating success and a status message.
  */
 async function processLLMResponse(llmResponse) {
     console.log("--- Processing LLM Response ---");
@@ -140,29 +149,18 @@ async function processLLMResponse(llmResponse) {
     const predictionText = llmResponse?.prediction;
     const navigationText = llmResponse?.navigation;
 
-    if (responseText) {
-        console.log(`LLM Thoughts:\n${responseText}`);
-    } else {
-        console.error("LLM didn't think anything this turn.");
-    }
-
-    if (predictionText) {
-        console.log(`LLM Prediction:\n${predictionText}`);
-    } else {
-        console.error("LLM didn't predict anything this turn.");
-    }
-
-    if (navigationText && navigationText.toUpperCase() !== "N/A") {
-        console.log(`LLM Navigation:\n${navigationText}`);
-    } else {
-        console.error("LLM didn't have a navigation plan for the next turn.");
-    }
+    // Log commentary, prediction, and navigation if present
+    console.log(`LLM Thoughts:\n${responseText ?? "N/A"}`);
+    console.log(`LLM Prediction:\n${predictionText ?? "N/A"}`);
+    console.log(`LLM Navigation:\n${(navigationText && navigationText.toUpperCase() !== "N/A") ? navigationText : "N/A"}`);
 
     try {
         if (llmResponse.functionCall == null) {
             console.warn("Warning: No tool call in LLM response.");
-            console.log(JSON.stringify(llmResponse));
+            // Log the full response if there's no function call for context
+            console.log("Full LLM Response (no function call):", JSON.stringify(llmResponse, null, 2));
             return {
+                success: true, // Not an error, just no action to take
                 text: "No tool call in this response. You may disregard this message if this was intentional.",
             };
         }
@@ -189,19 +187,24 @@ async function processLLMResponse(llmResponse) {
                         await pressButtons(args.buttons);
                     } else {
                         console.warn("Tool 'pressButtons' called with invalid args:", args);
+                        return { success: false, message: "Tool 'pressButtons' called with invalid args." };
                     }
-                    return { text: "Succesfully executed 'pressButtons' tool." };
+                    return { success: true, message: "Successfully executed 'pressButtons' tool." };
                 default:
                     console.warn(
                         `Received unknown tool name: ${responseFunctionCall.name}`
                     );
-                    return { text: "Unknown tool name." };
+                    return { success: false, message: `Unknown tool name: ${responseFunctionCall.name}` };
             }
             // --- End Tool Execution Logic ---
         } else {
             // Parsed JSON doesn't match expected tool format, treat as plain text
             console.log(
-                "Response is invalid. Outputting object:",
+                "LLM response functionCall is invalid or missing expected structure. Outputting object:",
+                responseFunctionCall
+            );
+            console.log(
+                "Original LLM Response Object:",
                 responseFunctionCall
             );
             return { text: "Improper tool call format." };
@@ -209,7 +212,7 @@ async function processLLMResponse(llmResponse) {
     } catch (error) {
         // Log other types of errors during processing
         console.error("Error processing LLM response:", error);
-        return { text: "Unspecified error processing LLM response." };
+        return { success: false, message: "Unspecified error processing LLM response." };
     }
 }
 
@@ -255,7 +258,7 @@ async function runGameLoop() {
             }
 
             if (!imageParts) {
-                console.error("Skipping iteration due to invalid image data URI.");
+                console.error(`Skipping iteration due to invalid image data URI: ${currentImageBase64URI ? currentImageBase64URI.substring(0, 50) + '...' : 'null'}`);
                 await delay(CONFIGS.LOOP_DELAY_MS); // Use config value
                 continue; // Skip this loop iteration
             }
@@ -269,11 +272,9 @@ async function runGameLoop() {
             }
 
             // 2. Construct the prompt parts for the current turn
-            // Combine system prompts and current game info into the text part
             const currentPromptText = `Current game state:\n${currentGameInfo}\n`;
-
             const currentTwitchChat = `Twitch Messages this turn:\n${twitch_chat}\n`;
-            // console.log(currentPromptText);
+            // console.log("Current Prompt Text:", currentPromptText); // Optional: Log full prompt text
 
             const currentUserPromptParts = [
                 {
@@ -283,10 +284,10 @@ async function runGameLoop() {
                 { text: currentTwitchChat },
             ];
 
-            // 3. Construct the full message history for the API call
+            // 3. Construct the full message history for the API call (including current user turn)
             const messagesForApi = [
                 ...googleHistory, // Add past user/model turns
-                { role: "user", parts: currentUserPromptParts }, // Add current user turn
+                { role: "user", parts: currentUserPromptParts },
             ];
 
             // 4. Make the API call to Google AI
@@ -324,7 +325,6 @@ async function runGameLoop() {
                     await delay(CONFIGS.LOOP_DELAY_MS); // Wait before retrying
                     continue;
                 }
-
 
                 console.log(
                     `Total tokens used: ${result.usageMetadata.totalTokenCount}`
