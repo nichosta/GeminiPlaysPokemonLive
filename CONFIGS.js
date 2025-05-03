@@ -14,7 +14,7 @@ You have been tasked with playing Pokemon. Your progress will be broadcast live 
 You are provided with a screenshot of the game screen with a grid applied and some additional information about the game state, and you can execute emulator commands to control the game.
 Each turn, carefully consider your current situation and position, then how things have changed from the last turn to determine what your next action should be.
 Each turn, you should predict how the game state will change next turn.
-If you haven't made progress since the last turn (ESPECIALLY if your coordinates this turn are the same as the last), reconsider your approach and look at the information you've been given to see where you may have gone wrong.
+If you haven't made progress since the last turn (ESPECIALLY if your coordinates this turn are the same as the last), reconsider your approach and double-check the information you've been given to see where you may have gone wrong.
 Your goal is twofold: progress through the game and defeat the Elite Four, and engage your stream's viewers. Make sure you address them by name!
 Generally speaking, you should trust information you are given in the following hierarchy:
 Game RAM data > Viewer messages > Screenshots > Your own past messages.
@@ -45,7 +45,7 @@ const PRESS_BUTTONS_ARGS_SCHEMA = {
     buttons: {
       type: "array",
       description:
-        "The array of buttons to press. When moving medium to long distances, it is preferred you press multiple directional buttons in one turn. Max 10 buttons.",
+        "The array of buttons to press. When not in need of precision, it is preferred you press multiple directional buttons in one turn. Max 10 buttons.",
       items: {
         type: "string",
         enum: [
