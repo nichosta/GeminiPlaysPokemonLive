@@ -45,7 +45,7 @@ const PRESS_BUTTONS_ARGS_SCHEMA = {
     buttons: {
       type: "array",
       description:
-        "The array of buttons to press. When moving medium to long distances, it is preferred you press multiple directional buttons in one turn. Max 6 buttons.",
+        "The array of buttons to press. When moving medium to long distances, it is preferred you press multiple directional buttons in one turn. Max 10 buttons.",
       items: {
         type: "string",
         enum: [
@@ -62,7 +62,7 @@ const PRESS_BUTTONS_ARGS_SCHEMA = {
         ],
       },
       minItems: 1,
-      maxItems: 6,
+      maxItems: 10,
     },
   },
   required: ["buttons"],

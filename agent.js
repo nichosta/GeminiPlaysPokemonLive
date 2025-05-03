@@ -41,7 +41,7 @@ async function saveHistory(history) {
     try {
         const historyJson = JSON.stringify(history, null, 2); // Pretty print JSON
         await fs.writeFile(HISTORY_FILE_PATH, historyJson, 'utf8');
-        console.log(`Chat history saved to ${HISTORY_FILE_PATH}`);
+        // console.log(`Chat history saved to ${HISTORY_FILE_PATH}`);
     } catch (error) {
         console.error(`Error saving chat history to ${HISTORY_FILE_PATH}:`, error);
     }
@@ -270,8 +270,9 @@ async function runGameLoop() {
 
             // 2. Construct the prompt parts for the current turn
             // Combine system prompts and current game info into the text part
-            const currentPromptText = `Current game state:\n${currentGameInfo}\nTwitch Messages: ${twitch_chat}\n`;
+            const currentPromptText = `Current game state:\n${currentGameInfo}\n`;
 
+            const currentTwitchChat = `Twitch Messages this turn:\n${twitch_chat}\n`;
             // console.log(currentPromptText);
 
             const currentUserPromptParts = [
@@ -279,6 +280,7 @@ async function runGameLoop() {
                     inlineData: { mimeType: imageParts.mimeType, data: imageParts.data },
                 },
                 { text: currentPromptText },
+                { text: currentTwitchChat },
             ];
 
             // 3. Construct the full message history for the API call
@@ -352,16 +354,20 @@ async function runGameLoop() {
                     ],
                 });
                 googleHistory.push({ role: "user", parts: [responseResult] });
+                googleHistory.push({ role: "user", parts: [{ text: currentTwitchChat}] });
 
                 // Manage history length (remove oldest model/response set)
-                // Keep 2 * HISTORY_LENGTH items (model + response turn = 2 items)
-                while (googleHistory.length > CONFIGS.HISTORY_LENGTH * 2) {
+                // Keep 3 * HISTORY_LENGTH items (model + response + twitch turn = 3 items)
+                while (googleHistory.length > CONFIGS.HISTORY_LENGTH * 3) {
                     googleHistory.shift(); // Remove oldest model message
                     googleHistory.shift(); // Remove oldest response message
+                    googleHistory.shift(); // Remove oldest user message
                 }
 
                 // Save the updated history
                 await saveHistory(googleHistory);
+                fs.writeFile('userPrompt_history.json', JSON.stringify(currentUserPromptParts));
+
             }
         } catch (error) {
             console.error("Error during game loop iteration:", error);
