@@ -1,6 +1,7 @@
 import { readUint8, readUint16, readUint32, readRange } from "./httpMemoryReader.js";
 import { getSpeciesName } from '../constant/species_map.js';
 import { getMoveName } from '../constant/moves_map.js';
+import { decodeByteArrayToString } from '../constant/text_character_map.js'
 import * as GAMESTATE_CONSTANTS from "./constants.js";
 
 /**
@@ -32,12 +33,11 @@ function getPartyPokemonBaseAddress(slot) {
  * @param {number} slot - The party slot index (0-5).
  * @returns {Promise<Uint8Array>} Raw bytes of the nickname (10 bytes).
  */
-async function getPokemonNicknameRawBytes(slot) {
+async function getPokemonNickname(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
     const nicknameAddr = baseAddr + GAMESTATE_CONSTANTS.NICKNAME_OFFSET;
     const buffer = await readRange(nicknameAddr, 10);
-    return new Uint8Array(buffer);
-    // TODO: Implement character decoding based on FireRed's encoding table.
+    return decodeByteArrayToString(buffer);
     // The string is terminated by 0xFF, remaining bytes padded with 0x00.[1]
 }
 
@@ -436,6 +436,8 @@ function getRibbonsObedience(miscBuffer) { // Offset 8, u32 [2]
  */
 export async function getPokemonData(slot) {
     try {
+        const nickname = await getPokemonNickname(slot);
+
         const pid = await getPokemonPID(slot);
         const otid = await getPokemonOTID(slot);
         const encryptedBlock = await getEncryptedBlock(slot);
@@ -456,6 +458,7 @@ export async function getPokemonData(slot) {
         const ivBitfield = getIVsEggAbilityBitfield(substructures.M);
 
         return {
+            nickname: nickname,
             pid: pid,
             otid: otid,
             level: level,

@@ -82,6 +82,7 @@ async function loadHistory() {
 function formatPokemonInfo(pokemon) {
     if (!pokemon) return "Invalid Pokemon data";
     return `
+    Nickname: ${pokemon.nickname}
   Species: ${pokemon.species}
   Level: ${pokemon.level}
   HP: ${pokemon.currentHP}/${pokemon.maxHP}
