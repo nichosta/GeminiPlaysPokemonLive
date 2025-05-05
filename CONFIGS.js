@@ -88,7 +88,7 @@ const STRUCTURED_OUTPUT_SCHEMA = {
     navigation: {
       type: "string",
       description:
-        "Your navigation plan for the next turn if you are actionable in the overworld. Make use of the collision data to navigate around obstacles and reach your destination. Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid. Write N/A here if this does not apply."
+        "Your navigation plan for the next turn if you are actionable in the overworld. Should be at least 10 tiles long unless you intend to interact with something before that. Make use of the collision data to navigate around obstacles and reach your destination. Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid. Write N/A here if this does not apply."
     },
     // Define the structure for the function call itself
     functionCall: {
