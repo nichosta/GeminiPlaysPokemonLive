@@ -4,7 +4,7 @@
 
 export const BAG_MAIN_ADDR = 0x02039DD8;           //! Start address of the bag pocket pointers and sizes
 export const SECURITY_KEY_POINTER_ADDR = 0x03005D90; //! Address holding the pointer to the save block containing the key
-export const SECURITY_KEY_OFFSET = 0x0F20;         // Offset within the save block to find the security key
+export const SECURITY_KEY_OFFSET = 0x01F4;         // Offset within the save block to find the security key
 
 export const POCKET_ENTRY_SIZE = 8; // 4 bytes for pointer, 4 bytes for capacity
 export const ITEM_ENTRY_SIZE = 4;   // 2 bytes for item ID, 2 bytes for encrypted quantity

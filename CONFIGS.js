@@ -5,6 +5,7 @@ export const GOOGLE_MODEL_NAME = "gemini-2.5-flash-preview-04-17";
 // export const GOOGLE_MODEL_NAME = "gemini-2.5-pro-exp-03-25";
 export const HISTORY_LENGTH = 30; // Keep the last X pairs of user/model messages
 export const LOOP_DELAY_MS = 5000; // Delay between loop iterations (e.g., 5 seconds) - ADJUST AS NEEDED!
+export const MAX_SUMMARIES = 50; // Maximum number of summary messages to keep in history
 
 // Main system prompt, very important
 // This heavily influences behavior and personality, so test any change exhaustively
@@ -32,7 +33,7 @@ A JSON object containing data about the currently onscreen part of the map, incl
 \tYour current X and Y position on the map. Note that the top left corner of the map is 0, 0; and going down increases the Y while going right increases the X.
 \tYour current facing direction. Remember you cannot interact with anything unless you are facing towards it. Be careful you face things before you try to interact.
 \tThe collision information of tiles on screen. Tiles you can walk onto or through are marked with an O, while tiles you cannot pass onto or through are marked with an X. Use this information to navigate around obstructions. 
-\tOnscreen warps to other maps, marked with a W in the tile data and with their destinations noted in the list of warps. Note some warps require you to take an additional action (usually walking onto a nearby impassable tile) while standing on their tile to be triggered.
+\tOnscreen warps to other maps, marked with a W in the tile data and with their destinations noted in the list of warps. Note some warps require you to take an additional action (usually walking onto a nearby impassable tile) while standing on their tile to be triggered. This list of warps is complete, if you believe you see a warp not listed then you are mistaken. Note this does not include overworld transitions (e.g. between cities and routes).
 \tOnscreen NPCs, marked with a ! in the tile data and with their sprite names noted. Remember that you CANNOT WALK THROUGH NPCs. Note that some NPCs may move - these may be difficult to catch, so if you are unable to do so, consider leaving them for later. This list of NPCs is complete, if you believe you see an NPC not listed then you are mistaken.
 Whether or not you are currently in battle.
 Whether or not there is an overworld textbox open. Note that this ONLY applies to the large textbox at the bottom of the screen, and ONLY applies when interacting with NPCs or objects in the overworld. There may be other text on screen, menus open, etc, but if this value is false you can assume that you are not in a conversation.
@@ -40,6 +41,22 @@ General information about your current Pokemon party.
 The contents of the five pouches of your inventory.
 (More information may be provided in the future; if there is anything you feel is important, feel free to request it to the developer.) 
 `;
+
+// Prompt used by summary Gemini for summarization
+export const SYSTEM_PROMPT_SUMMARY = `
+I need you to create a detailed summary of our conversation history up to this point. Do not include events that happened before the current conversation history, and do not guess at previous events. This summary will be added to the summary history to manage the context window.
+
+Please include:
+1. Key game events and milestones you've reached
+2. Important decisions you've made
+3. Current objectives or goals you're working toward
+4. Your current location and Pokémon team status
+5. Any strategies or plans you've mentioned
+6. Important suggestions and interactions with Twitch chatters
+
+The summary should be comprehensive enough that you can continue gameplay without losing important context about what has happened so far.
+If the most recent conversation is characterized by looping and a lack of progress, make note of this - it is important not to propogate hallucinations or mistakes.
+`
 
 // Schema definition for the arguments of the pressButtons function
 const PRESS_BUTTONS_ARGS_SCHEMA = {
@@ -80,15 +97,20 @@ const STRUCTURED_OUTPUT_SCHEMA = {
       description:
         "Your thought process/comments on the current situation, visible to viewers. This should include a complete evaluation of your current situation and how things have changed from the last turn.",
     },
-    prediction: {
-      type: "string",
-      description:
-        "A prediction of the differences between the current and next gamestate, which you should compare to in the next turn to verify your actions are having the desired effect.",
-    },
+    // prediction: {
+    //   type: "string",
+    //   description:
+    //     "A prediction of the differences between the current and next gamestate, which you should compare to in the next turn to verify your actions are having the desired effect.",
+    // },
     navigation: {
       type: "string",
       description:
-        "Your navigation plan for the next turn if you are actionable in the overworld. Should be at least 10 tiles long unless you intend to interact with something before that. Make use of the collision data to navigate around obstacles and reach your destination. Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid. Write N/A here if this does not apply."
+        "Your navigation plan for the next turn if you are actionable in the overworld. Should be at least 5 tiles long unless you intend to interact with something before that. Make use of the collision data to navigate around obstacles and reach your destination. Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid. Write N/A here if this does not apply."
+    },
+    mistakes: {
+      type: "string",
+      description:
+        "Errors and potential hallucinations that are leading to looping or impeding progress. Think long and hard about what might be stopping you! If you aren't stuck looping or failing to progress, put N/A here.",
     },
     // Define the structure for the function call itself
     functionCall: {
@@ -110,7 +132,8 @@ const STRUCTURED_OUTPUT_SCHEMA = {
 
 // Generation configuration
 export const GENERATION_CONFIG = {
-  temperature: 1.0,
+  temperature: 1,
+  topP: 1,
   systemInstruction: {
     parts: [{ text: SYSTEM_PROMPT_MAIN }, { text: SYSTEM_PROMPT_RAM_DATA }],
   },
@@ -123,4 +146,19 @@ export const GENERATION_CONFIG = {
   },
   responseMimeType: "application/json",
   responseSchema: STRUCTURED_OUTPUT_SCHEMA,
+};
+
+// Summarization configuration
+export const SUMMARIZATION_CONFIG = {
+  temperature: 0.5, // Low summarization temp (IDK if this is a good idea or not tbh)
+  systemInstruction: {
+    parts: [{ text: SYSTEM_PROMPT_SUMMARY}],
+  },
+  thinkingConfig: {
+    // Doesn't work lol
+    // includeThoughts: true,
+
+    // Big budget for summarization
+    thinkingBudget: 20000,
+  },
 };

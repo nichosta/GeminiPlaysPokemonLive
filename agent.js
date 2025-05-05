@@ -17,7 +17,8 @@ import { promises as fs } from 'fs'; // <-- Add this line
 import path from 'path'; // <-- Add this for path joining
 
 // --- Configuration ---
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY; // Get Google AI API key from environment variable
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const SUMMARY_HISTORY_FILE_PATH = path.join(process.cwd(), 'summary_history.json'); // <-- Define summary history file path
 const HISTORY_FILE_PATH = path.join(process.cwd(), 'chat_history.json'); // <-- Define history file path
 
 if (!GOOGLE_API_KEY) {
@@ -30,18 +31,20 @@ const genAI = new GoogleGenAI({ apiKey: GOOGLE_API_KEY });
 
 // --- History Management ---
 // History format for Google AI SDK: Array of { role: "user" | "model", parts: [{ text?: string, inlineData?: { mimeType: string, data: string } }] }
-let googleHistory = [];
+let googleHistory = []; // Holds the current conversation segment
+let summaryHistory = []; // Holds the summaries
 
 /**
  * @description Saves the current chat history to a JSON file.
  * @param {Array} history The chat history array to save.
+ * @param {string} filePath The path to the file where history should be saved.
  * @returns {Promise<void>}
  */
-async function saveHistory(history) {
+async function saveHistoryToFile(history, filePath) {
     try {
         const historyJson = JSON.stringify(history, null, 2); // Pretty print JSON
-        await fs.writeFile(HISTORY_FILE_PATH, historyJson, 'utf8');
-        // console.log(`Chat history saved to ${HISTORY_FILE_PATH}`);
+        await fs.writeFile(filePath, historyJson, 'utf8');
+        // console.log(`History saved to ${filePath}`);
     } catch (error) {
         console.error(`Error saving chat history to ${HISTORY_FILE_PATH}:`, error);
     }
@@ -49,24 +52,27 @@ async function saveHistory(history) {
 
 /**
  * @description Loads chat history from a JSON file.
+ * @param {string} filePath The path to the file from which history should be loaded.
+ * @param {string} historyName A descriptive name for logging (e.g., "Main", "Summary").
  * @returns {Promise<Array>} The loaded history array, or an empty array if loading fails.
  */
-async function loadHistory() {
+async function loadHistoryFromFile(filePath, historyName) {
     try {
-        await fs.access(HISTORY_FILE_PATH); // Check if file exists
-        const historyJson = await fs.readFile(HISTORY_FILE_PATH, 'utf8');
+        await fs.access(filePath); // Check if file exists
+        const historyJson = await fs.readFile(filePath, 'utf8');
         const loadedHistory = JSON.parse(historyJson);
-        console.log(`Chat history loaded from ${HISTORY_FILE_PATH}`);
+        console.log(`${historyName} history loaded from ${filePath}`);
         // Basic validation (check if it's an array)
-        if (Array.isArray(loadedHistory)) {
+        // Also check if elements have expected 'role' and 'parts' structure
+        if (Array.isArray(loadedHistory) && loadedHistory.every(item => item && typeof item.role === 'string' && Array.isArray(item.parts))) {
             return loadedHistory;
         } else {
-            console.warn(`Invalid history format found in ${HISTORY_FILE_PATH}. Starting fresh.`);
+            console.warn(`Invalid ${historyName} history format found in ${filePath}. Starting fresh.`);
             return [];
         }
     } catch (error) {
         if (error.code === 'ENOENT') {
-            console.log(`History file ${HISTORY_FILE_PATH} not found. Starting fresh.`);
+            console.log(`${historyName} history file ${filePath} not found. Starting fresh.`);
         } else {
             console.error(`Error loading chat history from ${HISTORY_FILE_PATH}:`, error);
         }
@@ -147,13 +153,15 @@ async function processLLMResponse(llmResponse) {
 
     // Get the text part of the response
     const responseText = llmResponse?.commentary;
-    const predictionText = llmResponse?.prediction;
+    // const predictionText = llmResponse?.prediction;
     const navigationText = llmResponse?.navigation;
+    const mistakeText = llmResponse?.mistakes;
 
     // Log commentary, prediction, and navigation if present
     console.log(`LLM Thoughts:\n${responseText ?? "N/A"}`);
-    console.log(`LLM Prediction:\n${predictionText ?? "N/A"}`);
+    // console.log(`LLM Prediction:\n${predictionText ?? "N/A"}`);
     console.log(`LLM Navigation:\n${(navigationText && navigationText.toUpperCase() !== "N/A") ? navigationText : "N/A"}`);
+    console.log(`LLM Mistakes:\n${mistakeText ?? "N/A"}`);
 
     try {
         if (llmResponse.functionCall == null) {
@@ -216,6 +224,51 @@ async function processLLMResponse(llmResponse) {
     }
 }
 
+/**
+ * @description Summarizes the provided history using the Gemini API.
+ * @param {Array} historyToSummarize The portion of the chat history to summarize.
+ * @returns {Promise<string|null>} The summary text, or null if summarization fails.
+ */
+async function summarizeHistory(historyToSummarize) {
+    if (!historyToSummarize || historyToSummarize.length === 0) {
+        console.log("No history provided for summarization.");
+        return null;
+    }
+
+    console.log(`--- Summarizing History (${historyToSummarize.length} messages) ---`);
+
+    try {
+        // Construct the prompt for the summarization model
+        // The summarization prompt expects the history directly as 'contents'
+        const result = await genAI.models.generateContent({
+            model: CONFIGS.GOOGLE_MODEL_NAME,
+            contents: historyToSummarize,
+            config: CONFIGS.SUMMARIZATION_CONFIG,
+        });
+
+        // NOTE: Using the main genAI instance and config here, as requested.
+        if (!result) {
+            console.error("Summarization Error: No response received from Google AI.");
+            return null;
+        }
+
+        const summaryText = result.text;
+
+        if (result.promptFeedback && result.promptFeedback.blockReason) {
+            console.error(
+                `Summarization Error: Prompt blocked. Reason: ${result.promptFeedback.blockReason}`
+            );
+            console.error("Block Details:", result.promptFeedback.safetyRatings);
+            return null;
+        }
+
+        console.log("--- Summarization Complete ---");
+        return summaryText;
+    } catch (error) {
+        console.error("Error during summarization API call:", error);
+        return null;
+    }
+}
 // --- Main Application Logic ---
 
 /**
@@ -229,17 +282,17 @@ function delay(ms) {
 
 async function runGameLoop() {
     // Load history at the start
-    googleHistory = await loadHistory(); // <-- Load history here
+    googleHistory = await loadHistoryFromFile(HISTORY_FILE_PATH, "Main");
+    summaryHistory = await loadHistoryFromFile(SUMMARY_HISTORY_FILE_PATH, "Summary");
 
-    console.log(
-        `Starting game loop with model ${CONFIGS.GOOGLE_MODEL_NAME}. Delay: ${CONFIGS.LOOP_DELAY_MS}ms`
-    );
-    console.log(`Initial history length: ${googleHistory.length}`);
-
+    // Calculate initial turn counter based on the length of the current googleHistory segment
+    let turnCounter = Math.floor(googleHistory.length / 3);
 
     while (true) {
         try {
             console.log("\n--- New Iteration ---");
+
+            console.log(`Turns Till Summary: ${CONFIGS.HISTORY_LENGTH - turnCounter}`);
 
             // 1. Get current game state
             const { original: currentImageBase64URI, processed: currentImageBase64URIProcessed } = await getGameImagesBase64(); // Get full data URI
@@ -284,13 +337,53 @@ async function runGameLoop() {
                 { text: currentTwitchChat },
             ];
 
-            // 3. Construct the full message history for the API call (including current user turn)
+            // 3. Check if summarization is needed BEFORE making the main API call
+            if (turnCounter >= CONFIGS.HISTORY_LENGTH) {
+                console.log(`Turn limit (${CONFIGS.HISTORY_LENGTH}) reached. Attempting summarization...`);
+
+                // Summarize the current googleHistory segment
+                if (googleHistory.length > 0) {
+                    const summaryText = await summarizeHistory(googleHistory);
+
+                    if (summaryText) {
+                        // Use 'model' role for the summary message
+                        const newSummaryMessage = {
+                            role: "model",
+                            parts: [{ text: `Summary of last ${turnCounter} turns:\n${summaryText}` }]
+                        };
+
+                        // Add new summary and limit total summaries
+                        summaryHistory.push(newSummaryMessage);
+                        while (summaryHistory.length > CONFIGS.MAX_SUMMARIES) {
+                            summaryHistory.shift(); // Remove the oldest summary
+                        }
+
+                        // Clear the main history and reset counter
+                        googleHistory = [];
+                        turnCounter = 0; // Reset turn counter
+
+                        // Save both histories
+                        await saveHistoryToFile(googleHistory, HISTORY_FILE_PATH);
+                        await saveHistoryToFile(summaryHistory, SUMMARY_HISTORY_FILE_PATH);
+                        console.log("History summarized and replaced.");
+                    } else {
+                        console.warn("Summarization failed. Proceeding without summarizing.");
+                        // Optionally, reset turn counter anyway or implement other fallback
+                    }
+                } else {
+                    console.log("No non-summary messages found to summarize. Resetting turn counter.");
+                    turnCounter = 0; // Reset counter if history was empty
+                }
+            }
+
+            // 4. Construct the full message history for the API call (including current user turn)
             const messagesForApi = [
-                ...googleHistory, // Add past user/model turns
+                ...summaryHistory, // Start with summaries
+                ...googleHistory, // Add current conversation segment
                 { role: "user", parts: currentUserPromptParts },
             ];
 
-            // 4. Make the API call to Google AI
+            // 5. Make the API call to Google AI
             console.log(
                 `Sending request to Google AI (${CONFIGS.GOOGLE_MODEL_NAME})...`
             );
@@ -302,7 +395,7 @@ async function runGameLoop() {
                 config: CONFIGS.GENERATION_CONFIG,
             });
 
-            // 5. Handle the response
+            // 6. Handle the response
             if (!result) {
                 console.error("API Error: No response received from Google AI.");
                 // Optional: Log the full result for debugging
@@ -333,6 +426,7 @@ async function runGameLoop() {
                 let responseResult = await processLLMResponse(parsedResponse);
 
                 // Add current user turn and model response to history
+                // IMPORTANT: Add the *model's* response first
                 googleHistory.push({
                     role: "model",
                     parts: [
@@ -350,32 +444,30 @@ async function runGameLoop() {
                             text:
                                 parsedResponse.navigation ??
                                 "No navigation in the previous turn.",
-                        }
+                        },
+                        { text: parsedResponse.mistakes ?? "No mistakes in the previous turn." }
                     ],
                 });
+                // Then add the *result* of the user's action (from processLLMResponse)
                 googleHistory.push({ role: "user", parts: [responseResult] });
+                // Finally, add the twitch chat for that turn
                 googleHistory.push({ role: "user", parts: [{ text: currentTwitchChat}] });
 
-                // Manage history length (remove oldest model/response set)
-                // Keep 3 * HISTORY_LENGTH items (model + response + twitch turn = 3 items)
-                while (googleHistory.length > CONFIGS.HISTORY_LENGTH * 3) {
-                    googleHistory.shift(); // Remove oldest model message
-                    googleHistory.shift(); // Remove oldest response message
-                    googleHistory.shift(); // Remove oldest user message
-                }
+                turnCounter++; // Increment turn counter after a successful turn cycle
 
                 // Save the updated history
-                await saveHistory(googleHistory);
+                await saveHistoryToFile(googleHistory, HISTORY_FILE_PATH); // Only save main history here
                 fs.writeFile('userPrompt_history.json', JSON.stringify(currentUserPromptParts));
 
             }
         } catch (error) {
             console.error("Error during game loop iteration:", error);
-            // Decide how to handle unexpected errors (e.g., stop, wait longer)
-            await saveHistory(googleHistory);
+            // Save both histories on error
+            await saveHistoryToFile(googleHistory, HISTORY_FILE_PATH);
+            await saveHistoryToFile(summaryHistory, SUMMARY_HISTORY_FILE_PATH);
         }
 
-        // 6. Wait before the next iteration
+        // 7. Wait before the next iteration
         console.log(`--- Waiting for ${CONFIGS.LOOP_DELAY_MS}ms ---`);
         await delay(CONFIGS.LOOP_DELAY_MS);
     }
