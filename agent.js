@@ -3,7 +3,7 @@ import { getGameImagesBase64, parseDataURI } from "./gamestate/screenshot.js";
 import { getPartyCount, getPokemonData, isInBattle } from "./gamestate/pokemonData.js";
 import { getBagContents, prettyPrintBag } from "./gamestate/bagData.js";
 import * as CONFIGS from "./CONFIGS.js";
-import { pressButtons } from "./buttonPress.js";
+import { pressButtons } from "./tools/buttonPress.js";
 import { readAndClearFile } from "./readInputFile.js";
 import { getVisibleMapStateJson } from "./gamestate/overworld/mapData.js";
 import { getCurrentMapBank, getCurrentMapNumber } from "./gamestate/overworld/playerData.js";

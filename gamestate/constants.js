@@ -27,40 +27,59 @@ if (gameVersion === 'EMERALD') {
 export const BAG_MAIN_ADDR = selectedConstants.BAG_MAIN_ADDR;
 export const SECURITY_KEY_POINTER_ADDR = selectedConstants.SECURITY_KEY_POINTER_ADDR;
 export const SECURITY_KEY_OFFSET = selectedConstants.SECURITY_KEY_OFFSET;
-export const POCKET_ENTRY_SIZE = selectedConstants.POCKET_ENTRY_SIZE;
-export const ITEM_ENTRY_SIZE = selectedConstants.ITEM_ENTRY_SIZE;
-export const POCKET_COUNT = selectedConstants.POCKET_COUNT;
-export const POCKETS = selectedConstants.POCKETS;
-export const POCKET_NAMES = selectedConstants.POCKET_NAMES;
+
+export const POCKET_ENTRY_SIZE = 8; // 4 bytes for pointer, 4 bytes for capacity
+export const ITEM_ENTRY_SIZE = 4;   // 2 bytes for item ID, 2 bytes for encrypted quantity
+export const POCKET_COUNT = 5;      // Total number of pockets
+
+// Enum-like object for pocket indices for clarity
+export const POCKETS = Object.freeze({
+    ITEMS: 0,
+    KEY_ITEMS: 1,
+    POKEBALLS: 2,
+    TMS_HMS: 3,
+    BERRIES: 4,
+});
+
+export const POCKET_NAMES = [
+    "Items",
+    "Key Items",
+    "Pokeballs",
+    "TMs & HMs",
+    "Berries"
+];
 
 // Party Pokémon
 export const IN_BATTLE_BIT_ADDR = selectedConstants.IN_BATTLE_BIT_ADDR;
-export const IN_BATTLE_BITMASK = selectedConstants.IN_BATTLE_BITMASK;
-export const PARTY_BASE_ADDR = selectedConstants.PARTY_BASE_ADDR;
-export const POKEMON_DATA_SIZE = selectedConstants.POKEMON_DATA_SIZE;
+export const IN_BATTLE_BITMASK = 0x02; // Bitmask to determine if the player is in battle
 
-// Pokémon Data Structure
-export const PID_OFFSET = selectedConstants.PID_OFFSET;
-export const OTID_OFFSET = selectedConstants.OTID_OFFSET;
-export const ENCRYPTED_BLOCK_OFFSET = selectedConstants.ENCRYPTED_BLOCK_OFFSET;
-export const ENCRYPTED_BLOCK_SIZE = selectedConstants.ENCRYPTED_BLOCK_SIZE;
-export const SUBSTRUCTURE_SIZE = selectedConstants.SUBSTRUCTURE_SIZE;
-export const NICKNAME_OFFSET = selectedConstants.NICKNAME_OFFSET;
-export const STATUS_OFFSET = selectedConstants.STATUS_OFFSET;
-export const LEVEL_OFFSET = selectedConstants.LEVEL_OFFSET;
-export const CURRENT_HP_OFFSET = selectedConstants.CURRENT_HP_OFFSET;
-export const MAX_HP_OFFSET = selectedConstants.MAX_HP_OFFSET;
-export const ATTACK_OFFSET = selectedConstants.ATTACK_OFFSET;
-export const DEFENSE_OFFSET = selectedConstants.DEFENSE_OFFSET;
-export const SPEED_OFFSET = selectedConstants.SPEED_OFFSET;
-export const SP_ATTACK_OFFSET = selectedConstants.SP_ATTACK_OFFSET;
-export const SP_DEFENSE_OFFSET = selectedConstants.SP_DEFENSE_OFFSET;
-export const PARTY_SIZE = selectedConstants.PARTY_SIZE;
-export const SPECIES_NONE = selectedConstants.SPECIES_NONE;
+export const PARTY_BASE_ADDR = selectedConstants.PARTY_BASE_ADDR;
+export const POKEMON_DATA_SIZE = 100; // Size of each Pokémon structure [1]
+// Offsets within the 100-byte Pokémon structure (Unencrypted part)
+
+// --- Constants for Pokémon Data Structure ---
+export const PID_OFFSET = 0x00; // u32 [1]
+export const OTID_OFFSET = 0x04; // u32 [1]
+// Encrypted Block Offset (Contains Species, Item, Moves, EVs, IVs etc.)
+export const ENCRYPTED_BLOCK_OFFSET = 0x20; // 48 bytes [1]
+export const ENCRYPTED_BLOCK_SIZE = 48;
+export const SUBSTRUCTURE_SIZE = 12;
+export const NICKNAME_OFFSET = 0x08; // 10 bytes [1]
+export const STATUS_OFFSET = 0x50; // 4 bytes (u32) [1]
+export const LEVEL_OFFSET = 0x54; // 1 byte (u8) [1]
+export const CURRENT_HP_OFFSET = 0x56; // 2 bytes (u16) [1]
+export const MAX_HP_OFFSET = 0x58; // 2 bytes (u16) [1]
+export const ATTACK_OFFSET = 0x5A; // 2 bytes (u16) [1]
+export const DEFENSE_OFFSET = 0x5C; // 2 bytes (u16) [1]
+export const SPEED_OFFSET = 0x5E; // 2 bytes (u16) [1]
+export const SP_ATTACK_OFFSET = 0x60; // 2 bytes (u16) [1]
+export const SP_DEFENSE_OFFSET = 0x62; // 2 bytes (u16) [1]
+export const PARTY_SIZE = 6; // Maximum number of Pokémon in a party
+export const SPECIES_NONE = 0; // The species ID representing an empty slot
 
 // Script Context
 export const SCRIPT_CONTEXT_ADDRESS = selectedConstants.SCRIPT_CONTEXT_ADDRESS;
-export const SCRIPT_CONTEXT_POINTER_OFFSET = selectedConstants.SCRIPT_CONTEXT_POINTER_OFFSET;
+export const SCRIPT_CONTEXT_POINTER_OFFSET = 0x08;      // Offset from start of sGlobalScriptContext to pointer to scriptPtr
 
-// You might want to export the determined version as well
+// Export the determined version as well
 export const ACTIVE_GAME_VERSION = gameVersion;
