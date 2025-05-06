@@ -34,11 +34,11 @@ export const BYTES_PER_TILE = selectedConstants.BYTES_PER_TILE;
 // Map Coordinate offset
 export const MAP_OFFSET = selectedConstants.MAP_OFFSET;
 
-// Backup Map Layout (Note: Emerald version might not have these defined)
-export const BACKUP_MAP_LAYOUT_ADDR = selectedConstants.BACKUP_MAP_LAYOUT_ADDR;
-export const BACKUP_MAP_LAYOUT_WIDTH_OFFSET = selectedConstants.BACKUP_MAP_LAYOUT_WIDTH_OFFSET;
-export const BACKUP_MAP_LAYOUT_HEIGHT_OFFSET = selectedConstants.BACKUP_MAP_LAYOUT_HEIGHT_OFFSET;
-export const BACKUP_MAP_DATA_ADDR = selectedConstants.BACKUP_MAP_DATA_ADDR;
+// Backup Map Layout (Currently hibernating)
+// export const BACKUP_MAP_LAYOUT_ADDR = selectedConstants.BACKUP_MAP_LAYOUT_ADDR;
+// export const BACKUP_MAP_LAYOUT_WIDTH_OFFSET = selectedConstants.BACKUP_MAP_LAYOUT_WIDTH_OFFSET;
+// export const BACKUP_MAP_LAYOUT_HEIGHT_OFFSET = selectedConstants.BACKUP_MAP_LAYOUT_HEIGHT_OFFSET;
+// export const BACKUP_MAP_DATA_ADDR = selectedConstants.BACKUP_MAP_DATA_ADDR;
 
 // Current Map Header & Layout
 export const CURRENT_MAP_HEADER_ADDR = selectedConstants.CURRENT_MAP_HEADER_ADDR;
@@ -73,7 +73,9 @@ export const OBJECT_EVENT_FLAGS_OFFSET = selectedConstants.OBJECT_EVENT_FLAGS_OF
 export const OBJECT_EVENT_GRAPHICS_ID_OFFSET = selectedConstants.OBJECT_EVENT_GRAPHICS_ID_OFFSET;
 export const OBJECT_EVENT_X_OFFSET = selectedConstants.OBJECT_EVENT_X_OFFSET;
 export const OBJECT_EVENT_Y_OFFSET = selectedConstants.OBJECT_EVENT_Y_OFFSET;
-export const OBJECT_EVENT_OFFSCREEN_BIT = selectedConstants.OBJECT_EVENT_OFFSCREEN_BIT;
+export const OBJECT_EVENT_FROZEN_BIT = 8;      // Bit 8: 1 = Frozen/Inactive movement
+export const OBJECT_EVENT_OFFSCREEN_BIT = 14;  // Bit 14: 1 = Offscreen/Inactive rendering (technically this gives an extra tile of buffer but I don't care)
+
 
 // Current Map Location
 export const MAP_BANK_ADDR = selectedConstants.MAP_BANK_ADDR;

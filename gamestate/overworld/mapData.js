@@ -378,6 +378,7 @@ function trimMapStateToViewport(fullMapState) {
             if (!npc.isOffScreen)
             {
                 trimmedNpcs.push({
+                    id: npc.id,
                     position: [npcX, npcY],
                     type: npc.type // Already formatted
                 });

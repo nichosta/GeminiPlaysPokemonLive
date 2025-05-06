@@ -125,7 +125,7 @@ export async function getCurrentMapNpcs() {
             // Read the 32-bit flags field (Little Endian)
             const flags = dataView.getUint32(currentOffset + MAP_CONSTANTS.OBJECT_EVENT_FLAGS_OFFSET, true);
 
-            // Check the off-screen flag (bit 9)
+            // Check the off-screen flag (bit 14)
             const isOffScreen = (flags >> MAP_CONSTANTS.OBJECT_EVENT_OFFSCREEN_BIT) & 1;
 
             // --- Extract required NPC data ---
@@ -144,7 +144,7 @@ export async function getCurrentMapNpcs() {
             // Current Y coordinate (s16, Little Endian), adjusted by MAP_OFFSET
             const y = dataView.getInt16(currentOffset + MAP_CONSTANTS.OBJECT_EVENT_Y_OFFSET, true) - MAP_CONSTANTS.MAP_OFFSET;
 
-            npcs.push({ x, y, graphicsId, isOffScreen });
+            npcs.push({ id: i, x, y, graphicsId, isOffScreen });
         }
         return npcs;
     } catch (error) {

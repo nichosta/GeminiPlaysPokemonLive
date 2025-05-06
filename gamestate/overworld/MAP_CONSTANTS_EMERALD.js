@@ -55,9 +55,6 @@ export const OBJECT_EVENT_X_OFFSET = 0x10;          // Offset to current X coord
 export const OBJECT_EVENT_Y_OFFSET = 0x12;          // Offset to current Y coordinate (s16)
 // export const OBJECT_EVENT_FACING_DIR_OFFSET = 0x19; // Offset to facing direction (u8), lower nibble matters (Not needed for current request)
 
-// ObjectEvent flags (bit indices within the u32 flags field at offset 0x00)
-export const OBJECT_EVENT_OFFSCREEN_BIT = 14; // Bit 14 (0x40) indicates off-screen status (technically this gives an extra tile of buffer but I don't care)
-
 // --- Current Map Location ---
 export const MAP_BANK_ADDR = 0x020322E4; //! Address of current map bank/group (u8)
 export const MAP_NUMBER_ADDR = 0x020322E5; //! Address of current map number (u8)
