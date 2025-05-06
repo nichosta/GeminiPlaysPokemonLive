@@ -20,16 +20,13 @@ export async function stunNPC(npcId) {
         const flagsAddr = npcBaseAddr + MAP_CONSTANTS.OBJECT_EVENT_FLAGS_OFFSET;
 
         const currentFlags = await readUint32(flagsAddr);
-        console.log(currentFlags.toString(16));
         const newFlags = currentFlags | (1 << MAP_CONSTANTS.OBJECT_EVENT_FROZEN_BIT); // Set the frozen bit
 
         await writeUint32(flagsAddr, newFlags);
-        console.log(`NPC ${npcId} flags updated to ${newFlags.toString(16)} (frozen bit set).`);
+        // console.log(`NPC ${npcId} flags updated to ${newFlags.toString(16)} (frozen bit set).`);
         return true;
     } catch (error) {
         console.error(`Error stunning NPC ${npcId}:`, error);
         return false;
     }
 }
-// Testing stun npc with ID 1
-stunNPC(1);
