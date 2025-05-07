@@ -45,18 +45,19 @@ The contents of the five pouches of your inventory.
 
 // Prompt used by summary Gemini for summarization
 export const SYSTEM_PROMPT_SUMMARY = `
-I need you to create a detailed summary of our conversation history up to this point. Do not include events that happened before the current conversation history, and do not guess at previous events. This summary will be added to the summary history to manage the context window.
+I need you to create a detailed summary of the conversation history up to this point. Do not include events that happened before the current conversation history, and do not guess at previous events. This summary will be added to the summary history to manage the context window.
 
 Please include:
 1. Key game events and milestones you've reached
 2. Important decisions you've made
-3. Current objectives or goals you're working toward
+3. Current objectives or goals you're working toward (emphasize current medium-term goal)
 4. Your current location and Pokémon team status
 5. Any strategies or plans you've mentioned
 6. Important suggestions and interactions with Twitch chatters
 
 The summary should be comprehensive enough that you can continue gameplay without losing important context about what has happened so far.
 If the most recent conversation is characterized by looping and a lack of progress, make note of this - it is important not to propogate hallucinations or mistakes.
+Do not include any acknowledgement or additional words in the response, only the summary.
 `
 
 // Schema definition for the arguments of the pressButtons function
