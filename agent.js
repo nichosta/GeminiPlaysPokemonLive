@@ -1,9 +1,10 @@
 // Imports from other files
 import { getGameImagesBase64, parseDataURI } from "./gamestate/screenshot.js";
 import { getPartyCount, getPokemonData, isInBattle } from "./gamestate/pokemonData.js";
-import { getBagContents, prettyPrintBag } from "./gamestate/bagData.js";
+import { getBagContents, prettyPrintBag, getPlayerMoney } from "./gamestate/bagData.js";
 import * as CONFIGS from "./CONFIGS.js";
 import { pressButtons } from "./tools/buttonPress.js";
+import { stunNPC } from "./tools/stunNPC.js";
 import { readAndClearFile } from "./readInputFile.js";
 import { getVisibleMapStateJson } from "./gamestate/overworld/mapData.js";
 import { getCurrentMapBank, getCurrentMapNumber } from "./gamestate/overworld/playerData.js";
@@ -117,25 +118,25 @@ async function getGameInfoText() {
     let bagInfo = await getBagContents();
     let prettyBagInfo = prettyPrintBag(bagInfo);
 
-    let mapBank = await getCurrentMapBank();
-    let mapNum = await getCurrentMapNumber();
-
-    let mapStateJSON = mapBank === 0 && mapNum === 0 ? { "map_name": "MAP_UNINITIALIZED" } : await getVisibleMapStateJson();
+    let mapStateJSON = await getVisibleMapStateJson();
 
     let inBattle = await isInBattle();
 
     let overworldTextboxOpen = await isScriptPtrSet();
 
+    let playerMoney = await getPlayerMoney();
+
     const gameInfo = `
       Map Data:\n${JSON.stringify(mapStateJSON)}
       In Battle: ${inBattle ? "Yes" : "No"}
-      Overworld Textbox Onscreen: ${overworldTextboxOpen ? "Yes" : "No"}
+      ${inBattle ? "" : `Overworld Textbox Onscreen: ${overworldTextboxOpen ? "Yes" : "No"}`}
       Party Count: ${partyCount}
       Pokemon:
         ${pokemonInfo.length > 0
             ? pokemonInfo.join("\n")
             : "No available pokemon"
         }
+        Money: ${playerMoney}
       ${prettyBagInfo}
     `;
     // Remove leading spaces from lines created by template literal indentation
@@ -198,6 +199,15 @@ async function processLLMResponse(llmResponse) {
                         return { text: "Tool 'pressButtons' called with invalid args." };
                     }
                     return { text: "Successfully executed 'pressButtons' tool." };
+                case "stunNPC":
+                    console.log(args);
+                    if (args.npcID) {
+                        await stunNPC(args.npcID);
+                    } else {
+                        console.warn("Tool 'stunNPC' called with invalid args:", args);
+                        return { text: "Tool 'stunNPC' called with invalid args." };
+                    }
+                    return { text: "Successfully executed 'stunNPC' tool." };
                 default:
                     console.warn(
                         `Received unknown tool name: ${responseFunctionCall.name}`
@@ -434,11 +444,6 @@ async function runGameLoop() {
                             text:
                                 parsedResponse.commentary ??
                                 "No thoughts in the previous turn.",
-                        },
-                        {
-                            text:
-                                parsedResponse.prediction ??
-                                "No prediction in the previous turn.",
                         },
                         {
                             text:

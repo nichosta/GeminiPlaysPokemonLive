@@ -3,7 +3,7 @@ import { type } from "os";
 // Choose a Gemini model that supports multimodal input (image + text)
 export const GOOGLE_MODEL_NAME = "gemini-2.5-flash-preview-04-17";
 // export const GOOGLE_MODEL_NAME = "gemini-2.5-pro-exp-03-25";
-export const HISTORY_LENGTH = 30; // Keep the last X pairs of user/model messages
+export const HISTORY_LENGTH = 40; // Keep the last X pairs of user/model messages
 export const LOOP_DELAY_MS = 5000; // Delay between loop iterations (e.g., 5 seconds) - ADJUST AS NEEDED!
 export const MAX_SUMMARIES = 50; // Maximum number of summary messages to keep in history
 
@@ -34,7 +34,7 @@ A JSON object containing data about the currently onscreen part of the map, incl
 \tYour current facing direction. Remember you cannot interact with anything unless you are facing towards it. Be careful you face things before you try to interact.
 \tThe collision information of tiles on screen. Tiles you can walk onto or through are marked with an O, while tiles you cannot pass onto or through are marked with an X. Use this information to navigate around obstructions. 
 \tOnscreen warps to other maps, marked with a W in the tile data and with their destinations noted in the list of warps. Note some warps require you to take an additional action (usually walking onto a nearby impassable tile) while standing on their tile to be triggered. This list of warps is complete, if you believe you see a warp not listed then you are mistaken. Note this does not include overworld transitions (e.g. between cities and routes).
-\tOnscreen NPCs, marked with a ! in the tile data and with their sprite names noted. Remember that you CANNOT WALK THROUGH NPCs. Note that some NPCs may move - these may be difficult to catch, so if you are unable to do so, consider leaving them for later. This list of NPCs is complete, if you believe you see an NPC not listed then you are mistaken.
+\tOnscreen NPCs, marked with a ! in the tile data and with their sprite names noted. Remember that you CANNOT WALK THROUGH NPCs. Note that some NPCs may move - these may be difficult to catch, so if you are unable to do so, consider using your "stunNPC" tool to freeze them until they are talked to. This list of NPCs is complete, if you believe you see an NPC not listed then you are mistaken.
 Whether or not you are currently in battle.
 Whether or not there is an overworld textbox open. Note that this ONLY applies to the large textbox at the bottom of the screen, and ONLY applies when interacting with NPCs or objects in the overworld. There may be other text on screen, menus open, etc, but if this value is false you can assume that you are not in a conversation.
 General information about your current Pokemon party.
@@ -88,6 +88,21 @@ const PRESS_BUTTONS_ARGS_SCHEMA = {
   required: ["buttons"],
 };
 
+// Schema definition for the arguments of the pressButtons function
+const STUN_NPC_ARGS_SCHEMA = {
+  type: "object",
+  properties: {
+    npcID: {
+      type: "integer",
+      description:
+        "The ID of the NPC to freeze. Freezes the NPC until they are talked to.",
+      maximum: 15,
+      minimum: 1,
+    },
+  },
+  required: ["npcID"],
+};
+
 // Schema definition for the overall structured output
 const STRUCTURED_OUTPUT_SCHEMA = {
   type: "object",
@@ -120,9 +135,11 @@ const STRUCTURED_OUTPUT_SCHEMA = {
         name: {
           type: "string",
           description: "The name of the function to call.",
-          enum: ["pressButtons"], // Only allow 'pressButtons' for now
+          enum: ["pressButtons", "stunNPC"],
         },
-        args: PRESS_BUTTONS_ARGS_SCHEMA, // Reference the arguments schema defined above
+        args: {
+          anyOf: [PRESS_BUTTONS_ARGS_SCHEMA, STUN_NPC_ARGS_SCHEMA]
+         }, // Reference the arguments schema defined above
       },
       required: ["name", "args"],
     },

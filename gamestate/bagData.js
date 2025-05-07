@@ -208,3 +208,35 @@ export function prettyPrintBag(bagContents) {
     });
     return bagString;
 }
+
+// Get money function (including XORing value with encryption key)
+/**
+ * Gets the player's current money.
+ * @returns {Promise<number>} The player's money.
+ */
+export async function getPlayerMoney() {
+    try {
+        // 1. Read the base pointer from PLAYER_OBJECT_POINTER_ADDR
+        const basePointer = await readUint32(GAMESTATE_CONSTANTS.PLAYER_OBJECT_POINTER_ADDR);
+        if (basePointer === 0) {
+            throw new Error("Player object base pointer is null.");
+        }
+
+        // 2. Calculate the actual address of the encrypted money value
+        const encryptedMoneyAddr = basePointer + GAMESTATE_CONSTANTS.MONEY_OFFSET;
+
+        // 3. Read the 32-bit encrypted money value from the calculated address
+        const encryptedMoney = await readUint32(encryptedMoneyAddr);
+
+        // 4. Get the security key for decryption
+        const securityKey = await getSecurityKey();
+
+        // 5. Decrypt the money value by XORing with the security key
+        const decryptedMoney = encryptedMoney ^ securityKey;
+
+        return decryptedMoney;
+    } catch (error) {
+        console.error("[getPlayerMoney] Failed to read or decrypt player's money:", error);
+        throw new Error(`Failed to retrieve player's money: ${error.message}`);
+    }
+}

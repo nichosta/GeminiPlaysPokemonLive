@@ -3,6 +3,26 @@ export const BAG_MAIN_ADDR = 0x02039DD8;                // Start address of the 
 export const SECURITY_KEY_POINTER_ADDR = 0x03005D90;    // Address holding the pointer to the save block containing the key
 export const SECURITY_KEY_OFFSET = 0x01F4;              // Offset within the save block to find the security key
 
+// Enum-like object for pocket indices for clarity
+export const POCKETS = Object.freeze({
+    ITEMS: 0,
+    POKEBALLS: 1,
+    TMS_HMS: 2,
+    BERRIES: 3,
+    KEY_ITEMS: 4,
+});
+
+export const POCKET_NAMES = [
+    "Items",
+    "Pokeballs",
+    "TMs & HMs",
+    "Berries",
+    "Key Items",
+];
+
+// --- Player Object ---
+export const PLAYER_OBJECT_POINTER_ADDR = 0x03005D8C; // Address of pointer to player object structure in IWRAM
+
 // --- Party Pokémon Data Constants ---
 export const IN_BATTLE_BIT_ADDR = 0x30026F9;            // Location of the bitmask determining if the player is in battle
 export const PARTY_BASE_ADDR = 0x020244EC;              // Base address for party Pokémon data [1]

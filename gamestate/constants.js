@@ -23,6 +23,10 @@ if (gameVersion === 'EMERALD') {
 
 // --- Re-export all constants from the selected set ---
 
+// --- Player Object ---
+export const PLAYER_OBJECT_POINTER_ADDR = selectedConstants.PLAYER_OBJECT_POINTER_ADDR;
+export const MONEY_OFFSET = 0x490; // Offset to player money (u32) within player object
+
 // Bag
 export const BAG_MAIN_ADDR = selectedConstants.BAG_MAIN_ADDR;
 export const SECURITY_KEY_POINTER_ADDR = selectedConstants.SECURITY_KEY_POINTER_ADDR;
@@ -32,22 +36,8 @@ export const POCKET_ENTRY_SIZE = 8; // 4 bytes for pointer, 4 bytes for capacity
 export const ITEM_ENTRY_SIZE = 4;   // 2 bytes for item ID, 2 bytes for encrypted quantity
 export const POCKET_COUNT = 5;      // Total number of pockets
 
-// Enum-like object for pocket indices for clarity
-export const POCKETS = Object.freeze({
-    ITEMS: 0,
-    KEY_ITEMS: 1,
-    POKEBALLS: 2,
-    TMS_HMS: 3,
-    BERRIES: 4,
-});
-
-export const POCKET_NAMES = [
-    "Items",
-    "Key Items",
-    "Pokeballs",
-    "TMs & HMs",
-    "Berries"
-];
+export const POCKETS = selectedConstants.POCKETS;
+export const POCKET_NAMES = selectedConstants.POCKET_NAMES;
 
 // Party Pokémon
 export const IN_BATTLE_BIT_ADDR = selectedConstants.IN_BATTLE_BIT_ADDR;

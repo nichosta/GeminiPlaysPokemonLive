@@ -2,8 +2,6 @@
 // This is directly from pokeemerald\include\constants\map_groups.h (slightly edited)
 // If you see this, feel free to make a pull request making some of the map names clearer
 const MAP_NAMES = `
-// gMapGroup_None
-#define MAP_NONE (0 | (0 << 8))
 // gMapGroup_TownsAndRoutes
 #define MAP_PETALBURG_CITY      (0 | (0 << 8))
 #define MAP_SLATEPORT_CITY      (1 | (0 << 8))
