@@ -305,12 +305,12 @@ async function runGameLoop() {
             console.log(`Turns Till Summary: ${CONFIGS.HISTORY_LENGTH - turnCounter}`);
 
             // 1. Get current game state
-            const { original: currentImageBase64URI, processed: currentImageBase64URIProcessed } = await getGameImagesBase64(); // Get full data URI
             const currentGameInfo = await getGameInfoText();
             let mapBank = await getCurrentMapBank();
             let mapNum = await getCurrentMapNumber();
             let inBattle = await isInBattle();
             let inMsgbox = await isScriptPtrSet();
+            const { original: currentImageBase64URI, processed: currentImageBase64URIProcessed } = await getGameImagesBase64(); // Get full data URI
 
             // Parse the image data URI (use grid version if outside battle + textbox and game started, else use nongrid)
             let imageParts;

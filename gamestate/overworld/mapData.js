@@ -201,6 +201,7 @@ export async function getMapStateJson() {
         const npcs = rawNpcs
             .filter(npc => npc.x >= 0 && npc.x < collisionData.width && npc.y >= 0 && npc.y < collisionData.height)
             .map(npc => ({
+                id: npc.id,
                 position: [npc.x, npc.y],
                 type: getEventObjectName(npc.graphicsId) || `Unknown NPC (ID: ${npc.graphicsId})`,
                 isOffScreen: npc.isOffScreen,
