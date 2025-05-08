@@ -2,8 +2,8 @@ import {
     readUint8,
     readUint32,
     readRange,
-} from "../httpMemoryReader.js";
-import * as MAP_CONSTANTS from "./constants.js";
+} from "../httpMemory/httpMemoryReader.js";
+import * as CONSTANTS from "../constant/constants.js";
 
 /**
  * Gets the base address of the MapEvents structure for the current map.
@@ -14,8 +14,8 @@ import * as MAP_CONSTANTS from "./constants.js";
 async function getMapEventsBaseAddress() {
     // This function remains useful for warps which are still read from MapEvents
     return await readUint32(
-        MAP_CONSTANTS.CURRENT_MAP_HEADER_ADDR +
-        MAP_CONSTANTS.MAP_HEADER_MAP_EVENTS_OFFSET
+        CONSTANTS.CURRENT_MAP_HEADER_ADDR +
+        CONSTANTS.MAP_HEADER_MAP_EVENTS_OFFSET
     );
 }
 
@@ -36,21 +36,21 @@ export async function getCurrentMapWarps() {
         }
 
         const warpCount = await readUint8(
-            mapEventsBaseAddress + MAP_CONSTANTS.MAP_EVENTS_WARP_COUNT_OFFSET
+            mapEventsBaseAddress + CONSTANTS.MAP_EVENTS_WARP_COUNT_OFFSET
         );
         if (warpCount === 0) {
             return [];
         }
 
         const warpsBaseAddress = await readUint32(
-            mapEventsBaseAddress + MAP_CONSTANTS.MAP_EVENTS_WARPS_POINTER_OFFSET
+            mapEventsBaseAddress + CONSTANTS.MAP_EVENTS_WARPS_POINTER_OFFSET
         );
         if (!warpsBaseAddress) {
             console.warn("Could not read Warps base address.");
             return [];
         }
 
-        const totalWarpDataSize = warpCount * MAP_CONSTANTS.WARP_EVENT_SIZE;
+        const totalWarpDataSize = warpCount * CONSTANTS.WARP_EVENT_SIZE;
         const warpDataBytes = new Uint8Array(await readRange(warpsBaseAddress, totalWarpDataSize));
 
         if (!warpDataBytes || warpDataBytes.length !== totalWarpDataSize) {
@@ -68,11 +68,11 @@ export async function getCurrentMapWarps() {
         const warps = [];
 
         for (let i = 0; i < warpCount; i++) {
-            const currentOffset = i * MAP_CONSTANTS.WARP_EVENT_SIZE;
-            const x = dataView.getInt16(currentOffset + MAP_CONSTANTS.WARP_EVENT_X_OFFSET, true);
-            const y = dataView.getInt16(currentOffset + MAP_CONSTANTS.WARP_EVENT_Y_OFFSET, true);
-            const destMapNum = dataView.getUint8(currentOffset + MAP_CONSTANTS.WARP_EVENT_MAP_NUM_OFFSET);
-            const destMapGroup = dataView.getUint8(currentOffset + MAP_CONSTANTS.WARP_EVENT_MAP_GROUP_OFFSET);
+            const currentOffset = i * CONSTANTS.WARP_EVENT_SIZE;
+            const x = dataView.getInt16(currentOffset + CONSTANTS.WARP_EVENT_X_OFFSET, true);
+            const y = dataView.getInt16(currentOffset + CONSTANTS.WARP_EVENT_Y_OFFSET, true);
+            const destMapNum = dataView.getUint8(currentOffset + CONSTANTS.WARP_EVENT_MAP_NUM_OFFSET);
+            const destMapGroup = dataView.getUint8(currentOffset + CONSTANTS.WARP_EVENT_MAP_GROUP_OFFSET);
             warps.push({ x, y, destMapNum, destMapGroup });
         }
         return warps;
@@ -96,9 +96,9 @@ export async function getCurrentMapWarps() {
  */
 export async function getCurrentMapNpcs() {
     try {
-        const objectEventsBaseAddress = MAP_CONSTANTS.OBJECT_EVENTS_ADDR;
-        const objectCount = MAP_CONSTANTS.OBJECT_EVENT_COUNT;
-        const objectSize = MAP_CONSTANTS.OBJECT_EVENT_SIZE;
+        const objectEventsBaseAddress = CONSTANTS.OBJECT_EVENTS_ADDR;
+        const objectCount = CONSTANTS.OBJECT_EVENT_COUNT;
+        const objectSize = CONSTANTS.OBJECT_EVENT_SIZE;
         const totalObjectDataSize = objectCount * objectSize; // 16 * 32 = 0x240 bytes
 
         // Read the block of live object event data
@@ -123,15 +123,15 @@ export async function getCurrentMapNpcs() {
             const currentOffset = i * objectSize;
 
             // Read the 32-bit flags field (Little Endian)
-            const flags = dataView.getUint32(currentOffset + MAP_CONSTANTS.OBJECT_EVENT_FLAGS_OFFSET, true);
+            const flags = dataView.getUint32(currentOffset + CONSTANTS.OBJECT_EVENT_FLAGS_OFFSET, true);
 
             // Check the off-screen flag (bit 14)
-            const isOffScreen = (flags >> MAP_CONSTANTS.OBJECT_EVENT_OFFSCREEN_BIT) & 1;
+            const isOffScreen = (flags >> CONSTANTS.OBJECT_EVENT_OFFSCREEN_BIT) & 1;
 
             // --- Extract required NPC data ---
 
             // Graphics ID (u8)
-            const graphicsId = dataView.getUint8(currentOffset + MAP_CONSTANTS.OBJECT_EVENT_GRAPHICS_ID_OFFSET);
+            const graphicsId = dataView.getUint8(currentOffset + CONSTANTS.OBJECT_EVENT_GRAPHICS_ID_OFFSET);
 
             // If graphicsId is 0, it might indicate an inactive/invalid slot, skip it.
             if (graphicsId === 0) {
@@ -139,10 +139,10 @@ export async function getCurrentMapNpcs() {
             }
 
             // Current X coordinate (s16, Little Endian), adjusted by MAP_OFFSET
-            const x = dataView.getInt16(currentOffset + MAP_CONSTANTS.OBJECT_EVENT_X_OFFSET, true) - MAP_CONSTANTS.MAP_OFFSET;
+            const x = dataView.getInt16(currentOffset + CONSTANTS.OBJECT_EVENT_X_OFFSET, true) - CONSTANTS.MAP_OFFSET;
 
             // Current Y coordinate (s16, Little Endian), adjusted by MAP_OFFSET
-            const y = dataView.getInt16(currentOffset + MAP_CONSTANTS.OBJECT_EVENT_Y_OFFSET, true) - MAP_CONSTANTS.MAP_OFFSET;
+            const y = dataView.getInt16(currentOffset + CONSTANTS.OBJECT_EVENT_Y_OFFSET, true) - CONSTANTS.MAP_OFFSET;
 
             npcs.push({ id: i, x, y, graphicsId, isOffScreen });
         }

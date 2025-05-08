@@ -1,5 +1,5 @@
-import { readUint32, readRange } from '../httpMemoryReader.js';
-import * as MAP_CONSTANTS from "./constants.js";
+import { readUint32, readRange } from '../httpMemory/httpMemoryReader.js';
+import * as CONSTANTS from "../constant/constants.js";
 
 // Assuming BYTES_PER_TILE might be useful elsewhere, add it to MAP_CONSTANTS
 // Otherwise, define it here: const BYTES_PER_TILE = 2;
@@ -11,7 +11,7 @@ import * as MAP_CONSTANTS from "./constants.js";
  * @returns {Promise<number>} The width of the map layout.
  */
 async function getBackupMapWidth() {
-    const widthAddress = MAP_CONSTANTS.BACKUP_MAP_LAYOUT_ADDR + MAP_CONSTANTS.BACKUP_MAP_LAYOUT_WIDTH_OFFSET;
+    const widthAddress = CONSTANTS.BACKUP_MAP_LAYOUT_ADDR + CONSTANTS.BACKUP_MAP_LAYOUT_WIDTH_OFFSET;
     return await readUint32(widthAddress);
 }
 
@@ -21,7 +21,7 @@ async function getBackupMapWidth() {
  * @returns {Promise<number>} The height of the map layout.
  */
 async function getBackupMapHeight() {
-    const heightAddress = MAP_CONSTANTS.BACKUP_MAP_LAYOUT_ADDR + MAP_CONSTANTS.BACKUP_MAP_LAYOUT_HEIGHT_OFFSET;
+    const heightAddress = CONSTANTS.BACKUP_MAP_LAYOUT_ADDR + CONSTANTS.BACKUP_MAP_LAYOUT_HEIGHT_OFFSET;
     return await readUint32(heightAddress);
 }
 
@@ -34,7 +34,7 @@ async function getBackupMapHeight() {
  */
 async function getBackupMapTiles(mapWidth, mapHeight) {
     let mapTileBytes = mapWidth * mapHeight * 2;
-    let range = await readRange(MAP_CONSTANTS.BACKUP_MAP_DATA_ADDR, mapTileBytes);
+    let range = await readRange(CONSTANTS.BACKUP_MAP_DATA_ADDR, mapTileBytes);
     return range;
 }
 
@@ -44,7 +44,7 @@ async function getBackupMapTiles(mapWidth, mapHeight) {
  * @returns {Promise<number>} The base address (pointer value).
  */
 async function getMainMapLayoutBaseAddress() {
-    return await readUint32(MAP_CONSTANTS.CURRENT_MAP_HEADER_ADDR + MAP_CONSTANTS.MAP_HEADER_MAP_LAYOUT_OFFSET);
+    return await readUint32(CONSTANTS.CURRENT_MAP_HEADER_ADDR + CONSTANTS.MAP_HEADER_MAP_LAYOUT_OFFSET);
 }
 
 /**
@@ -59,7 +59,7 @@ export async function getMainMapWidth() {
         console.error("Failed to get main map layout base address for width.");
         return 0; // Or throw an error, depending on desired behavior
     }
-    return await readUint32(baseAddress + MAP_CONSTANTS.MAP_LAYOUT_WIDTH_OFFSET);
+    return await readUint32(baseAddress + CONSTANTS.MAP_LAYOUT_WIDTH_OFFSET);
 }
 
 /**
@@ -74,7 +74,7 @@ export async function getMainMapHeight() {
         console.error("Failed to get main map layout base address for height.");
         return 0; // Or throw an error
     }
-    return await readUint32(baseAddress + MAP_CONSTANTS.MAP_LAYOUT_HEIGHT_OFFSET);
+    return await readUint32(baseAddress + CONSTANTS.MAP_LAYOUT_HEIGHT_OFFSET);
 }
 
 /**
@@ -90,14 +90,14 @@ export async function getMainMapTiles(mapWidth, mapHeight) {
         console.error("Failed to get main map layout base address for tiles.");
         return []; // Return empty array on error
     }
-    const mapDataAddress = await readUint32(baseAddress + MAP_CONSTANTS.MAP_LAYOUT_DATA_OFFSET);
+    const mapDataAddress = await readUint32(baseAddress + CONSTANTS.MAP_LAYOUT_DATA_OFFSET);
     if (!mapDataAddress) {
         console.error("Failed to get main map data address.");
         return []; // Return empty array on error
     }
 
     // Use the constant for bytes per tile
-    const mapTileBytes = mapWidth * mapHeight * MAP_CONSTANTS.BYTES_PER_TILE;
+    const mapTileBytes = mapWidth * mapHeight * CONSTANTS.BYTES_PER_TILE;
 
     // Ensure width/height/bytes are valid before reading range
     if (mapTileBytes <= 0) {

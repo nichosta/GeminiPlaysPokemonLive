@@ -1,5 +1,5 @@
-import * as GAMESTATE_CONSTANTS from "./constants.js";
-import { readUint32 } from "./httpMemoryReader.js";
+import * as CONSTANTS from "./constant/constants.js";
+import { readUint32 } from "./httpMemory/httpMemoryReader.js";
 
 /**
  * Checks if the script pointer is set.
@@ -7,6 +7,6 @@ import { readUint32 } from "./httpMemoryReader.js";
  * @returns {Promise<boolean>} - A promise that resolves to true if the script pointer is set, false otherwise.
  */
 export async function isScriptPtrSet() {
-  const scriptContextPointer = await readUint32(GAMESTATE_CONSTANTS.SCRIPT_CONTEXT_ADDRESS + GAMESTATE_CONSTANTS.SCRIPT_CONTEXT_POINTER_OFFSET);
+  const scriptContextPointer = await readUint32(CONSTANTS.SCRIPT_CONTEXT_ADDRESS + CONSTANTS.SCRIPT_CONTEXT_POINTER_OFFSET);
   return scriptContextPointer !== 0;
 }

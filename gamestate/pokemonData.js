@@ -1,17 +1,17 @@
-import { readUint8, readUint16, readUint32, readRange } from "./httpMemoryReader.js";
+import { readUint8, readUint16, readUint32, readRange } from "./httpMemory/httpMemoryReader.js";
 import { getSpeciesName } from '../constant/species_map.js';
 import { getMoveName } from '../constant/moves_map.js';
 import { decodeByteArrayToString } from '../constant/text_character_map.js'
-import * as GAMESTATE_CONSTANTS from "./constants.js";
+import * as CONSTANTS from "./constant/constants.js";
 
 /**
  * Checks if the player is currently in a battle.
  * @returns {Promise<boolean>} True if in battle, false otherwise.
  */
 export async function isInBattle() {
-    const bitmask = await readUint8(GAMESTATE_CONSTANTS.IN_BATTLE_BIT_ADDR);
+    const bitmask = await readUint8(CONSTANTS.IN_BATTLE_BIT_ADDR);
     // Check if the bit corresponding to in-battle is set
-    return (bitmask & GAMESTATE_CONSTANTS.IN_BATTLE_BITMASK) !== 0;
+    return (bitmask & CONSTANTS.IN_BATTLE_BITMASK) !== 0;
 }
 
 /**
@@ -23,7 +23,7 @@ function getPartyPokemonBaseAddress(slot) {
     if (slot < 0 || slot > 5) {
         throw new Error("Invalid party slot index. Must be between 0 and 5.");
     }
-    return GAMESTATE_CONSTANTS.PARTY_BASE_ADDR + (slot * GAMESTATE_CONSTANTS.POKEMON_DATA_SIZE);
+    return CONSTANTS.PARTY_BASE_ADDR + (slot * CONSTANTS.POKEMON_DATA_SIZE);
 }
 
 /**
@@ -35,7 +35,7 @@ function getPartyPokemonBaseAddress(slot) {
  */
 async function getPokemonNickname(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    const nicknameAddr = baseAddr + GAMESTATE_CONSTANTS.NICKNAME_OFFSET;
+    const nicknameAddr = baseAddr + CONSTANTS.NICKNAME_OFFSET;
     const buffer = await readRange(nicknameAddr, 10);
     return decodeByteArrayToString(buffer);
     // The string is terminated by 0xFF, remaining bytes padded with 0x00.[1]
@@ -48,7 +48,7 @@ async function getPokemonNickname(slot) {
  */
 async function getPokemonLevel(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readUint8(baseAddr + GAMESTATE_CONSTANTS.LEVEL_OFFSET);
+    return await readUint8(baseAddr + CONSTANTS.LEVEL_OFFSET);
 }
 
 /**
@@ -58,7 +58,7 @@ async function getPokemonLevel(slot) {
  */
 async function getPokemonCurrentHP(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readUint16(baseAddr + GAMESTATE_CONSTANTS.CURRENT_HP_OFFSET);
+    return await readUint16(baseAddr + CONSTANTS.CURRENT_HP_OFFSET);
 }
 
 /**
@@ -68,7 +68,7 @@ async function getPokemonCurrentHP(slot) {
  */
 async function getPokemonMaxHP(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readUint16(baseAddr + GAMESTATE_CONSTANTS.MAX_HP_OFFSET);
+    return await readUint16(baseAddr + CONSTANTS.MAX_HP_OFFSET);
 }
 
 /**
@@ -78,7 +78,7 @@ async function getPokemonMaxHP(slot) {
  */
 async function getPokemonAttack(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readUint16(baseAddr + GAMESTATE_CONSTANTS.ATTACK_OFFSET);
+    return await readUint16(baseAddr + CONSTANTS.ATTACK_OFFSET);
 }
 
 /**
@@ -88,7 +88,7 @@ async function getPokemonAttack(slot) {
  */
 async function getPokemonDefense(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readUint16(baseAddr + GAMESTATE_CONSTANTS.DEFENSE_OFFSET);
+    return await readUint16(baseAddr + CONSTANTS.DEFENSE_OFFSET);
 }
 
 /**
@@ -98,7 +98,7 @@ async function getPokemonDefense(slot) {
  */
 async function getPokemonSpeed(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readUint16(baseAddr + GAMESTATE_CONSTANTS.SPEED_OFFSET);
+    return await readUint16(baseAddr + CONSTANTS.SPEED_OFFSET);
 }
 
 /**
@@ -108,7 +108,7 @@ async function getPokemonSpeed(slot) {
  */
 async function getPokemonSpAttack(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readUint16(baseAddr + GAMESTATE_CONSTANTS.SP_ATTACK_OFFSET);
+    return await readUint16(baseAddr + CONSTANTS.SP_ATTACK_OFFSET);
 }
 
 /**
@@ -118,7 +118,7 @@ async function getPokemonSpAttack(slot) {
  */
 async function getPokemonSpDefense(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readUint16(baseAddr + GAMESTATE_CONSTANTS.SP_DEFENSE_OFFSET);
+    return await readUint16(baseAddr + CONSTANTS.SP_DEFENSE_OFFSET);
 }
 
 /**
@@ -129,7 +129,7 @@ async function getPokemonSpDefense(slot) {
  */
 async function getPokemonStatusCondition(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readUint32(baseAddr + GAMESTATE_CONSTANTS.STATUS_OFFSET);
+    return await readUint32(baseAddr + CONSTANTS.STATUS_OFFSET);
 }
 
 // --- Decryption and Unshuffling Logic ---
@@ -141,7 +141,7 @@ async function getPokemonStatusCondition(slot) {
  */
 async function getPokemonPID(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readUint32(baseAddr + GAMESTATE_CONSTANTS.PID_OFFSET);
+    return await readUint32(baseAddr + CONSTANTS.PID_OFFSET);
 }
 
 /**
@@ -151,7 +151,7 @@ async function getPokemonPID(slot) {
  */
 async function getPokemonOTID(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readUint32(baseAddr + GAMESTATE_CONSTANTS.OTID_OFFSET);
+    return await readUint32(baseAddr + CONSTANTS.OTID_OFFSET);
 }
 
 /**
@@ -161,7 +161,7 @@ async function getPokemonOTID(slot) {
  */
 async function getEncryptedBlock(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return Uint8Array.from(await readRange(baseAddr + GAMESTATE_CONSTANTS.ENCRYPTED_BLOCK_OFFSET, GAMESTATE_CONSTANTS.ENCRYPTED_BLOCK_SIZE)).buffer;
+    return Uint8Array.from(await readRange(baseAddr + CONSTANTS.ENCRYPTED_BLOCK_OFFSET, CONSTANTS.ENCRYPTED_BLOCK_SIZE)).buffer;
 }
 
 /**
@@ -174,10 +174,10 @@ async function getEncryptedBlock(slot) {
 function decryptBlock(encryptedBuffer, pid, otid) {
     const decryptionKey = pid ^ otid; // [1, 2]
     const encryptedView = new DataView(encryptedBuffer);
-    const decryptedBuffer = new ArrayBuffer(GAMESTATE_CONSTANTS.ENCRYPTED_BLOCK_SIZE);
+    const decryptedBuffer = new ArrayBuffer(CONSTANTS.ENCRYPTED_BLOCK_SIZE);
     const decryptedView = new DataView(decryptedBuffer);
 
-    for (let i = 0; i < GAMESTATE_CONSTANTS.ENCRYPTED_BLOCK_SIZE; i += 4) {
+    for (let i = 0; i < CONSTANTS.ENCRYPTED_BLOCK_SIZE; i += 4) {
         // Read 32 bits (4 bytes) in little-endian format
         const encryptedChunk = encryptedView.getUint32(i, true);
         // XOR with the key [2]
@@ -205,7 +205,7 @@ const SUBSTRUCTURE_ORDER = [
  */
 function unshuffleSubstructures(decryptedBuffer, pid) {
     // --- Re-include your corrected unshuffleSubstructures implementation here ---
-     if (!decryptedBuffer || decryptedBuffer.byteLength !== GAMESTATE_CONSTANTS.ENCRYPTED_BLOCK_SIZE) {
+     if (!decryptedBuffer || decryptedBuffer.byteLength !== CONSTANTS.ENCRYPTED_BLOCK_SIZE) {
         console.error("Invalid decrypted buffer provided to unshuffleSubstructures.");
         return { G: null, A: null, E: null, M: null };
     }
@@ -215,9 +215,9 @@ function unshuffleSubstructures(decryptedBuffer, pid) {
 
     for (let i = 0; i < orderString.length; i++) {
         const substructureType = orderString[i];
-        const sourceOffset = i * GAMESTATE_CONSTANTS.SUBSTRUCTURE_SIZE;
-        if (sourceOffset + GAMESTATE_CONSTANTS.SUBSTRUCTURE_SIZE <= decryptedBuffer.byteLength) {
-            const substructureSlice = decryptedBuffer.slice(sourceOffset, sourceOffset + GAMESTATE_CONSTANTS.SUBSTRUCTURE_SIZE);
+        const sourceOffset = i * CONSTANTS.SUBSTRUCTURE_SIZE;
+        if (sourceOffset + CONSTANTS.SUBSTRUCTURE_SIZE <= decryptedBuffer.byteLength) {
+            const substructureSlice = decryptedBuffer.slice(sourceOffset, sourceOffset + CONSTANTS.SUBSTRUCTURE_SIZE);
             unshuffled[substructureType] = substructureSlice;
         } else {
              console.error(`Substructure slicing out of bounds for type ${substructureType} at offset ${sourceOffset}`);
@@ -252,23 +252,23 @@ function getSpeciesId(growthBuffer) {
  */
 export async function getPartyCount() {
     let count = 0;
-    while (count < GAMESTATE_CONSTANTS.PARTY_SIZE) {
+    while (count < CONSTANTS.PARTY_SIZE) {
         try {
             const baseAddr = getPartyPokemonBaseAddress(count);
 
             // Optimization: Check PID first. If PID is 0, the slot is usually empty.
-            const pid = await readUint32(baseAddr + GAMESTATE_CONSTANTS.PID_OFFSET);
+            const pid = await readUint32(baseAddr + CONSTANTS.PID_OFFSET);
             if (pid === 0) {
                 // console.debug(`[getPartyCount] Slot ${count} has PID 0. Assuming empty.`);
                 break; // Found an empty slot
             }
 
             // If PID is not 0, proceed to read data needed for species ID check
-            const otid = await readUint32(baseAddr + GAMESTATE_CONSTANTS.OTID_OFFSET);
-            const encryptedBlockBuffer = Uint8Array.from(await readRange(baseAddr + GAMESTATE_CONSTANTS.ENCRYPTED_BLOCK_OFFSET, GAMESTATE_CONSTANTS.ENCRYPTED_BLOCK_SIZE)).buffer;
+            const otid = await readUint32(baseAddr + CONSTANTS.OTID_OFFSET);
+            const encryptedBlockBuffer = Uint8Array.from(await readRange(baseAddr + CONSTANTS.ENCRYPTED_BLOCK_OFFSET, CONSTANTS.ENCRYPTED_BLOCK_SIZE)).buffer;
 
             // Validate the read operation
-            if (!encryptedBlockBuffer || encryptedBlockBuffer.byteLength !== GAMESTATE_CONSTANTS.ENCRYPTED_BLOCK_SIZE) {
+            if (!encryptedBlockBuffer || encryptedBlockBuffer.byteLength !== CONSTANTS.ENCRYPTED_BLOCK_SIZE) {
                  console.warn(`[getPartyCount] Could not read valid encrypted block for slot ${count}. Stopping count.`);
                  break; // Stop counting if data is unreadable
             }
@@ -289,7 +289,7 @@ export async function getPartyCount() {
             // console.debug(`[getPartyCount] Slot ${count}: PID=${pid}, SpeciesID=${speciesId}`);
 
             // Check if the species ID indicates an empty slot
-            if (speciesId === GAMESTATE_CONSTANTS.SPECIES_NONE) {
+            if (speciesId === CONSTANTS.SPECIES_NONE) {
                 // console.debug(`[getPartyCount] Slot ${count} has SpeciesID ${SPECIES_NONE}. Found end of party.`);
                 break; // Found an empty slot
             }
@@ -442,7 +442,7 @@ export async function getPokemonData(slot) {
         const otid = await getPokemonOTID(slot);
         const encryptedBlock = await getEncryptedBlock(slot);
 
-        if (!encryptedBlock || encryptedBlock.byteLength !== GAMESTATE_CONSTANTS.ENCRYPTED_BLOCK_SIZE) {
+        if (!encryptedBlock || encryptedBlock.byteLength !== CONSTANTS.ENCRYPTED_BLOCK_SIZE) {
             console.error(`Failed to read encrypted block for slot ${slot}`);
             return null;
         }

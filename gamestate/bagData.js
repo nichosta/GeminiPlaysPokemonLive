@@ -1,7 +1,7 @@
 // gamestate/bagData.js
-import { readUint16, readUint32, readRange } from "./httpMemoryReader.js"; // readUint16 was missing from imports, added it
+import { readUint16, readUint32, readRange } from "./httpMemory/httpMemoryReader.js"; // readUint16 was missing from imports, added it
 import { getItemName } from '../constant/item_map.js';
-import * as GAMESTATE_CONSTANTS from "./constants.js";
+import * as CONSTANTS from "./constant/constants.js";
 
 // --- Core Functions ---
 
@@ -13,13 +13,13 @@ import * as GAMESTATE_CONSTANTS from "./constants.js";
 async function getSecurityKey() {
     try {
         // 1. Read the base pointer from SECURITY_KEY_POINTER_ADDR
-        const basePointer = await readUint32(GAMESTATE_CONSTANTS.SECURITY_KEY_POINTER_ADDR);
+        const basePointer = await readUint32(CONSTANTS.SECURITY_KEY_POINTER_ADDR);
         if (basePointer === 0) {
             throw new Error("Security key base pointer is null.");
         }
 
         // 2. Calculate the actual address of the security key
-        const securityKeyAddr = basePointer + GAMESTATE_CONSTANTS.SECURITY_KEY_OFFSET;
+        const securityKeyAddr = basePointer + CONSTANTS.SECURITY_KEY_OFFSET;
 
         // 3. Read the 32-bit security key from the calculated address
         const securityKey = await readUint32(securityKeyAddr);
@@ -38,18 +38,18 @@ async function getSecurityKey() {
  * @throws {Error} If the pocket index is invalid or memory reads fail.
  */
 async function getPocketInfo(pocketIndex) {
-    if (pocketIndex < 0 || pocketIndex >= GAMESTATE_CONSTANTS.POCKET_COUNT) {
-        throw new Error(`Invalid pocket index: ${pocketIndex}. Must be between 0 and ${GAMESTATE_CONSTANTS.POCKET_COUNT - 1}.`);
+    if (pocketIndex < 0 || pocketIndex >= CONSTANTS.POCKET_COUNT) {
+        throw new Error(`Invalid pocket index: ${pocketIndex}. Must be between 0 and ${CONSTANTS.POCKET_COUNT - 1}.`);
     }
 
-    const pocketInfoAddr = GAMESTATE_CONSTANTS.BAG_MAIN_ADDR + (pocketIndex * GAMESTATE_CONSTANTS.POCKET_ENTRY_SIZE);
+    const pocketInfoAddr = CONSTANTS.BAG_MAIN_ADDR + (pocketIndex * CONSTANTS.POCKET_ENTRY_SIZE);
     // console.debug(`[getPocketInfo] Reading pocket info for index ${pocketIndex} at address 0x${pocketInfoAddr.toString(16)}`);
 
     try {
         // Read the 8 bytes containing the pointer and capacity
-        const pocketDataBytes = await readRange(pocketInfoAddr, GAMESTATE_CONSTANTS.POCKET_ENTRY_SIZE);
-        if (pocketDataBytes.length !== GAMESTATE_CONSTANTS.POCKET_ENTRY_SIZE) {
-             throw new Error(`Read incomplete pocket info data (${pocketDataBytes.length} bytes instead of ${GAMESTATE_CONSTANTS.POCKET_ENTRY_SIZE}).`);
+        const pocketDataBytes = await readRange(pocketInfoAddr, CONSTANTS.POCKET_ENTRY_SIZE);
+        if (pocketDataBytes.length !== CONSTANTS.POCKET_ENTRY_SIZE) {
+             throw new Error(`Read incomplete pocket info data (${pocketDataBytes.length} bytes instead of ${CONSTANTS.POCKET_ENTRY_SIZE}).`);
         }
 
         // Use DataView to easily parse little-endian values
@@ -91,7 +91,7 @@ async function readPocketItems(pocketIndex, securityKey) {
         return [];
     }
 
-    const totalBytesToRead = pocketInfo.capacity * GAMESTATE_CONSTANTS.ITEM_ENTRY_SIZE;
+    const totalBytesToRead = pocketInfo.capacity * CONSTANTS.ITEM_ENTRY_SIZE;
     // console.debug(`[readPocketItems] Reading ${totalBytesToRead} bytes for pocket ${pocketIndex} from address 0x${pocketInfo.pointer.toString(16)}`);
 
     const items = [];
@@ -110,10 +110,10 @@ async function readPocketItems(pocketIndex, securityKey) {
         // console.debug(`[readPocketItems] Using quantity decryption key: 0x${quantityDecryptionKey.toString(16)} (from 0x${securityKey.toString(16)})`);
 
         for (let i = 0; i < pocketInfo.capacity; i++) {
-            const offset = i * GAMESTATE_CONSTANTS.ITEM_ENTRY_SIZE;
+            const offset = i * CONSTANTS.ITEM_ENTRY_SIZE;
 
             // Ensure we don't read past the actual buffer length if the read was incomplete
-            if (offset + GAMESTATE_CONSTANTS.ITEM_ENTRY_SIZE > view.byteLength) {
+            if (offset + CONSTANTS.ITEM_ENTRY_SIZE > view.byteLength) {
                  console.warn(`[readPocketItems] Stopping item read for pocket ${pocketIndex} due to incomplete data at slot ${i}.`);
                  break;
             }
@@ -163,8 +163,8 @@ export async function getBagContents() {
     try {
         const securityKey = await getSecurityKey();
 
-        for (let i = 0; i < GAMESTATE_CONSTANTS.POCKET_COUNT; i++) {
-            const pocketName = GAMESTATE_CONSTANTS.POCKET_NAMES[i];
+        for (let i = 0; i < CONSTANTS.POCKET_COUNT; i++) {
+            const pocketName = CONSTANTS.POCKET_NAMES[i];
             // console.debug(`[getBagContents] Reading pocket: ${pocketName} (Index ${i})`);
             try {
                 const items = await readPocketItems(i, securityKey);
@@ -193,7 +193,7 @@ export async function getBagContents() {
  */
 export function prettyPrintBag(bagContents) {
     let bagString = "Bag Contents:\n";
-    GAMESTATE_CONSTANTS.POCKET_NAMES.forEach(pocketName => {
+    CONSTANTS.POCKET_NAMES.forEach(pocketName => {
         bagString +=`${pocketName}:\n`; // Print pocket name
         const items = bagContents[pocketName];
         if (items && items.length > 0) {
@@ -217,13 +217,13 @@ export function prettyPrintBag(bagContents) {
 export async function getPlayerMoney() {
     try {
         // 1. Read the base pointer from PLAYER_OBJECT_POINTER_ADDR
-        const basePointer = await readUint32(GAMESTATE_CONSTANTS.PLAYER_OBJECT_POINTER_ADDR);
+        const basePointer = await readUint32(CONSTANTS.PLAYER_OBJECT_POINTER_ADDR);
         if (basePointer === 0) {
             throw new Error("Player object base pointer is null.");
         }
 
         // 2. Calculate the actual address of the encrypted money value
-        const encryptedMoneyAddr = basePointer + GAMESTATE_CONSTANTS.MONEY_OFFSET;
+        const encryptedMoneyAddr = basePointer + CONSTANTS.MONEY_OFFSET;
 
         // 3. Read the 32-bit encrypted money value from the calculated address
         const encryptedMoney = await readUint32(encryptedMoneyAddr);

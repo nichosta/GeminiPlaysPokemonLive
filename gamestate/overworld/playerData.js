@@ -1,12 +1,12 @@
-import * as MAP_CONSTANTS from "./constants.js";
-import { readUint8, readUint16, readUint32 } from "../httpMemoryReader.js";
+import * as CONSTANTS from "../constant/constants.js";
+import { readUint8, readUint16, readUint32 } from "../httpMemory/httpMemoryReader.js";
 
 /**
  * Gets the current map bank number.
  * @returns {Promise<number>} The map bank number.
  */
 export async function getCurrentMapBank() {
-    return await readUint8(MAP_CONSTANTS.MAP_BANK_ADDR);
+    return await readUint8(CONSTANTS.MAP_BANK_ADDR);
 }
 
 /**
@@ -14,7 +14,7 @@ export async function getCurrentMapBank() {
  * @returns {Promise<number>} The map number.
  */
 export async function getCurrentMapNumber() {
-    return await readUint8(MAP_CONSTANTS.MAP_NUMBER_ADDR);
+    return await readUint8(CONSTANTS.MAP_NUMBER_ADDR);
 }
 
 /**
@@ -22,9 +22,9 @@ export async function getCurrentMapNumber() {
  * @returns {Promise<string>} The direction the player is facing (lowercase).
  */
 export async function getPlayerFacingDirection() {
-    const direction = await readUint8(MAP_CONSTANTS.FACING_DIRECTION_ADDR);
-    const maskedDirection = direction & MAP_CONSTANTS.FACING_DIRECTION_MASK;
-    return MAP_CONSTANTS.FACING_DIRECTION_MAP.get(maskedDirection) ?? "unknown";
+    const direction = await readUint8(CONSTANTS.FACING_DIRECTION_ADDR);
+    const maskedDirection = direction & CONSTANTS.FACING_DIRECTION_MASK;
+    return CONSTANTS.FACING_DIRECTION_MAP.get(maskedDirection) ?? "unknown";
 }
 
 /**
@@ -33,7 +33,7 @@ export async function getPlayerFacingDirection() {
  * @returns {Promise<number>} The base address (pointer value).
  */
 async function getPlayerObjectBaseAddress() {
-    return await readUint32(MAP_CONSTANTS.PLAYER_OBJECT_POINTER_ADDR);
+    return await readUint32(CONSTANTS.PLAYER_OBJECT_POINTER_ADDR);
 }
 
 /**
@@ -44,7 +44,7 @@ async function getPlayerObjectBaseAddress() {
 export async function getPlayerX() {
     const baseAddress = await getPlayerObjectBaseAddress();
     // Consider removing or clarifying this comment if "[6]" isn't clear
-    return await readUint16(baseAddress + MAP_CONSTANTS.PLAYER_X_OFFSET); // [6]
+    return await readUint16(baseAddress + CONSTANTS.PLAYER_X_OFFSET); // [6]
 }
 
 /**
@@ -55,7 +55,7 @@ export async function getPlayerX() {
 export async function getPlayerY() {
     const baseAddress = await getPlayerObjectBaseAddress();
     // Consider removing or clarifying this comment if "[6]" isn't clear
-    return await readUint16(baseAddress + MAP_CONSTANTS.PLAYER_Y_OFFSET); // [6]
+    return await readUint16(baseAddress + CONSTANTS.PLAYER_Y_OFFSET); // [6]
 }
 
 /**
@@ -64,7 +64,7 @@ export async function getPlayerY() {
  */
 export async function getPlayerPosition() {
     const baseAddress = await getPlayerObjectBaseAddress();
-    const x = await readUint16(baseAddress + MAP_CONSTANTS.PLAYER_X_OFFSET);
-    const y = await readUint16(baseAddress + MAP_CONSTANTS.PLAYER_Y_OFFSET);
+    const x = await readUint16(baseAddress + CONSTANTS.PLAYER_X_OFFSET);
+    const y = await readUint16(baseAddress + CONSTANTS.PLAYER_Y_OFFSET);
     return [ x, y ];
 }
