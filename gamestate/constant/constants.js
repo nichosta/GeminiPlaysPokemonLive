@@ -92,6 +92,9 @@ export const MAP_OFFSET = 7;
 export const CURRENT_MAP_HEADER_ADDR = selectedConstants.CURRENT_MAP_HEADER_ADDR;
 export const MAP_HEADER_MAP_LAYOUT_OFFSET = 0x00; // Offset to pointer to current map layout structure (struct MapLayout *)
 export const MAP_HEADER_MAP_EVENTS_OFFSET = 0x04; // Offset to pointer to MapEvents structure (struct MapEvents *)
+export const MAP_HEADER_MAP_CONNECTIONS_OFFSET = 0x0C; // Offset to pointer to MapConnections structure (struct MapConnections *)
+
+// --- Map Layout ---
 
 // MapLayout struct offsets
 export const MAP_LAYOUT_WIDTH_OFFSET = 0x00; // Offset to map width (u32)
@@ -127,7 +130,19 @@ export const OBJECT_EVENT_X_OFFSET = 0x10;          // Offset to current X coord
 export const OBJECT_EVENT_Y_OFFSET = 0x12;          // Offset to current Y coordinate (s16)
 export const OBJECT_EVENT_FROZEN_BIT = 8;      // Bit 8: 1 = Frozen/Inactive movement
 export const OBJECT_EVENT_OFFSCREEN_BIT = 14;  // Bit 14: 1 = Offscreen/Inactive rendering (technically this gives an extra tile of buffer but I don't care)
-// export const OBJECT_EVENT_FACING_DIR_OFFSET = 0x19; // Offset to facing direction (u8), lower nibble matters (Not needed for current request)
+
+// --- Map Connections ---
+
+// MapConnections struct offsets
+export const MAP_CONNECTIONS_COUNT_OFFSET = 0x00; // Offset to connection count (s32)
+export const MAP_CONNECTIONS_CONNECTION_POINTER_OFFSET = 0x04; // Offset to connections array pointer (const struct MapConnection *)
+
+// MapConnection struct offsets
+export const MAP_CONNECTION_DIRECTION_OFFSET = 0x00; // Offset to direction (u8)
+export const MAP_CONNECTION_OFFSET_OFFSET = 0x01; // Offset to "offset" field (s32)
+export const MAP_CONNECTION_MAP_GROUP_OFFSET = 0x05; // Offset to destination map group (u8)
+export const MAP_CONNECTION_MAP_NUM_OFFSET = 0x06; // Offset to destination map num (u8)
+
 
 
 // Current Map Location

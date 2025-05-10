@@ -1,4 +1,4 @@
-import { readUint32, readRange } from '../httpMemory/httpMemoryReader.js';
+import { readUint32, readRange } from '../emulatorInteraction/httpMemoryReader.js';
 import * as CONSTANTS from "../constant/constants.js";
 
 // Assuming BYTES_PER_TILE might be useful elsewhere, add it to MAP_CONSTANTS

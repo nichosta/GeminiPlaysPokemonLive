@@ -1,5 +1,5 @@
 import * as CONSTANTS from "./constant/constants.js";
-import { readUint32 } from "./httpMemory/httpMemoryReader.js";
+import { readUint32 } from "./emulatorInteraction/httpMemoryReader.js";
 
 /**
  * Checks if the script pointer is set.

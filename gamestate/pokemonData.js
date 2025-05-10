@@ -1,4 +1,4 @@
-import { readUint8, readUint16, readUint32, readRange } from "./httpMemory/httpMemoryReader.js";
+import { readUint8, readUint16, readUint32, readRange } from "./emulatorInteraction/httpMemoryReader.js";
 import { getSpeciesName } from '../constant/species_map.js';
 import { getMoveName } from '../constant/moves_map.js';
 import { decodeByteArrayToString } from '../constant/text_character_map.js'

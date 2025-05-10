@@ -3,10 +3,10 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 // Import player position functions from mapData.js
-import { getPlayerX, getPlayerY } from './overworld/playerData.js';
+import { getPlayerX, getPlayerY } from '../overworld/playerData.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SCREENSHOTS_DIR = path.join(__dirname, '..', 'screenshots');
+const SCREENSHOTS_DIR = path.join(__dirname, '..', '..', 'screenshots');
 
 // --- Grid Configuration ---
 const GRID_TILE_WIDTH_PX = 16; // Width of a game tile in pixels on the original screenshot
@@ -83,6 +83,7 @@ export async function getGameImagesBase64() {
 
     // --- Parallel Fetching (Screenshot & Player Position) ---
     const screenshotResponse = await fetch(`http://localhost:5000/core/screenshot?path=${originalScreenshotPath}`, { method: 'POST' });
+    await delay(10);
     const playerX = await getPlayerX();
     const playerY = await getPlayerY();
 
@@ -199,3 +200,12 @@ export function parseDataURI(dataURI) {
     console.error("Error: Invalid data URI format received.");
     return null;
 }
+
+/**
+ * @description Delays execution for a specified number of milliseconds.
+ * @param {number} ms Time to delay in milliseconds.
+ * @returns {Promise<void>}
+ */
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }

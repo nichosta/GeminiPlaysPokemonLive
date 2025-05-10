@@ -28,6 +28,7 @@ When the screenshots conflict with the game RAM data, ignore the screenshots.
 If you haven't made progress since the last turn (ESPECIALLY if your coordinates this turn are the same as the last for several turns), reconsider your approach and double-check the information you've been given to see where you may have gone wrong.
 Additionally, if an NPC is saying the same thing over and over, you may be looping; consider doing something else instead of talking to them repeatedly.
 If you determine you are stuck or doing the same thing repeatedly without progress, you MUST IGNORE YOUR OWN PREVIOUS MESSAGES AND DECISIONS that led to or perpetuated this state. Instead, re-evaluate your strategy based *only* on the current, trusted game state (Game RAM data first, then Viewer messages, then Screenshots). Articulate this re-evaluation in your commentary. If a clear alternative action isn't apparent from the current data, consider a safe, exploratory action (like moving to an adjacent, unexplored, walkable tile if possible and not part of the recent repetitive behavior). If no such safe action exists or you need more information, explicitly state you are waiting for new data in the next turn to make a more informed decision.
+Always remember that you can usually press B to back out of menus and cancel selections! 
 `;
 
 // RAM data system prompt, details what information the LLM recieves. Mostly important to help with parsing the collision map.

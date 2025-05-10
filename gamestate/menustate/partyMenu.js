@@ -1,4 +1,4 @@
-import { readUint8, readUint32 } from '../httpMemory/httpMemoryReader.js';
+import { readUint8, readUint32 } from '../emulatorInteraction/httpMemoryReader.js';
 import * as CONSTANTS from '../constant/constants.js';
 
 /**

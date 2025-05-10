@@ -2,7 +2,7 @@ import {
     readUint8,
     readUint32,
     readRange,
-} from "../httpMemory/httpMemoryReader.js";
+} from "../emulatorInteraction/httpMemoryReader.js";
 import * as CONSTANTS from "../constant/constants.js";
 
 /**

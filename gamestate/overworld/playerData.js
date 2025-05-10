@@ -1,5 +1,5 @@
 import * as CONSTANTS from "../constant/constants.js";
-import { readUint8, readUint16, readUint32 } from "../httpMemory/httpMemoryReader.js";
+import { readUint8, readUint16, readUint32 } from "../emulatorInteraction/httpMemoryReader.js";
 
 /**
  * Gets the current map bank number.

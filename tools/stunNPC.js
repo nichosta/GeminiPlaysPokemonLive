@@ -1,5 +1,5 @@
-import { readUint32 } from "../gamestate/httpMemory/httpMemoryReader.js";
-import { writeUint32 } from "../gamestate/httpMemory/httpMemoryWriter.js";
+import { readUint32 } from "../gamestate/emulatorInteraction/httpMemoryReader.js";
+import { writeUint32 } from "../gamestate/emulatorInteraction/httpMemoryWriter.js";
 import * as CONSTANTS from "../gamestate/constant/constants.js";
 
 /**

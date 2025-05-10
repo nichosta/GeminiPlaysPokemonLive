@@ -1,5 +1,5 @@
 // Imports from other files
-import { getGameImagesBase64, parseDataURI } from "./gamestate/screenshot.js";
+import { getGameImagesBase64, parseDataURI } from "./gamestate/emulatorInteraction/screenshot.js";
 import { getPartyCount, getPokemonData, isInBattle } from "./gamestate/pokemonData.js";
 import { getBagContents, prettyPrintBag, getPlayerMoney } from "./gamestate/bagData.js";
 import * as CONFIGS from "./CONFIGS.js";

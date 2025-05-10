@@ -1,5 +1,5 @@
 // gamestate/bagData.js
-import { readUint16, readUint32, readRange } from "./httpMemory/httpMemoryReader.js"; // readUint16 was missing from imports, added it
+import { readUint16, readUint32, readRange } from "./emulatorInteraction/httpMemoryReader.js"; // readUint16 was missing from imports, added it
 import { getItemName } from '../constant/item_map.js';
 import * as CONSTANTS from "./constant/constants.js";
 

@@ -1,4 +1,4 @@
-import { readUint8, readUint16, readUint32, readRange } from "../httpMemory/httpMemoryReader.js";
+import { readUint8, readUint16, readUint32, readRange } from "../emulatorInteraction/httpMemoryReader.js";
 import { getMapName } from "../../constant/map_map.js";
 import { getEventObjectName } from "../../constant/event_object_map.js";
 import * as CONSTANTS from "../constant/constants.js";
