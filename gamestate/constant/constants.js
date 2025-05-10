@@ -108,6 +108,11 @@ export const MAP_LAYOUT_SECONDARY_TILESET_OFFSET = 0x14; // Offset to secondary 
 export const MAPGRID_METATILE_ID_MASK = 0x03FF; // The part of the mapgrid info that holds the metatile ID
 export const MAPGRID_COLLISION_MASK = 0xC00; // The part of the mapgrid info that holds the collision info
 
+// --- Tileset ---
+export const TILESET_METATILE_ATTRIBUTES_POINTER_OFFSET = 0x10; // Offset to metatile attributes array pointer (const u16 *)
+export const PRIMARY_TILESET_METATILE_COUNT = 0x200; // Number of metatiles (max) listed in a tileset
+export const METATILE_ATTR_BEHAVIOR_MASK = 0x00FF; // Mask for the bits in a u16 metatile that correspond to behavior
+
 // --- Map Events (Templates for Warps, NPCs, etc.) ---
 
 // MapEvents struct offsets
