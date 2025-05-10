@@ -6,6 +6,7 @@ import { getCurrentMapBank, getCurrentMapNumber, getPlayerFacingDirection, getPl
 import { getCurrentMapNpcs, getCurrentMapWarps } from "./mapEvents.js";
 import { getMainMapHeight, getMainMapTiles, getMainMapWidth } from "./mapLayouts.js";
 import { getCurrentMapConnections } from "./mapConnections.js";
+import * as mapCache from '../cache/mapCache.js';
 
 // --- Constants ---
 const TILE_WALKABLE = 'O';
@@ -158,42 +159,127 @@ export async function getMapStateJson() {
     try {
         const mapBank = await getCurrentMapBank();
         const mapNumber = await getCurrentMapNumber();
-        const [ playerX, playerY ] = await getPlayerPosition();
+
+        // If mapBank or mapNumber indicates no valid map (e.g., 0,0 or other specific values),
+        // invalidate cache and return a minimal state.
+        // Adjust this condition based on how your game indicates "not in a map".
+        if (mapBank === 0 && mapNumber === 0) {
+            mapCache.invalidateMapCache();
+            // console.warn("Not in a valid map (bank/number is 0). Returning minimal state.");
+            const [playerX_nomap, playerY_nomap] = await getPlayerPosition(); // Still get player pos if possible
+            const facingDirection_nomap = await getPlayerFacingDirection();
+            return {
+                map_name: "Unknown (No Map Loaded)",
+                width: 0,
+                height: 0,
+                tile_passability: BASE_TILE_PASSABILITY,
+                map_data: [],
+                player_state: { position: [playerX_nomap, playerY_nomap], facing: facingDirection_nomap },
+                warps: [],
+                npcs: [],
+                connections: [],
+            };
+        }
+
+        const cachedStructure = mapCache.getCachedMapStructure(mapBank, mapNumber);
+
+        // Always fetch dynamic data fresh
+        const [playerX, playerY] = await getPlayerPosition();
         const facingDirection = await getPlayerFacingDirection();
-        const rawWarps = await getCurrentMapWarps(); // Fetch raw warps
-        const rawNpcs = await getCurrentMapNpcs(); // Fetch raw NPCs
+        const rawNpcs = await getCurrentMapNpcs(); // Live NPC data
+
+        if (cachedStructure) {
+            // Cache hit for map structure
+            // console.debug(`Cache hit for map ${mapBank}-${mapNumber}. Using cached structure.`);
+            const { mapName, width, height, tile_passability, map_data: collisionMapData, rawWarps: cachedRawWarps, connections: cachedConnections } = cachedStructure;
+
+            // Format warps using cached rawWarps
+            const warps = cachedRawWarps
+                .filter(warp => warp.x >= 0 && warp.x < width && warp.y >= 0 && warp.y < height)
+                .map(warp => ({
+                    position: [warp.x, warp.y],
+                    destination: getMapName(warp.destMapGroup, warp.destMapNum) || `Unknown Map (${warp.destMapGroup}-${warp.destMapNum})`
+                }));
+
+            // Format npcs (freshly fetched) using cached map dimensions for bounds
+            const npcs = rawNpcs
+                .filter(npc => npc.x >= 0 && npc.x < width && npc.y >= 0 && npc.y < height)
+                .map(npc => ({
+                    id: npc.id,
+                    position: [npc.x, npc.y],
+                    type: getEventObjectName(npc.graphicsId) || `Unknown NPC (ID: ${npc.graphicsId})`,
+                    isOffScreen: npc.isOffScreen,
+                    wandering: npc.wandering,
+                }));
+
+            return {
+                map_name: mapName,
+                width: width,
+                height: height,
+                tile_passability: tile_passability, // This is BASE_TILE_PASSABILITY from cache
+                map_data: collisionMapData,
+                player_state: { position: [playerX, playerY], facing: facingDirection },
+                warps: warps,
+                npcs: npcs,
+                connections: cachedConnections,
+            };
+        }
+
+        // Cache miss: Fetch all structural map data
+        // console.debug(`Cache miss for map ${mapBank}-${mapNumber}. Fetching all data.`);
+        const mapName = getMapName(mapBank, mapNumber); // Already have bank/number
         const mapWidth = await getMainMapWidth();
         const mapHeight = await getMainMapHeight();
-        const mapConnections = await getCurrentMapConnections();
+        const mapConnections = await getCurrentMapConnections(); // Fetch connections
 
-        const mapName = getMapName(mapBank, mapNumber);
-
-        // Ensure width/height are valid before fetching tiles
+        // Ensure width/height are valid before fetching tiles or caching
         if (mapWidth <= 0 || mapHeight <= 0) {
-             console.warn(`Invalid map dimensions fetched: ${mapWidth}x${mapHeight} for ${mapName}. Returning minimal state.`);
-             return {
-                map_name: mapName,
+            console.warn(`Invalid map dimensions fetched: ${mapWidth}x${mapHeight} for ${mapName}. Returning minimal state without caching.`);
+            // rawNpcs is already fetched. Format them with 0,0 dimensions (effectively empty).
+            const npcs = rawNpcs
+                .filter(npc => npc.x >= 0 && npc.x < 0 && npc.y >= 0 && npc.y < 0) // Will be empty
+                .map(npc => ({
+                    id: npc.id,
+                    position: [npc.x, npc.y],
+                    type: getEventObjectName(npc.graphicsId) || `Unknown NPC (ID: ${npc.graphicsId})`,
+                    isOffScreen: npc.isOffScreen,
+                    wandering: npc.wandering,
+                }));
+            return {
+                map_name: mapName, // mapName is available
                 width: 0,
                 height: 0,
                 tile_passability: BASE_TILE_PASSABILITY,
                 map_data: [],
                 player_state: { position: [playerX, playerY], facing: facingDirection },
                 warps: [],
-                npcs: [],
-                connections: mapConnections, // Include connections even for minimal state
-             };
+                npcs: npcs, // Will be empty
+                connections: mapConnections, // mapConnections are available
+            };
         }
 
+        const rawWarps = await getCurrentMapWarps(); // Fetch raw warps now that dimensions are valid
         const mapTiles = await getMainMapTiles(mapWidth, mapHeight);
 
         // Process tiles into collision map ('O'/'X')
         const collisionData = processMemoryDataToCollisionMap(mapTiles, mapWidth);
         if (!collisionData) {
-             console.error(`Failed to process map tiles into collision data for ${mapName}.`);
-             return null; // Indicate failure
+            console.error(`Failed to process map tiles into collision data for ${mapName}.`);
+            return null; // Indicate failure
         }
 
-        // Format warps AFTER getting collision data, ensuring coordinates are valid
+        // Store structural data in cache
+        mapCache.setCachedMapStructure(mapBank, mapNumber, {
+            mapName: mapName,
+            width: collisionData.width,
+            height: collisionData.height,
+            tile_passability: collisionData.tile_passability, // This is BASE_TILE_PASSABILITY
+            map_data: collisionData.map_data,
+            rawWarps: rawWarps, // Store raw warps (not yet fully formatted with names)
+            connections: mapConnections // Store already formatted connections
+        });
+
+        // Format warps (from freshly fetched rawWarps)
         const warps = rawWarps
             .filter(warp => warp.x >= 0 && warp.x < collisionData.width && warp.y >= 0 && warp.y < collisionData.height)
             .map(warp => ({
@@ -201,7 +287,7 @@ export async function getMapStateJson() {
                 destination: getMapName(warp.destMapGroup, warp.destMapNum) || `Unknown Map (${warp.destMapGroup}-${warp.destMapNum})`
             }));
 
-        // Format npcs AFTER getting collision data, ensuring coordinates are valid
+        // Format npcs (from freshly fetched rawNpcs)
         const npcs = rawNpcs
             .filter(npc => npc.x >= 0 && npc.x < collisionData.width && npc.y >= 0 && npc.y < collisionData.height)
             .map(npc => ({
@@ -232,6 +318,7 @@ export async function getMapStateJson() {
 
     } catch (error) {
         console.error("Error getting complete map state:", error);
+        mapCache.invalidateMapCache(); // Invalidate cache on major error
         return null; // Return null on error
     }
 }
