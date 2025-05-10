@@ -257,6 +257,13 @@ export const WATER_TILES =
     "SOUTHWARD_CURRENT",
 ];
 
+export const LEDGE_DIRECTIONS = new Map(
+    ["JUMP_EAST", "→"],
+    ["JUMP_WEST", "←"],
+    ["JUMP_NORTH", "↑"],
+    ["JUMP_SOUTH", "↓"]
+);
+
 /**
  * Parses C preprocessor metatile behavior definitions into a JavaScript Map.
  * @param {string} definitionString - The string containing the #define statements.

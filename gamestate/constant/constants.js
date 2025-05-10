@@ -21,8 +21,6 @@ if (gameVersion === 'EMERALD') {
     selectedConstants = FRLG_CONSTANTS;
 }
 
-// --- Re-export all constants from the selected set ---
-
 // --- Player Object ---
 export const PLAYER_OBJECT_POINTER_ADDR = selectedConstants.PLAYER_OBJECT_POINTER_ADDR;
 export const PLAYER_X_OFFSET = 0x000; // Offset to player X coordinate (u16) within player object

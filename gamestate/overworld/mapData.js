@@ -7,7 +7,7 @@ import { getCurrentMapNpcs, getCurrentMapWarps } from "./mapEvents.js";
 import { getMainMapHeight, getMainMapMetatileIds, getMainMapTiles, getMainMapWidth } from "./mapLayouts.js";
 import { getCurrentMapConnections } from "./mapConnections.js";
 import { getAllMetatileBehaviors } from "./mapMetatiles.js";
-import { getMetatileBehaviorName, WATER_TILES } from "../../constant/metatile_behaviors_map.js";
+import { getMetatileBehaviorName, WATER_TILES, LEDGE_DIRECTIONS } from "../../constant/metatile_behaviors_map.js";
 
 // --- Constants ---
 const TILE_WALKABLE = 'O';
@@ -15,18 +15,26 @@ const TILE_BLOCKED = 'X';
 const TILE_WARP = 'W';
 const TILE_NPC = '!';
 const TILE_WATER = '~';
+const TILE_LEDGE_EAST = '→';
+const TILE_LEDGE_WEST = '←';
+const TILE_LEDGE_NORTH = '↑';
+const TILE_LEDGE_SOUTH = '↓';
 
 const BASE_TILE_PASSABILITY = Object.freeze({
     [TILE_WALKABLE]: "walkable",
     [TILE_BLOCKED]: "blocked",
     [TILE_WATER]: "requires surf",
+    [TILE_LEDGE_EAST]: "Ledge (only walkable in the indicated direction)",
+    [TILE_LEDGE_WEST]: "Ledge (only walkable in the indicated direction)",
+    [TILE_LEDGE_NORTH]: "Ledge (only walkable in the indicated direction)",
+    [TILE_LEDGE_SOUTH]: "Ledge (only walkable in the indicated direction)",
 });
 
 const VIEWPORT_TILE_PASSABILITY = Object.freeze({
     ...BASE_TILE_PASSABILITY,
     [TILE_WARP]: "warp",
     [TILE_NPC]: "npc",
-    [TILE_WATER]: "requires surf",
+    // Ledge descriptions are inherited from BASE_TILE_PASSABILITY
 });
 
 const MAX_VIEWPORT_WIDTH = 15;
@@ -92,8 +100,11 @@ async function processMemoryDataToCollisionMap(tileGridData, mapWidthTiles, allM
 
                 const behaviorByte = allMetatileBehaviors[metatileId];
                 const behaviorName = getMetatileBehaviorName(behaviorByte); // Handles undefined behaviorByte
+                const ledgeChar = behaviorName ? LEDGE_DIRECTIONS.get(behaviorName) : undefined;
 
-                if (behaviorName && WATER_TILES.includes(behaviorName)) {
+                if (ledgeChar) {
+                    tileType = ledgeChar;
+                } else if (behaviorName && WATER_TILES.includes(behaviorName)) {
                     tileType = TILE_WATER;
                 } else {
                     // Fallback to collision bits if not a defined water tile
@@ -440,7 +451,8 @@ function trimMapStateToViewport(fullMapState) {
                 const originalTileString = sourceRow[currentMapX];
                 if (typeof originalTileString === 'string' && originalTileString.includes(':')) {
                     const typeFromData = originalTileString.split(':')[1]; // Get part after ':'
-                    if (typeFromData === TILE_WALKABLE || typeFromData === TILE_BLOCKED || typeFromData === TILE_WATER) {
+                    // Check if the typeFromData is a known base tile type (walkable, blocked, water, or any ledge)
+                    if (BASE_TILE_PASSABILITY.hasOwnProperty(typeFromData)) {
                          tileType = typeFromData;
                     } else {
                          console.warn(`Unexpected base tile type '${typeFromData}' at (${currentMapX}, ${currentMapY}) for ${map_name}. Defaulting to '${TILE_BLOCKED}'.`);
@@ -633,6 +645,29 @@ export async function validatePath(path, mapState) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is a water tile, and the player is not surfing.` }
         }
 
+        // 3. Ledge Check (if applicable)
+        // This check comes after blocked/NPC/water checks.
+        // If it's a ledge, the movement must be in the ledge's direction.
+        const actualDeltaX = pX - prevX; // dx > 0 is East, dx < 0 is West
+        const actualDeltaY = pY - prevY; // dy > 0 is South, dy < 0 is North
+
+        if (tileType === TILE_LEDGE_EAST && actualDeltaX !== 1) { // Must move East (dx=1, dy=0)
+            return { isValid: false, failurePoint: [pX, pY], reason: `Cannot traverse East-facing ledge (${pX},${pY}) when not moving East. Actual move: dx=${actualDeltaX}, dy=${actualDeltaY}.` };
+        }
+        if (tileType === TILE_LEDGE_WEST && actualDeltaX !== -1) { // Must move West (dx=-1, dy=0)
+            return { isValid: false, failurePoint: [pX, pY], reason: `Cannot traverse West-facing ledge (${pX},${pY}) when not moving West. Actual move: dx=${actualDeltaX}, dy=${actualDeltaY}.` };
+        }
+        if (tileType === TILE_LEDGE_NORTH && actualDeltaY !== -1) { // Must move North (dx=0, dy=-1)
+            return { isValid: false, failurePoint: [pX, pY], reason: `Cannot traverse North-facing ledge (${pX},${pY}) when not moving North. Actual move: dx=${actualDeltaX}, dy=${actualDeltaY}.` };
+        }
+        if (tileType === TILE_LEDGE_SOUTH && actualDeltaY !== 1) { // Must move South (dx=0, dy=1)
+            return { isValid: false, failurePoint: [pX, pY], reason: `Cannot traverse South-facing ledge (${pX},${pY}) when not moving South. Actual move: dx=${actualDeltaX}, dy=${actualDeltaY}.` };
+        }
+
+        // If we passed all checks for this step (including specific ledge direction):
+        // - Blocked/NPC check passed.
+        // - Water/surfing check passed.
+        // - Ledge direction check passed.
         // Update previous coordinates for the next iteration
         prevX = pX;
         prevY = pY;
