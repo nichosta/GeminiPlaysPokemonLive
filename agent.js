@@ -8,7 +8,7 @@ import { stunNPC } from "./tools/stunNPC.js";
 import { readAndClearFile } from "./readInputFile.js";
 import { getVisibleMapStateJson, validatePath } from "./gamestate/overworld/mapData.js";
 import { getCurrentMapBank, getCurrentMapNumber } from "./gamestate/overworld/playerData.js";
-import { isScriptPtrSet } from "./gamestate/textReader.js";
+import { isFieldMessageBoxActive } from "./gamestate/textReader.js";
 
 // Import Google AI SDK
 import { GoogleGenAI } from "@google/genai";
@@ -122,7 +122,7 @@ async function getGameInfoText(visibleMapState) {
 
     let mapStateJSON = visibleMapState; // Use the passed visibleMapState
     let inBattle = await isInBattle();
-    let overworldTextboxOpen = await isScriptPtrSet();
+    let overworldTextboxOpen = await isFieldMessageBoxActive();
     let playerMoney = await getPlayerMoney();
 
     let partyMenuSlot = await getPartyMenuSlotId();
@@ -348,7 +348,7 @@ async function runGameLoop() {
             let mapBank = await getCurrentMapBank();
             let mapNum = await getCurrentMapNumber();
             let inBattle = await isInBattle();
-            let inMsgbox = await isScriptPtrSet();
+            let inMsgbox = await isFieldMessageBoxActive();
             const { original: currentImageBase64URI, processed: currentImageBase64URIProcessed } = await getGameImagesBase64(); // Get full data URI
 
             // Parse the image data URI (use grid version if outside battle + textbox and game started, else use nongrid)

@@ -32,6 +32,9 @@ export const PARTY_BASE_ADDR = 0x02024284; // Base address for party Pokémon da
 // when there's an overworld text box open, so...
 export const SCRIPT_CONTEXT_ADDRESS = 0x03000EB0; //! Pointer to the sGlobalScriptContext object with script state
 
+// --- Message Box Type ---
+export const FIELD_MESSAGE_BOX_ADDR = 0x0203709C // Address of sMessageBoxType byte
+
 // --- Current Map Header & Layout ---
 export const CURRENT_MAP_HEADER_ADDR = 0x02036DFC; // Address of the current map header structure
 

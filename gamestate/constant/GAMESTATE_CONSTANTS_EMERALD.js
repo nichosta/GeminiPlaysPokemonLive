@@ -32,6 +32,9 @@ export const PARTY_BASE_ADDR = 0x020244EC;              // Base address for part
 // when there's an overworld text box open, so...
 export const SCRIPT_CONTEXT_ADDRESS = 0x03000E40;       // Pointer to the sGlobalScriptContext object with script state
 
+// --- Field Message Box ---
+export const FIELD_MESSAGE_BOX_ADDR = 0x020375BC // Address of the sFieldMessageBoxMode byte in Emerald
+
 // --- Current Map Header & Layout ---
 export const CURRENT_MAP_HEADER_ADDR = 0x02037318; // Address of the current map header structure
 

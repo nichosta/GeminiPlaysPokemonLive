@@ -73,6 +73,9 @@ export const SPECIES_NONE = 0; // The species ID representing an empty slot
 export const SCRIPT_CONTEXT_ADDRESS = selectedConstants.SCRIPT_CONTEXT_ADDRESS;
 export const SCRIPT_CONTEXT_POINTER_OFFSET = 0x08;      // Offset from start of sGlobalScriptContext to pointer to scriptPtr
 
+// Field message box
+export const FIELD_MESSAGE_BOX_ADDR = selectedConstants.FIELD_MESSAGE_BOX_ADDR;
+
 // Export the determined version as well
 export const ACTIVE_GAME_VERSION = gameVersion;
 
