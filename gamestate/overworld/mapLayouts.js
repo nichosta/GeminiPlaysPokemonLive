@@ -43,7 +43,7 @@ async function getBackupMapTiles(mapWidth, mapHeight) {
  * Reads the pointer stored at CURRENT_MAP_HEADER_ADDR + MAP_HEADER_MAP_LAYOUT_OFFSET.
  * @returns {Promise<number>} The base address (pointer value).
  */
-async function getMainMapLayoutBaseAddress() {
+export async function getMainMapLayoutBaseAddress() {
     return await readUint32(CONSTANTS.CURRENT_MAP_HEADER_ADDR + CONSTANTS.MAP_HEADER_MAP_LAYOUT_OFFSET);
 }
 
@@ -80,9 +80,9 @@ export async function getMainMapHeight() {
 /**
  * Gets the current map tiles as raw bytes.
  * Reads a range of bytes from the map data address.
- * @param {number} mapWidth - The width of the map in tiles.
- * @param {number} mapHeight - The height of the map in tiles.
- * @returns {Promise<number[]>} The map tiles as an array of bytes, or an empty array on error.
+ * @param {number} mapWidth The width of the map in tiles.
+ * @param {number} mapHeight The height of the map in tiles.
+ * @returns {Promise<number[]>} The map tiles as an array of u16 values (each representing a full tile's data), or an empty array on error.
  */
 export async function getMainMapTiles(mapWidth, mapHeight) {
     const baseAddress = await getMainMapLayoutBaseAddress();
@@ -105,6 +105,47 @@ export async function getMainMapTiles(mapWidth, mapHeight) {
         return [];
     }
 
-    const range = await readRange(mapDataAddress, mapTileBytes);
-    return range; // Assuming readRange handles its own errors or returns empty array/throws
+    const rawBytes = await readRange(mapDataAddress, mapTileBytes);
+    if (!rawBytes || rawBytes.length !== mapTileBytes) {
+        console.error(`Failed to read complete map tile data from 0x${mapDataAddress.toString(16)}. Expected ${mapTileBytes} bytes, got ${rawBytes?.length || 0}.`);
+        return [];
+    }
+
+    const tileValues = [];
+    for (let i = 0; i < rawBytes.length; i += CONSTANTS.BYTES_PER_TILE) {
+        const byte1 = rawBytes[i];
+        const byte2 = rawBytes[i + 1];
+        const tileValue = (byte2 << 8) | byte1; // Little Endian u16
+        tileValues.push(tileValue);
+    }
+    return tileValues;
+}
+
+/**
+ * Fetches the metatile IDs for each tile in the current map's grid.
+ * @returns {Promise<number[]|null>} An array of metatile IDs (u16 values, masked according to MAPGRID_METATILE_ID_MASK),
+ *                                   or null if there's an error fetching map dimensions or tiles.
+ *                                   The order of IDs corresponds to a row-major traversal of the map grid.
+ */
+export async function getMainMapMetatileIds() {
+    try {
+        const mapWidth = await getMainMapWidth();
+        const mapHeight = await getMainMapHeight();
+
+        if (mapWidth <= 0 || mapHeight <= 0) {
+            console.warn(`Cannot fetch metatile IDs for map with invalid dimensions: ${mapWidth}x${mapHeight}`);
+            return null;
+        }
+
+        const tileValues = await getMainMapTiles(mapWidth, mapHeight); // This now returns u16[]
+        if (!tileValues || tileValues.length !== mapWidth * mapHeight) {
+            console.error(`Failed to get valid tile values or count mismatch for metatile IDs. Expected ${mapWidth * mapHeight} tiles, got ${tileValues?.length || 0}.`);
+            return null;
+        }
+
+        return tileValues.map(tileValue => tileValue & CONSTANTS.MAPGRID_METATILE_ID_MASK);
+    } catch (error) {
+        console.error("Error fetching main map metatile IDs:", error);
+        return null;
+    }
 }

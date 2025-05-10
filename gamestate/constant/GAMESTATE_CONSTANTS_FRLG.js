@@ -23,6 +23,9 @@ export const POCKET_NAMES = [
 // --- Player Object ---
 export const PLAYER_OBJECT_POINTER_ADDR = 0x03005008; // Address of pointer to player object structure in IWRAM
 
+// --- Player Avatar ---
+export const PLAYER_AVATAR_ADDR = 0x02037078; // Address of gPlayerAvatar struct
+
 // --- Party Pokémon Data Constants ---
 export const IN_BATTLE_BIT_ADDR = 0x03003529; // Location of the bitmask determining if the player is in battle
 export const PARTY_BASE_ADDR = 0x02024284; // Base address for party Pokémon data [1]

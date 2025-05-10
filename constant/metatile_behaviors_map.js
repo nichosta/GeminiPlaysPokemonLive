@@ -244,6 +244,19 @@ const METATILE_BEHAVIORS = `
 #define MB_INVALID 0xFF
 `
 
+export const WATER_TILES = 
+[
+    "POND_WATER",
+    "OCEAN_WATER",
+    "INTERIOR_DEEP_WATER",
+    "DEEP_WATER",
+    "SOOTOPOLIS_DEEP_WATER",
+    "EASTWARD_CURRENT",
+    "WESTWARD_CURRENT",
+    "NORTHWARD_CURRENT",
+    "SOUTHWARD_CURRENT",
+];
+
 /**
  * Parses C preprocessor metatile behavior definitions into a JavaScript Map.
  * @param {string} definitionString - The string containing the #define statements.

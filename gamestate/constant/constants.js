@@ -29,6 +29,11 @@ export const PLAYER_X_OFFSET = 0x000; // Offset to player X coordinate (u16) wit
 export const PLAYER_Y_OFFSET = 0x002; // Offset to player Y coordinate (u16) within player object
 export const MONEY_OFFSET = 0x490; // Offset to player money (u32) within player object
 
+// --- Player Avatar ---
+export const PLAYER_AVATAR_ADDR = selectedConstants.PLAYER_AVATAR_ADDR;
+export const PLAYER_AVATAR_FLAGS_OFFSET = 0x00; // Offset to player avatar flags (u8)
+export const PLAYER_AVATAR_FLAG_SURFING = 1 << 3; // Mask on player flags to determine if player is surfing
+
 // Bag
 export const BAG_MAIN_ADDR = selectedConstants.BAG_MAIN_ADDR;
 export const SECURITY_KEY_POINTER_ADDR = selectedConstants.SECURITY_KEY_POINTER_ADDR;

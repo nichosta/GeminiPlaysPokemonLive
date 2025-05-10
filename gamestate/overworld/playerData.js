@@ -68,3 +68,12 @@ export async function getPlayerPosition() {
     const y = await readUint16(baseAddress + CONSTANTS.PLAYER_Y_OFFSET);
     return [ x, y ];
 }
+
+/**
+ * Checks if the player is currently surfing.
+ * @returns {Promise<boolean>} True if the player is surfing, false otherwise.
+ */
+export async function isPlayerSurfing() {
+    const playerAvatarFlags = await readUint8(CONSTANTS.PLAYER_AVATAR_ADDR + CONSTANTS.PLAYER_AVATAR_FLAGS_OFFSET);
+    return (playerAvatarFlags & CONSTANTS.PLAYER_AVATAR_FLAG_SURFING) !== 0;
+}

@@ -2,26 +2,31 @@ import { readUint8, readUint16, readUint32, readRange } from "../emulatorInterac
 import { getMapName } from "../../constant/map_map.js";
 import { getEventObjectName } from "../../constant/event_object_map.js";
 import * as CONSTANTS from "../constant/constants.js";
-import { getCurrentMapBank, getCurrentMapNumber, getPlayerFacingDirection, getPlayerPosition } from "./playerData.js";
+import { getCurrentMapBank, getCurrentMapNumber, getPlayerFacingDirection, getPlayerPosition, isPlayerSurfing } from "./playerData.js";
 import { getCurrentMapNpcs, getCurrentMapWarps } from "./mapEvents.js";
-import { getMainMapHeight, getMainMapTiles, getMainMapWidth } from "./mapLayouts.js";
+import { getMainMapHeight, getMainMapMetatileIds, getMainMapTiles, getMainMapWidth } from "./mapLayouts.js";
 import { getCurrentMapConnections } from "./mapConnections.js";
+import { getAllMetatileBehaviors } from "./mapMetatiles.js";
+import { getMetatileBehaviorName, WATER_TILES } from "../../constant/metatile_behaviors_map.js";
 
 // --- Constants ---
 const TILE_WALKABLE = 'O';
 const TILE_BLOCKED = 'X';
 const TILE_WARP = 'W';
 const TILE_NPC = '!';
+const TILE_WATER = '~';
 
 const BASE_TILE_PASSABILITY = Object.freeze({
     [TILE_WALKABLE]: "walkable",
     [TILE_BLOCKED]: "blocked",
+    [TILE_WATER]: "requires surf",
 });
 
 const VIEWPORT_TILE_PASSABILITY = Object.freeze({
     ...BASE_TILE_PASSABILITY,
     [TILE_WARP]: "warp",
     [TILE_NPC]: "npc",
+    [TILE_WATER]: "requires surf",
 });
 
 const MAX_VIEWPORT_WIDTH = 15;
@@ -30,36 +35,38 @@ const MAX_VIEWPORT_HEIGHT = 10;
 /**
  * Processes raw map tile byte data into a structured map object with coordinate-based tile strings.
  *
- * @param {number[]} memory_data - Flat array of bytes representing the map tiles (2 bytes per tile).
+ * @param {number[]} tileGridData - Array of u16 values, where each value represents a map tile's full data.
  * @param {number} mapWidthTiles - The width of the map in tiles.
+ * @param {number[]} allMetatileBehaviors - Array of behavior bytes for all metatiles (primary and secondary combined).
  * @returns {{width: number, height: number, tile_passability: object, map_data: string[][]}|null}
  *          An object containing:
  *          - width: The width of the map in tiles.
  *          - height: The height of the map in tiles.
  *          - tile_passability: A mapping { "O": "walkable", "X": "blocked" }.
- *          - map_data: A 2D array where each element is a string "x,y:T"
+ *          - map_data: A 2D array where each element is a string "x,y:T".
  *                      (T is 'O' for walkable, 'X' for blocked).
  *                      Coordinates (x, y) are absolute within the full map.
  *          Returns null if input is invalid or processing fails.
  */
-function processMemoryDataToCollisionMap(memory_data, mapWidthTiles) {
+async function processMemoryDataToCollisionMap(tileGridData, mapWidthTiles, allMetatileBehaviors) {
     // --- Input Validation ---
-    if (!Array.isArray(memory_data)) { // Allow empty array, process it as 0 tiles
-        console.error("Invalid input: memory_data must be an array.");
+    if (!Array.isArray(tileGridData)) {
+        console.error("Invalid input: tileGridData must be an array.");
         return null;
     }
     if (typeof mapWidthTiles !== 'number' || mapWidthTiles <= 0) {
         console.error("Invalid input: mapWidthTiles must be a positive number.");
         return null;
     }
-    if (memory_data.length % 2 !== 0) {
-        console.warn("Warning: memory_data length is not an even number. The last byte will be ignored.");
-        // Adjust length to be even for tile processing
-        memory_data = memory_data.slice(0, -1);
+    if (!Array.isArray(allMetatileBehaviors)) {
+        console.error("Invalid input: allMetatileBehaviors must be an array.");
+        return null; // Or handle as if no special behaviors exist
     }
 
-    const numTiles = memory_data.length / 2;
-    if (numTiles === 0) {
+    const numTiles = tileGridData.length;
+
+    // Handle cases where mapWidthTiles is valid but numTiles is 0 (e.g. map height is 0)
+    if (numTiles === 0 && mapWidthTiles > 0) {
         // Handle empty map data gracefully
         return {
             width: mapWidthTiles, // Return requested width
@@ -79,20 +86,22 @@ function processMemoryDataToCollisionMap(memory_data, mapWidthTiles) {
         const row = [];
         for (let x = 0; x < mapWidthTiles; x++) {
             if (tileIndex < numTiles) {
-                const byte1Index = tileIndex * 2;
-                const byte2Index = byte1Index + 1;
+                const tileValue = tileGridData[tileIndex];
+                const metatileId = tileValue & CONSTANTS.MAPGRID_METATILE_ID_MASK;
+                let tileType;
 
-                const byte1 = memory_data[byte1Index];
-                const byte2 = memory_data[byte2Index];
+                const behaviorByte = allMetatileBehaviors[metatileId];
+                const behaviorName = getMetatileBehaviorName(behaviorByte); // Handles undefined behaviorByte
 
-                // Combine bytes into a 16-bit value (Little Endian: byte2 is high, byte1 is low)
-                const tileValue = (byte2 << 8) | byte1;
-
-                // Extract collision bits (bits 10 and 11)
-                const collisionBits = (tileValue >> 10) & 0x3;
-
-                // Map collision bits: 0 = walkable (Open), others = blocked (X)
-                const tileType = (collisionBits === 0) ? TILE_WALKABLE : TILE_BLOCKED;
+                if (behaviorName && WATER_TILES.includes(behaviorName)) {
+                    tileType = TILE_WATER;
+                } else {
+                    // Fallback to collision bits if not a defined water tile
+                    // MAPGRID_COLLISION_MASK is 0xC00 (bits 10 and 11)
+                    const collisionBits = (tileValue & CONSTANTS.MAPGRID_COLLISION_MASK) >> 10;
+                    // 0 = walkable (Open), others = blocked (X)
+                    tileType = (collisionBits === 0) ? TILE_WALKABLE : TILE_BLOCKED;
+                }
 
                 row.push(`${x},${y}:${tileType}`);
                 tileIndex++;
@@ -165,6 +174,7 @@ export async function getMapStateJson() {
         const mapWidth = await getMainMapWidth();
         const mapHeight = await getMainMapHeight();
         const mapConnections = await getCurrentMapConnections();
+        const allMetatileBehaviors = await getAllMetatileBehaviors();
 
         const mapName = getMapName(mapBank, mapNumber);
 
@@ -184,10 +194,15 @@ export async function getMapStateJson() {
              };
         }
 
+        if (!allMetatileBehaviors) {
+            console.error(`Failed to fetch metatile behaviors for ${mapName}. Collision map might be inaccurate.`);
+            // Proceed, but collision map will only use collision bits.
+        }
+
         const mapTiles = await getMainMapTiles(mapWidth, mapHeight);
 
         // Process tiles into collision map ('O'/'X')
-        const collisionData = processMemoryDataToCollisionMap(mapTiles, mapWidth);
+        const collisionData = await processMemoryDataToCollisionMap(mapTiles, mapWidth, allMetatileBehaviors || []);
         if (!collisionData) {
              console.error(`Failed to process map tiles into collision data for ${mapName}.`);
              return null; // Indicate failure
@@ -425,7 +440,7 @@ function trimMapStateToViewport(fullMapState) {
                 const originalTileString = sourceRow[currentMapX];
                 if (typeof originalTileString === 'string' && originalTileString.includes(':')) {
                     const typeFromData = originalTileString.split(':')[1]; // Get part after ':'
-                    if (typeFromData === TILE_WALKABLE || typeFromData === TILE_BLOCKED) {
+                    if (typeFromData === TILE_WALKABLE || typeFromData === TILE_BLOCKED || typeFromData === TILE_WATER) {
                          tileType = typeFromData;
                     } else {
                          console.warn(`Unexpected base tile type '${typeFromData}' at (${currentMapX}, ${currentMapY}) for ${map_name}. Defaulting to '${TILE_BLOCKED}'.`);
@@ -612,6 +627,10 @@ export async function validatePath(path, mapState) {
 
         if (tileType === TILE_BLOCKED || tileType === TILE_NPC) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is not walkable. Type: '${tileType}'.` };
+        }
+
+        if (tileType === TILE_WATER && !(await isPlayerSurfing())) {
+            return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is a water tile, and the player is not surfing.` }
         }
 
         // Update previous coordinates for the next iteration
