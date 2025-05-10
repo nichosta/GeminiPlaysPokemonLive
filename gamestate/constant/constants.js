@@ -143,3 +143,10 @@ export const FACING_DIRECTION_MAP = new Map([
     [3, "left"],
     [4, "right"]
 ]);
+
+// --- Party Menu ---
+
+// Party pointers
+export const PARTY_MENU_ADDR = selectedConstants.PARTY_MENU_ADDR; 
+export const PARTY_MENU_SLOTID_OFFSET = 0x09; // Offset to slot ID (u8)
+export const PARTY_MENU_INTERNAL_ADDR = selectedConstants.PARTY_MENU_INTERNAL_ADDR;

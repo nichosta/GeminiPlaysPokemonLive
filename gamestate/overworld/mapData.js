@@ -476,3 +476,65 @@ export async function getVisibleMapStateJson() {
         return null;
     }
 }
+
+/**
+ * Validates a given navigation path against the provided map state.
+ * Checks for out-of-bounds coordinates and non-walkable tiles ('O' is walkable).
+ *
+ * @param {Array<[number, number]>} path - An array of [x, y] coordinates representing the path.
+ * @param {object} mapState - The map state object, typically from getVisibleMapStateJson().
+ *                            This object contains map_data (viewport) and full map width/height.
+ * @returns {Promise<{isValid: boolean, failurePoint?: [number, number], reason?: string}>}
+ *          An object indicating if the path is valid. If invalid, includes
+ *          the point of failure and a reason.
+ */
+export async function validatePath(path, mapState) {
+    if (!path || path.length === 0) {
+        return { isValid: true }; // An empty path is trivially valid
+    }
+
+    if (!mapState || !mapState.map_data || typeof mapState.width !== 'number' || typeof mapState.height !== 'number') {
+        console.warn("validatePath: Invalid mapState provided.", mapState);
+        return { isValid: false, reason: "Invalid map state provided for validation." };
+    }
+
+    const { map_data: viewportMapData, width: fullMapWidth, height: fullMapHeight } = mapState;
+
+    for (const [pX, pY] of path) {
+        // 1. Check if coordinate is within full map bounds
+        if (pX < 0 || pX >= fullMapWidth || pY < 0 || pY >= fullMapHeight) {
+            return { isValid: false, failurePoint: [pX, pY], reason: `Coordinate (${pX},${pY}) is out of full map bounds (${fullMapWidth}x${fullMapHeight}).` };
+        }
+
+        // 2. Find the tile in the viewportMapData (which uses absolute coordinates in its strings)
+        let tileFound = false;
+        let tileType = '';
+
+        for (const row of viewportMapData) {
+            for (const tileString of row) {
+                // tileString is "absX,absY:TileType"
+                const parts = tileString.split(':');
+                const coords = parts[0].split(',');
+                const mapTileX = parseInt(coords[0], 10);
+                const mapTileY = parseInt(coords[1], 10);
+
+                if (mapTileX === pX && mapTileY === pY) {
+                    tileType = parts[1];
+                    tileFound = true;
+                    break;
+                }
+            }
+            if (tileFound) break;
+        }
+
+        if (!tileFound) {
+            return { isValid: false, failurePoint: [pX, pY], reason: `Coordinate (${pX},${pY}) not found in current visible map data (viewport).` };
+        }
+
+        if (tileType === TILE_BLOCKED || tileType === TILE_NPC) {
+            return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is not walkable. Type: '${tileType}'.` };
+        }
+    }
+
+    return { isValid: true };
+}

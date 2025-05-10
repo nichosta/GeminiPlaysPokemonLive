@@ -3,9 +3,9 @@ import { type } from "os";
 // Choose a Gemini model that supports multimodal input (image + text)
 export const GOOGLE_MODEL_NAME = "gemini-2.5-flash-preview-04-17";
 // export const GOOGLE_MODEL_NAME = "gemini-2.5-pro-exp-03-25";
-export const HISTORY_LENGTH = 40; // Keep the last X pairs of user/model messages
+export const HISTORY_LENGTH = 30; // Keep the last X pairs of user/model messages
 export const LOOP_DELAY_MS = 5000; // Delay between loop iterations (e.g., 5 seconds) - ADJUST AS NEEDED!
-export const MAX_SUMMARIES = 50; // Maximum number of summary messages to keep in history
+export const MAX_SUMMARIES = 60; // Maximum number of summary messages to keep in history
 
 // Main system prompt, very important
 // This heavily influences behavior and personality, so test any change exhaustively
@@ -38,6 +38,7 @@ A JSON object containing data about the currently onscreen part of the map, incl
 \tOnscreen warps to other maps, marked with a W in the tile data and with their destinations noted in the list of warps. Note some warps require you to take an additional action (usually walking onto a nearby impassable tile) while standing on their tile to be triggered. This list of warps is complete, if you believe you see a warp not listed then you are mistaken. Note this does not include overworld transitions (e.g. between cities and routes).
 \tOnscreen NPCs, marked with a ! in the tile data and with their sprite names noted. Remember that you CANNOT WALK THROUGH NPCs. Note that some NPCs may move - you can usually tell which NPCs they are if their position data changes between turns. These NPCs may be difficult to catch, so if you are unable to do so, consider using your "stunNPC" tool to freeze them until they are talked to. This list of NPCs is complete, if you believe you see an NPC not listed then you are mistaken.
 Whether or not you are currently in battle.
+The currently selected party member slot, if the party pokemon selction menu is open (not to be confused with the main battle interface, the party selection menu is what appears when you select "Pokemon" in the main battle interface). The left column of the party menu has slot 0 (or 0 and 1 if in a double battle), which are the active Pokemon. The right column has the other slots. Note that the slot order does not necessarily match up to the party order if you have switched party members already during the battle!
 Whether or not there is an overworld textbox open. Note that this ONLY applies to the large textbox at the bottom of the screen, and ONLY applies when interacting with NPCs or objects in the overworld. There may be other text on screen, menus open, etc, but if this value is false you can assume that you are not in a conversation.
 General information about your current Pokemon party.
 The contents of the five pouches of your inventory.
@@ -68,7 +69,7 @@ const PRESS_BUTTONS_ARGS_SCHEMA = {
     buttons: {
       type: "array",
       description:
-        "The array of buttons to press. When not in need of precision, it is preferred you press multiple directional buttons in one turn. Max 10 buttons.",
+        "The array of buttons to press. When not in need of precision, it is preferred you press multiple directional buttons in one turn. Max 7 buttons.",
       items: {
         type: "string",
         enum: [
@@ -85,7 +86,7 @@ const PRESS_BUTTONS_ARGS_SCHEMA = {
         ],
       },
       minItems: 1,
-      maxItems: 10,
+      maxItems: 7,
     },
   },
   required: ["buttons"],
@@ -115,16 +116,24 @@ const STRUCTURED_OUTPUT_SCHEMA = {
       description:
         "Your thought process/comments on the current situation, visible to viewers. This should include a complete evaluation of your current situation and how things have changed from the last turn.",
     },
-    // prediction: {
-    //   type: "string",
-    //   description:
-    //     "A prediction of the differences between the current and next gamestate, which you should compare to in the next turn to verify your actions are having the desired effect.",
-    // },
     navigation: {
-      type: "string",
-      description:
-        "Your navigation plan for the next turn if you are actionable in the overworld. Should be at least 5 tiles long unless you intend to interact with something before that. Make use of the collision data to navigate around obstacles and reach your destination. Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid. Write N/A here if this does not apply."
-    },
+      type: "array",
+      description: 
+        "Your navigation plan for the next turn if you are actionable in the overworld. Should be long enough to reach the edge of the screen unless you intend to interact with something before that. Make use of the collision data to navigate around obstacles and reach your destination. Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid. Put [] here if this does not apply.",
+      items: {
+        type: "object",
+          properties: {
+            x: {
+              type: "integer",
+            },
+            y: {
+              type: "integer",
+            },
+          },
+        },
+        minItems: 0,
+        maxItems: 7,
+      },
     mistakes: {
       type: "string",
       description:

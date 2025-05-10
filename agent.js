@@ -6,7 +6,7 @@ import * as CONFIGS from "./CONFIGS.js";
 import { pressButtons } from "./tools/buttonPress.js";
 import { stunNPC } from "./tools/stunNPC.js";
 import { readAndClearFile } from "./readInputFile.js";
-import { getVisibleMapStateJson } from "./gamestate/overworld/mapData.js";
+import { getVisibleMapStateJson, validatePath } from "./gamestate/overworld/mapData.js";
 import { getCurrentMapBank, getCurrentMapNumber } from "./gamestate/overworld/playerData.js";
 import { isScriptPtrSet } from "./gamestate/textReader.js";
 
@@ -16,6 +16,7 @@ import { GoogleGenAI } from "@google/genai";
 // Import Node.js file system module
 import { promises as fs } from 'fs'; // <-- Add this line
 import path from 'path'; // <-- Add this for path joining
+import { getPartyMenuSlotId } from "./gamestate/menustate/partyMenu.js";
 
 // --- Configuration ---
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
@@ -103,10 +104,11 @@ function formatPokemonInfo(pokemon) {
 
 /**
  * @description Gets the current game state information (RAM data) as a formatted string.
+ * @param {object} visibleMapState The pre-fetched visible map state object.
  * @returns {Promise<string>} Formatted string containing party, inventory, location, etc.
  */
-async function getGameInfoText() {
-    console.log("--- Getting Game Info ---");
+async function getGameInfoText(visibleMapState) {
+    // console.log("--- Getting Game Info (for stringification) ---"); // Less verbose logging
     let partyCount = await getPartyCount();
     let pokemonInfo = [];
     if (partyCount > 0) {
@@ -118,17 +120,17 @@ async function getGameInfoText() {
     let bagInfo = await getBagContents();
     let prettyBagInfo = prettyPrintBag(bagInfo);
 
-    let mapStateJSON = await getVisibleMapStateJson();
-
+    let mapStateJSON = visibleMapState; // Use the passed visibleMapState
     let inBattle = await isInBattle();
-
     let overworldTextboxOpen = await isScriptPtrSet();
-
     let playerMoney = await getPlayerMoney();
 
+    let partyMenuSlot = await getPartyMenuSlotId();
+
     const gameInfo = `
-      Map Data:\n${JSON.stringify(mapStateJSON)}
+      Map Data:\n${mapStateJSON ? JSON.stringify(mapStateJSON) : "Error: Map data unavailable."}
       In Battle: ${inBattle ? "Yes" : "No"}
+      ${partyMenuSlot === 7 ? "" : `Party Menu Slot: ${partyMenuSlot}`}
       ${inBattle ? "" : `Overworld Textbox Onscreen: ${overworldTextboxOpen ? "Yes" : "No"}`}
       Party Count: ${partyCount}
       Pokemon:
@@ -147,21 +149,50 @@ async function getGameInfoText() {
  * @description Processes the LLM's response, assuming it contains a tool call.
  * If parsing fails, logs the raw text response.
  * @param {string} llmResponse The response from the LLM.
+ * @param {object | null} currentMapState The current visible map state, for path validation.
  * @returns {Promise<{success: boolean, message: string}>} Object indicating success and a status message.
  */
-async function processLLMResponse(llmResponse) {
+async function processLLMResponse(llmResponse, currentMapState) {
     console.log("--- Processing LLM Response ---");
 
-    // Get the text part of the response
+    // Initialize a variable to hold the outcome of path validation
+    let pathValidationOutcome = { isValid: true, reason: "No navigation path proposed or validation not applicable." };
     const responseText = llmResponse?.commentary;
-    // const predictionText = llmResponse?.prediction;
-    const navigationText = llmResponse?.navigation;
+    const navigationPath = llmResponse?.navigation; // Array of {x,y}
     const mistakeText = llmResponse?.mistakes;
 
     // Log commentary, prediction, and navigation if present
     console.log(`LLM Thoughts:\n${responseText ?? "N/A"}`);
-    // console.log(`LLM Prediction:\n${predictionText ?? "N/A"}`);
-    console.log(`LLM Navigation:\n${(navigationText && navigationText.toUpperCase() !== "N/A") ? navigationText : "N/A"}`);
+
+    if (navigationPath && navigationPath.length > 0) {
+        const navigationDisplayArray = navigationPath.map(item => `[${item.x},${item.y}]`);
+        console.log(`LLM Proposed Navigation:\n${navigationDisplayArray.join(" -> ")}`);
+
+        const pathCoordinates = navigationPath.map(coord => [coord.x, coord.y]);
+        if (currentMapState) {
+            const validationResult = await validatePath(pathCoordinates, currentMapState);
+            pathValidationOutcome = validationResult; // Store the actual validation result
+
+            if (!validationResult.isValid) {
+                console.warn(`LLM Navigation Path Validation FAILED:`);
+                // console.warn(`  Path: ${navigationDisplayArray.join(" -> ")}`);
+                if (validationResult.failurePoint) {
+                    console.warn(`  Failure at [${validationResult.failurePoint.join(',')}] because: ${validationResult.reason}`);
+                } else {
+                    console.warn(`  Reason: ${validationResult.reason}`);
+                }
+            } else {
+                // console.log("LLM Navigation Path Validated Successfully.");
+            }
+        } else {
+            pathValidationOutcome = { isValid: false, reason: "Map state not available for validation." };
+            console.warn("Skipping navigation path validation: currentMapState not available.");
+        }
+    } else {
+        console.log("LLM Proposed Navigation: N/A");
+        // pathValidationOutcome remains as its default:
+        // { isValid: true, reason: "No navigation path proposed or validation not applicable." }
+    }
     console.log(`LLM Mistakes:\n${mistakeText ?? "N/A"}`);
 
     try {
@@ -170,7 +201,8 @@ async function processLLMResponse(llmResponse) {
             // Log the full response if there's no function call for context
             console.log("Full LLM Response (no function call):", JSON.stringify(llmResponse, null, 2));
             return {
-                text: "No tool call in this response. You may disregard this message if this was intentional.",
+                toolExecutionText: "No tool call in this response. You may disregard this message if this was intentional.",
+                pathValidationResult: pathValidationOutcome
             };
         }
 
@@ -196,23 +228,23 @@ async function processLLMResponse(llmResponse) {
                         await pressButtons(args.buttons);
                     } else {
                         console.warn("Tool 'pressButtons' called with invalid args:", args);
-                        return { text: "Tool 'pressButtons' called with invalid args." };
+                        return { toolExecutionText: "Tool 'pressButtons' called with invalid args.", pathValidationResult: pathValidationOutcome };
                     }
-                    return { text: "Successfully executed 'pressButtons' tool." };
+                    return { toolExecutionText: "Successfully executed 'pressButtons' tool.", pathValidationResult: pathValidationOutcome };
                 case "stunNPC":
                     console.log(args);
                     if (args.npcID) {
                         await stunNPC(args.npcID);
                     } else {
                         console.warn("Tool 'stunNPC' called with invalid args:", args);
-                        return { text: "Tool 'stunNPC' called with invalid args." };
+                        return { toolExecutionText: "Tool 'stunNPC' called with invalid args.", pathValidationResult: pathValidationOutcome };
                     }
-                    return { text: "Successfully executed 'stunNPC' tool." };
+                    return { toolExecutionText: "Successfully executed 'stunNPC' tool.", pathValidationResult: pathValidationOutcome };
                 default:
                     console.warn(
                         `Received unknown tool name: ${responseFunctionCall.name}`
                     );
-                    return { text: `Unknown tool name: ${responseFunctionCall.name}` };
+                    return { toolExecutionText: `Unknown tool name: ${responseFunctionCall.name}`, pathValidationResult: pathValidationOutcome };
             }
             // --- End Tool Execution Logic ---
         } else {
@@ -225,12 +257,12 @@ async function processLLMResponse(llmResponse) {
                 "Original LLM Response Object:",
                 responseFunctionCall
             );
-            return { text: "Improper tool call format." };
+            return { toolExecutionText: "Improper tool call format.", pathValidationResult: pathValidationOutcome };
         }
     } catch (error) {
         // Log other types of errors during processing
         console.error("Error processing LLM response:", error);
-        return { text: "Unspecified error processing LLM response." };
+        return { toolExecutionText: "Unspecified error processing LLM response.", pathValidationResult: pathValidationOutcome };
     }
 }
 
@@ -304,8 +336,15 @@ async function runGameLoop() {
 
             console.log(`Turns Till Summary: ${CONFIGS.HISTORY_LENGTH - turnCounter}`);
 
-            // 1. Get current game state
-            const currentGameInfo = await getGameInfoText();
+            // 1. Get current game state (map data object and stringified version)
+            const visibleMapState = await getVisibleMapStateJson(); // Get the map state object
+            if (!visibleMapState) {
+                console.error("Critical: Failed to get visible map state. Skipping iteration.");
+                await delay(CONFIGS.LOOP_DELAY_MS);
+                continue;
+            }
+            const currentGameInfoString = await getGameInfoText(visibleMapState); // Get stringified version for LLM
+
             let mapBank = await getCurrentMapBank();
             let mapNum = await getCurrentMapNumber();
             let inBattle = await isInBattle();
@@ -335,7 +374,7 @@ async function runGameLoop() {
             }
 
             // 2. Construct the prompt parts for the current turn
-            const currentPromptText = `Current game state:\n${currentGameInfo}\n`;
+            const currentPromptText = `Current game state:\n${currentGameInfoString}\n`;
             const currentTwitchChat = `Twitch Messages this turn:\n${twitch_chat}\n`;
             // console.log("Current Prompt Text:", currentPromptText); // Optional: Log full prompt text
 
@@ -433,7 +472,7 @@ async function runGameLoop() {
                     `Total tokens used: ${result.usageMetadata.totalTokenCount}`
                 );
 
-                let responseResult = await processLLMResponse(parsedResponse);
+                let { toolExecutionText, pathValidationResult } = await processLLMResponse(parsedResponse, visibleMapState);
 
                 // Add current user turn and model response to history
                 // IMPORTANT: Add the *model's* response first
@@ -441,20 +480,28 @@ async function runGameLoop() {
                     role: "model",
                     parts: [
                         {
-                            text:
+                            text: `Commentary: ${
                                 parsedResponse.commentary ??
-                                "No thoughts in the previous turn.",
+                                "No commentary in the previous turn."
+                            }`
                         },
                         {
-                            text:
-                                parsedResponse.navigation ??
-                                "No navigation in the previous turn.",
+                            text: (Array.isArray(parsedResponse.navigation) && parsedResponse.navigation.length > 0)
+                                ? `Proposed Navigation: ${JSON.stringify(parsedResponse.navigation)}`
+                                : "No navigation proposed in the previous turn.",
                         },
-                        { text: parsedResponse.mistakes ?? "No mistakes in the previous turn." }
+                        { text: `Mistakes Identified: ${parsedResponse.mistakes ?? "N/A"}` }
                     ],
                 });
-                // Then add the *result* of the user's action (from processLLMResponse)
-                googleHistory.push({ role: "user", parts: [responseResult] });
+                // Then add the *result* of the LLM's action and path validation
+                googleHistory.push({
+                    role: "user", // This represents the outcome/feedback from the environment
+                    parts: [
+                        { text: `Tool Execution Outcome: ${toolExecutionText}` },
+                        { text: `Path Validation Outcome: ${pathValidationResult ? JSON.stringify(pathValidationResult) : 'Validation not performed or path was empty.'}` }
+                    ]
+                });
+
                 // Finally, add the twitch chat for that turn
                 googleHistory.push({ role: "user", parts: [{ text: currentTwitchChat}] });
 

@@ -46,3 +46,7 @@ export const MAP_NUMBER_ADDR = 0x02031DBD; // Address of current map number (u8)
 
 // --- Player State ---
 export const FACING_DIRECTION_ADDR = 0x02036E50; // Address containing player facing direction (among other things)
+
+// --- Party Menu ---
+export const PARTY_MENU_ADDR = 0x0203B0A0; // Address of the global party menu handler object
+export const PARTY_MENU_INTERNAL_ADDR = 0x0203B09C // Address of global party internal object pointer (check here for contents)
