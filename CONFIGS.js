@@ -38,12 +38,29 @@ A JSON object containing data about the currently onscreen part of the map, incl
 \tOnscreen warps to other maps, marked with a W in the tile data and with their destinations noted in the list of warps. Note some warps require you to take an additional action (usually walking onto a nearby impassable tile) while standing on their tile to be triggered. This list of warps is complete, if you believe you see a warp not listed then you are mistaken. Note this does not include overworld transitions (e.g. between cities and routes).
 \tOnscreen NPCs, marked with a ! in the tile data and with their sprite names noted. Remember that you CANNOT WALK THROUGH NPCs. Note that some NPCs may move - you can usually tell which NPCs they are if their position data changes between turns. These NPCs may be difficult to catch, so if you are unable to do so, consider using your "stunNPC" tool to freeze them until they are talked to. This list of NPCs is complete, if you believe you see an NPC not listed then you are mistaken.
 Whether or not you are currently in battle.
-The currently selected party member slot, if the party pokemon selction menu is open (not to be confused with the main battle interface, the party selection menu is what appears when you select "Pokemon" in the main battle interface). The left column of the party menu has slot 0 (or 0 and 1 if in a double battle), which are the active Pokemon. The right column has the other slots. Note that the slot order does not necessarily match up to the party order if you have switched party members already during the battle!
 Whether or not there is an overworld textbox open. Note that this ONLY applies to the large textbox at the bottom of the screen, and ONLY applies when interacting with NPCs or objects in the overworld. There may be other text on screen, menus open, etc, but if this value is false you can assume that you are not in a conversation.
 General information about your current Pokemon party.
 The contents of the five pouches of your inventory.
 (More information may be provided in the future; if there is anything you feel is important, feel free to request it to the developer.) 
 `;
+
+// Battle system prompt, involving instructions for battling.
+const SYSTEM_PROMPT_BATTLE_INSTRUCTIONS = `
+In battle, you should remember the following details:
+The main battle menu is laid out in a 2x2 grid:
+FIGHT BAG\n
+POKEMON RUN
+To get to BAG from FIGHT, you must move right;
+To get to RUN from BAG, you must move down. You cannot reach the lower row by moving left or right.
+The move menu is laid out in the same 2x2 grid:
+MOVE1 MOVE2\n
+MOVE3 MOVE4
+and requires the same movement (down) to reach the lower row.
+In a double battle, after pressing A on a selected move, you must then confirm which enemy Pokemon to attack (unless the move is a spread move).
+This requires pressing A once again if you want to target the enemy Pokemon on the right, or pressing left and then A if you want to target the enemy Pokemon on the left.
+Note that if the enemy is currently only fielding one Pokemon (if the other has fainted), you should just press A immediately after selecting the move to target it.
+You are told the currently selected party member slot, if the party pokemon selction menu is open (not to be confused with the main battle interface, the party selection menu is what appears when you select "Pokemon" in the main battle interface). The left column of the party menu has slot 0 (or 0 and 1 if in a double battle), which are the active Pokemon. The right column has the other slots. Note that the slot order does not necessarily match up to the party order if you have switched party members already during the battle!
+`
 
 // Prompt used by summary Gemini for summarization
 export const SYSTEM_PROMPT_SUMMARY = `
@@ -165,7 +182,7 @@ export const GENERATION_CONFIG = {
   temperature: 1,
   topP: 1,
   systemInstruction: {
-    parts: [{ text: SYSTEM_PROMPT_MAIN }, { text: SYSTEM_PROMPT_RAM_DATA }],
+    parts: [{ text: SYSTEM_PROMPT_MAIN }, { text: SYSTEM_PROMPT_RAM_DATA },  { text: SYSTEM_PROMPT_BATTLE_INSTRUCTIONS }],
   },
   thinkingConfig: {
     // Doesn't work lol

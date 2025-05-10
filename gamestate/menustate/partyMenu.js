@@ -19,9 +19,9 @@ export async function isPartyMenuOpen() {
     }
 }
 
-// Read the party menu slot id (a u8)
 /**
  * Reads the current party menu slot ID.
+ * 7 indicates either the menu is closed or the Exit button is selected
  * @returns {Promise<number|null>} The current slot ID, or null if an error occurs.
  */
 export async function getPartyMenuSlotId() {
