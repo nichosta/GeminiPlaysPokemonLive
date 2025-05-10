@@ -1,14 +1,15 @@
 // Imports from other files
 import { getGameImagesBase64, parseDataURI } from "./gamestate/emulatorInteraction/screenshot.js";
-import { getPartyCount, getPokemonData, isInBattle } from "./gamestate/pokemonData.js";
-import { getBagContents, prettyPrintBag, getPlayerMoney } from "./gamestate/bagData.js";
+import { isInBattle } from "./gamestate/pokemonData.js";
 import * as CONFIGS from "./CONFIGS.js";
-import { pressButtons } from "./tools/buttonPress.js";
-import { stunNPC } from "./tools/stunNPC.js";
 import { readAndClearFile } from "./readInputFile.js";
-import { getVisibleMapStateJson, validatePath } from "./gamestate/overworld/mapData.js";
+import { getVisibleMapStateJson } from "./gamestate/overworld/mapData.js";
 import { getCurrentMapBank, getCurrentMapNumber } from "./gamestate/overworld/playerData.js";
 import { isFieldMessageBoxActive, isScriptPtrSet } from "./gamestate/textReader.js";
+
+// Imports for refactored functions
+import { getGameInfoText } from "./llminteract/buildPrompt.js";
+import { processLLMResponse } from "./llminteract/processResponse.js";
 
 // Import Google AI SDK
 import { GoogleGenAI } from "@google/genai";
@@ -16,7 +17,6 @@ import { GoogleGenAI } from "@google/genai";
 // Import Node.js file system module
 import { promises as fs } from 'fs'; // <-- Add this line
 import path from 'path'; // <-- Add this for path joining
-import { getPartyMenuSlotId } from "./gamestate/menustate/partyMenu.js";
 
 // --- Configuration ---
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
@@ -79,190 +79,6 @@ async function loadHistoryFromFile(filePath, historyName) {
             console.error(`Error loading chat history from ${HISTORY_FILE_PATH}:`, error);
         }
         return []; // Return empty history on any error
-    }
-}
-
-/**
- * @description Formats the data for a single Pokemon into a readable string.
- * @param {object} pokemon The Pokemon data object.
- * @returns {string} Formatted string for the Pokemon.
- */
-function formatPokemonInfo(pokemon) {
-    if (!pokemon) return "Invalid Pokemon data";
-    return `
-    Nickname: ${pokemon.nickname}
-  Species: ${pokemon.species}
-  Level: ${pokemon.level}
-  HP: ${pokemon.currentHP}/${pokemon.maxHP}
-  Moves:
-    \t${pokemon.moves[0]} (PP ${pokemon.currentPP[0]})
-    \t${pokemon.moves[1]} (PP ${pokemon.currentPP[1]})
-    \t${pokemon.moves[2]} (PP ${pokemon.currentPP[2]})
-    \t${pokemon.moves[3]} (PP ${pokemon.currentPP[3]})
-`;
-}
-
-/**
- * @description Gets the current game state information (RAM data) as a formatted string.
- * @param {object} visibleMapState The pre-fetched visible map state object.
- * @returns {Promise<string>} Formatted string containing party, inventory, location, etc.
- */
-async function getGameInfoText(visibleMapState) {
-    // console.log("--- Getting Game Info (for stringification) ---"); // Less verbose logging
-    let partyCount = await getPartyCount();
-    let pokemonInfo = [];
-    if (partyCount > 0) {
-        for (let i = 0; i < partyCount; i++) {
-            pokemonInfo.push(formatPokemonInfo(await getPokemonData(i)));
-        }
-    }
-
-    let bagInfo = await getBagContents();
-    let prettyBagInfo = prettyPrintBag(bagInfo);
-
-    let mapStateJSON = visibleMapState; // Use the passed visibleMapState
-    let inBattle = await isInBattle();
-    let overworldTextboxOpen = await isScriptPtrSet();
-    let playerMoney = await getPlayerMoney();
-
-    let partyMenuSlot = await getPartyMenuSlotId();
-
-    const gameInfo = `
-      Map Data:\n${mapStateJSON ? JSON.stringify(mapStateJSON) : "Error: Map data unavailable."}
-      In Battle: ${inBattle ? "Yes" : "No"}
-      ${partyMenuSlot === 7 ? "" : `Party Menu Slot: ${partyMenuSlot}`}
-      ${inBattle ? "" : `Overworld Textbox Onscreen: ${overworldTextboxOpen ? "Yes" : "No"}`}
-      Party Count: ${partyCount}
-      Pokemon:
-        ${pokemonInfo.length > 0
-            ? pokemonInfo.join("\n")
-            : "No available pokemon"
-        }
-        Money: ${playerMoney}
-      ${prettyBagInfo}
-    `;
-    // Remove leading spaces from lines created by template literal indentation
-    return gameInfo.replace(/\n +/g, "\n");;
-}
-
-/**
- * @description Processes the LLM's response, assuming it contains a tool call.
- * If parsing fails, logs the raw text response.
- * @param {string} llmResponse The response from the LLM.
- * @param {object | null} currentMapState The current visible map state, for path validation.
- * @returns {Promise<{success: boolean, message: string}>} Object indicating success and a status message.
- */
-async function processLLMResponse(llmResponse, currentMapState) {
-    console.log("--- Processing LLM Response ---");
-
-    // Initialize a variable to hold the outcome of path validation
-    let pathValidationOutcome = { isValid: true, reason: "No navigation path proposed or validation not applicable." };
-    const responseText = llmResponse?.commentary;
-    const navigationPath = llmResponse?.navigation; // Array of {x,y}
-    const mistakeText = llmResponse?.mistakes;
-
-    // Log commentary, prediction, and navigation if present
-    console.log(`LLM Thoughts:\n${responseText ?? "N/A"}`);
-
-    if (navigationPath && navigationPath.length > 0) {
-        const navigationDisplayArray = navigationPath.map(item => `[${item.x},${item.y}]`);
-        console.log(`LLM Proposed Navigation:\n${navigationDisplayArray.join(" -> ")}`);
-
-        const pathCoordinates = navigationPath.map(coord => [coord.x, coord.y]);
-        if (currentMapState) {
-            const validationResult = await validatePath(pathCoordinates, currentMapState);
-            pathValidationOutcome = validationResult; // Store the actual validation result
-
-            if (!validationResult.isValid) {
-                console.warn(`LLM Navigation Path Validation FAILED:`);
-                // console.warn(`  Path: ${navigationDisplayArray.join(" -> ")}`);
-                if (validationResult.failurePoint) {
-                    console.warn(`  Failure at [${validationResult.failurePoint.join(',')}] because: ${validationResult.reason}`);
-                } else {
-                    console.warn(`  Reason: ${validationResult.reason}`);
-                }
-            } else {
-                // console.log("LLM Navigation Path Validated Successfully.");
-            }
-        } else {
-            pathValidationOutcome = { isValid: false, reason: "Map state not available for validation." };
-            console.warn("Skipping navigation path validation: currentMapState not available.");
-        }
-    } else {
-        console.log("LLM Proposed Navigation: N/A");
-        // pathValidationOutcome remains as its default:
-        // { isValid: true, reason: "No navigation path proposed or validation not applicable." }
-    }
-    console.log(`LLM Mistakes:\n${mistakeText ?? "N/A"}`);
-
-    try {
-        if (llmResponse.functionCall == null) {
-            console.warn("Warning: No tool call in LLM response.");
-            // Log the full response if there's no function call for context
-            console.log("Full LLM Response (no function call):", JSON.stringify(llmResponse, null, 2));
-            return {
-                toolExecutionText: "No tool call in this response. You may disregard this message if this was intentional.",
-                pathValidationResult: pathValidationOutcome
-            };
-        }
-
-        // Attempt to get the response
-        const responseFunctionCall = llmResponse.functionCall;
-
-        // Check if it looks like our expected tool call format
-        if (
-            responseFunctionCall &&
-            typeof responseFunctionCall === "object" &&
-            responseFunctionCall.name &&
-            typeof responseFunctionCall.name === "string" &&
-            responseFunctionCall.args
-        ) {
-            console.log(`Attempting to execute tool: ${responseFunctionCall.name}`);
-            const args = responseFunctionCall.args;
-
-            // --- Tool Execution Logic ---
-            switch (responseFunctionCall.name) {
-                case "pressButtons":
-                    console.log(args);
-                    if (args.buttons) {
-                        await pressButtons(args.buttons);
-                    } else {
-                        console.warn("Tool 'pressButtons' called with invalid args:", args);
-                        return { toolExecutionText: "Tool 'pressButtons' called with invalid args.", pathValidationResult: pathValidationOutcome };
-                    }
-                    return { toolExecutionText: "Successfully executed 'pressButtons' tool.", pathValidationResult: pathValidationOutcome };
-                case "stunNPC":
-                    console.log(args);
-                    if (args.npcID) {
-                        await stunNPC(args.npcID);
-                    } else {
-                        console.warn("Tool 'stunNPC' called with invalid args:", args);
-                        return { toolExecutionText: "Tool 'stunNPC' called with invalid args.", pathValidationResult: pathValidationOutcome };
-                    }
-                    return { toolExecutionText: "Successfully executed 'stunNPC' tool.", pathValidationResult: pathValidationOutcome };
-                default:
-                    console.warn(
-                        `Received unknown tool name: ${responseFunctionCall.name}`
-                    );
-                    return { toolExecutionText: `Unknown tool name: ${responseFunctionCall.name}`, pathValidationResult: pathValidationOutcome };
-            }
-            // --- End Tool Execution Logic ---
-        } else {
-            // Parsed JSON doesn't match expected tool format, treat as plain text
-            console.log(
-                "LLM response functionCall is invalid or missing expected structure. Outputting object:",
-                responseFunctionCall
-            );
-            console.log(
-                "Original LLM Response Object:",
-                responseFunctionCall
-            );
-            return { toolExecutionText: "Improper tool call format.", pathValidationResult: pathValidationOutcome };
-        }
-    } catch (error) {
-        // Log other types of errors during processing
-        console.error("Error processing LLM response:", error);
-        return { toolExecutionText: "Unspecified error processing LLM response.", pathValidationResult: pathValidationOutcome };
     }
 }
 

@@ -193,7 +193,7 @@ const STRUCTURED_OUTPUT_SCHEMA = {
     navigation: {
       type: "array",
       description: 
-        "Your navigation plan for the next turn if you are actionable in the overworld. Should be long enough to reach the edge of the screen unless you intend to interact with something before that. Make use of the collision data to navigate around obstacles and reach your destination. Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid. Put [] here if this does not apply.",
+        "Your navigation plan for the next turn if you are actionable in the overworld. Should always be at least four tiles unless you intend to interact with something before that. Make use of the collision data to navigate around obstacles and reach your destination. Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid. Put [] here if this does not apply.",
       items: {
         type: "object",
           properties: {
