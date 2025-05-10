@@ -14,7 +14,8 @@ import * as CONSTANTS from "../constant/constants.js";
  * Returns an empty array if no connections are found, if pointers are invalid, or if an error occurs during memory reading.
  */
 export async function getCurrentMapConnections() {
-    const connections = [];
+    const actualConnections = []; // Stores connections read from memory
+    const allConnections = [];    // Will store actual connections + MAP_NONE placeholders
 
     try {
         // 1. Get the pointer to the MapConnections struct from the current map header
@@ -60,8 +61,8 @@ export async function getCurrentMapConnections() {
             const mapGroup = await readUint8(currentConnectionBaseAddr + CONSTANTS.MAP_CONNECTION_MAP_GROUP_OFFSET);
             const mapNum = await readUint8(currentConnectionBaseAddr + CONSTANTS.MAP_CONNECTION_MAP_NUM_OFFSET);
             const mapName = getMapName(mapGroup, mapNum);
-
-            connections.push({
+            
+            actualConnections.push({
                 direction: direction,
                 mapName: mapName
                 // The 'offset' field (MAP_CONNECTION_OFFSET_OFFSET) is ignored as per the request.
@@ -69,8 +70,27 @@ export async function getCurrentMapConnections() {
         }
     } catch (error) {
         console.error("Error reading map connections:", error);
-        return []; // Return an empty array on any error to prevent crashes.
+        // If a critical error occurs reading the base connection data, return empty.
+        // No point in adding MAP_NONE placeholders if we can't even determine existing ones.
+        return []; 
     }
 
-    return connections;
+    // Add successfully read connections to the final list
+    allConnections.push(...actualConnections);
+
+    // Define standard directions and find which ones are already present
+    const STANDARD_DIRECTIONS = ["up", "down", "left", "right"];
+    const presentDirections = new Set(actualConnections.map(conn => conn.direction));
+
+    // Add "MAP_NONE" for any standard directions that are missing
+    for (const dir of STANDARD_DIRECTIONS) {
+        if (!presentDirections.has(dir)) {
+            allConnections.push({
+                direction: dir,
+                mapName: "MAP_NONE" 
+            });
+        }
+    }
+
+    return allConnections;
 }

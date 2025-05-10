@@ -642,7 +642,7 @@ export async function validatePath(path, mapState) {
         }
 
         if (tileType === TILE_WATER && !(await isPlayerSurfing())) {
-            return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is a water tile, and the player is not surfing.` }
+            return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is a water tile (~), and the player is not surfing.` }
         }
 
         // 3. Ledge Check (if applicable)
