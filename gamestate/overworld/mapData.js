@@ -5,6 +5,7 @@ import * as CONSTANTS from "../constant/constants.js";
 import { getCurrentMapBank, getCurrentMapNumber, getPlayerFacingDirection, getPlayerPosition } from "./playerData.js";
 import { getCurrentMapNpcs, getCurrentMapWarps } from "./mapEvents.js";
 import { getMainMapHeight, getMainMapTiles, getMainMapWidth } from "./mapLayouts.js";
+import { getCurrentMapConnections } from "./mapConnections.js";
 
 // --- Constants ---
 const TILE_WALKABLE = 'O';
@@ -149,7 +150,8 @@ function processMemoryDataToCollisionMap(memory_data, mapWidthTiles) {
  *              map_data: string[][], // e.g., ["0,0:X", "1,0:O"]
  *              player_state: { position: [number, number], facing: string },
  *              warps: Array<{ position: [number, number], destination: string }>,
- *              npcs: Array<{ position: [number, number], type: string }>
+ *              npcs: Array<{ id: number, position: [number, number], type: string, isOffScreen: boolean }>,
+ *              connections: Array<{direction: string, mapName: string}>
  *          }
  */
 export async function getMapStateJson() {
@@ -162,6 +164,7 @@ export async function getMapStateJson() {
         const rawNpcs = await getCurrentMapNpcs(); // Fetch raw NPCs
         const mapWidth = await getMainMapWidth();
         const mapHeight = await getMainMapHeight();
+        const mapConnections = await getCurrentMapConnections();
 
         const mapName = getMapName(mapBank, mapNumber);
 
@@ -177,6 +180,7 @@ export async function getMapStateJson() {
                 player_state: { position: [playerX, playerY], facing: facingDirection },
                 warps: [],
                 npcs: [],
+                connections: mapConnections, // Include connections even for minimal state
              };
         }
 
@@ -220,6 +224,7 @@ export async function getMapStateJson() {
             },
             warps: warps,
             npcs: npcs,
+            connections: mapConnections,
         };
 
         return mapState;
@@ -244,6 +249,7 @@ function isValidFullMapState(state) {
     if (!Array.isArray(state.map_data)) return false;
     if (!Array.isArray(state.warps)) return false;
     if (!Array.isArray(state.npcs)) return false;
+    if (!Array.isArray(state.connections)) return false;
 
     // Basic dimension/data consistency checks
     if (state.height > 0 && state.map_data.length !== state.height) {
@@ -281,6 +287,7 @@ function isValidFullMapState(state) {
  *          tile_passability (with 'X'/'O'/'W'/'!'),
  *          map_data (with 'X'/'O'/'W'/'!' markers),
  *          player_state, filtered warps, and filtered npcs.
+ *          Also includes `connections` filtered by viewport visibility.
  */
 function trimMapStateToViewport(fullMapState) {
     // --- Input Validation ---
@@ -296,7 +303,8 @@ function trimMapStateToViewport(fullMapState) {
         map_data: fullMapData,
         player_state,
         warps: fullWarps = [],
-        npcs: fullNpcs = []
+        npcs: fullNpcs = [],
+        connections: fullConnections = []
     } = fullMapState;
 
     // Handle case where map is empty
@@ -310,7 +318,8 @@ function trimMapStateToViewport(fullMapState) {
             map_data: [],
             player_state: player_state,
             warps: [],
-            npcs: []
+            npcs: [],
+            connections: [] // No connections if map is empty
         };
     }
 
@@ -346,6 +355,7 @@ function trimMapStateToViewport(fullMapState) {
             player_state: player_state,
             warps: [],
             npcs: [],
+            connections: [], // No connections if viewport is invalid
         };
     }
 
@@ -429,6 +439,32 @@ function trimMapStateToViewport(fullMapState) {
         }
     }
 
+    // --- Filter Connections by Viewport Edges ---
+    const trimmedConnections = [];
+    for (const conn of fullConnections) {
+        let isVisible = false;
+        switch (conn.direction) {
+            case "down":
+                isVisible = actualEndY === fullHeight;
+                break;
+            case "up":
+                isVisible = actualStartY === 0;
+                break;
+            case "left":
+                isVisible = actualStartX === 0;
+                break;
+            case "right":
+                isVisible = actualEndX === fullWidth;
+                break;
+            default: // For connections like "dive", "emerge", or "unknown", assume they are always "visible" if present
+                isVisible = true;
+                break;
+        }
+        if (isVisible) {
+            trimmedConnections.push(conn);
+        }
+    }
+
     // --- Assemble the Trimmed State Object ---
     return {
         map_name: map_name,
@@ -438,7 +474,8 @@ function trimMapStateToViewport(fullMapState) {
         map_data: trimmedMapData,     // Contains 'X'/'O'/'W'/'!' markers
         player_state: player_state,   // Absolute coords
         warps: trimmedWarps,          // Filtered, absolute coords
-        npcs: trimmedNpcs             // Filtered, absolute coords
+        npcs: trimmedNpcs,             // Filtered, absolute coords
+        connections: trimmedConnections
     };
 }
 
@@ -451,7 +488,8 @@ function trimMapStateToViewport(fullMapState) {
  * @returns {Promise<object|null>} A promise that resolves to an object containing
  *          the map name, dimensions, collision data (including 'W'/'!' markers),
  *          player state, filtered warp points, and filtered NPCs, trimmed to a
- *          viewport (max 15x10) centered around the player. Coordinates remain
+ *          viewport (max 15x10) centered around the player.
+ *          Also includes map connections visible from the viewport edges. Coordinates remain
  *          *absolute*. Returns null if a critical error occurs.
  */
 export async function getVisibleMapStateJson() {
@@ -483,14 +521,24 @@ export async function getVisibleMapStateJson() {
  *
  * @param {Array<[number, number]>} path - An array of [x, y] coordinates representing the path.
  * @param {object} mapState - The map state object, typically from getVisibleMapStateJson().
- *                            This object contains map_data (viewport) and full map width/height.
+ *                            This object contains map_data (viewport) and viewport width/height.
+ *                            The full map dimensions are implicitly handled by the viewport calculation.
  * @returns {Promise<{isValid: boolean, failurePoint?: [number, number], reason?: string}>}
  *          An object indicating if the path is valid. If invalid, includes
  *          the point of failure and a reason.
  */
 export async function validatePath(path, mapState) {
     if (!path || path.length === 0) {
-        return { isValid: true }; // An empty path is trivially valid
+        return { isValid: true, reason: "Empty path is trivially valid." };
+    }
+
+    // It's crucial that mapState here is the *trimmed* viewport state,
+    // because map_data in it reflects the viewport's content and coordinates.
+    // The width/height in mapState should be the viewport's width/height.
+    // The tile strings "x,y:T" within map_data use *absolute* map coordinates.
+    if (!mapState || !mapState.map_data || typeof mapState.width !== 'number' || typeof mapState.height !== 'number' || !mapState.player_state) {
+        console.warn("validatePath: Invalid mapState provided (must be trimmed viewport state).", mapState);
+        return { isValid: false, reason: "Invalid map state provided for validation (expecting trimmed viewport state)." };
     }
 
     if (!mapState || !mapState.map_data || typeof mapState.width !== 'number' || typeof mapState.height !== 'number') {
@@ -498,12 +546,21 @@ export async function validatePath(path, mapState) {
         return { isValid: false, reason: "Invalid map state provided for validation." };
     }
 
-    const { map_data: viewportMapData, width: fullMapWidth, height: fullMapHeight } = mapState;
+    const { map_data: viewportMapData, width: viewportWidth, height: viewportHeight, player_state } = mapState;
+
+    // Determine the absolute coordinate bounds of the current viewport
+    // This requires knowing the top-left absolute coordinate of the viewport.
+    // We can infer this if map_data is not empty.
+    let viewportAbsStartX = 0;
+    let viewportAbsStartY = 0;
+    if (viewportMapData.length > 0 && viewportMapData[0].length > 0 && viewportMapData[0][0].includes(',')) {
+        [viewportAbsStartX, viewportAbsStartY] = viewportMapData[0][0].split(':')[0].split(',').map(Number);
+    }
 
     for (const [pX, pY] of path) {
-        // 1. Check if coordinate is within full map bounds
-        if (pX < 0 || pX >= fullMapWidth || pY < 0 || pY >= fullMapHeight) {
-            return { isValid: false, failurePoint: [pX, pY], reason: `Coordinate (${pX},${pY}) is out of full map bounds (${fullMapWidth}x${fullMapHeight}).` };
+        // 1. Check if coordinate is within the *current viewport's absolute bounds*
+        if (pX < viewportAbsStartX || pX >= viewportAbsStartX + viewportWidth || pY < viewportAbsStartY || pY >= viewportAbsStartY + viewportHeight) {
+            return { isValid: false, failurePoint: [pX, pY], reason: `Coordinate (${pX},${pY}) is out of current viewport bounds ([${viewportAbsStartX},${viewportAbsStartY}] to [${viewportAbsStartX + viewportWidth -1 },${viewportAbsStartY + viewportHeight - 1}]).` };
         }
 
         // 2. Find the tile in the viewportMapData (which uses absolute coordinates in its strings)

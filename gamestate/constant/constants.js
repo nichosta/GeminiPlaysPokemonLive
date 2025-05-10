@@ -138,10 +138,12 @@ export const MAP_CONNECTIONS_COUNT_OFFSET = 0x00; // Offset to connection count 
 export const MAP_CONNECTIONS_CONNECTION_POINTER_OFFSET = 0x04; // Offset to connections array pointer (const struct MapConnection *)
 
 // MapConnection struct offsets
-export const MAP_CONNECTION_DIRECTION_OFFSET = 0x00; // Offset to direction (u8)
-export const MAP_CONNECTION_OFFSET_OFFSET = 0x01; // Offset to "offset" field (s32)
-export const MAP_CONNECTION_MAP_GROUP_OFFSET = 0x05; // Offset to destination map group (u8)
-export const MAP_CONNECTION_MAP_NUM_OFFSET = 0x06; // Offset to destination map num (u8)
+export const MAP_CONNECTION_SIZE = 0x0C; // Size of one MapConnection struct (0x0C bytes)
+export const MAP_CONNECTION_DIRECTION_OFFSET = 0x00; // Offset to direction (u8 padded)
+export const MAP_CONNECTION_OFFSET_OFFSET = 0x04; // Offset to "offset" field (s32)
+export const MAP_CONNECTION_MAP_GROUP_OFFSET = 0x08; // Offset to destination map group (u8)
+export const MAP_CONNECTION_MAP_NUM_OFFSET = 0x09; // Offset to destination map num (u8)
+// 2 bytes padding
 
 
 

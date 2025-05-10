@@ -1,0 +1,76 @@
+import { readUint8, readUint16, readUint32, readRange } from "../emulatorInteraction/httpMemoryReader.js";
+import { getMapName } from "../../constant/map_map.js";
+import * as CONSTANTS from "../constant/constants.js";
+
+/**
+ * Reads information about the current map's connections from the game memory.
+ *
+ * It retrieves the list of connections from the current map to adjacent maps,
+ * including the direction of the connection and the name of the connected map.
+ *
+ * @async
+ * @returns {Promise<Array<{direction: string, mapName: string}>>} A promise that resolves to an array of connection objects.
+ * Each object has a `direction` (e.g., "up", "down", "left", "right") and a `mapName` (e.g., "PALLET TOWN").
+ * Returns an empty array if no connections are found, if pointers are invalid, or if an error occurs during memory reading.
+ */
+export async function getCurrentMapConnections() {
+    const connections = [];
+
+    try {
+        // 1. Get the pointer to the MapConnections struct from the current map header
+        // The map header address is a constant, and the offset to the connections pointer is also a constant.
+        const mapConnectionsStructPtrAddr = CONSTANTS.CURRENT_MAP_HEADER_ADDR + CONSTANTS.MAP_HEADER_MAP_CONNECTIONS_OFFSET;
+        const mapConnectionsStructPtr = await readUint32(mapConnectionsStructPtrAddr);
+
+        // If the pointer to the MapConnections struct is null or zero, there are no connections defined or an error.
+        if (!mapConnectionsStructPtr || mapConnectionsStructPtr === 0) {
+            // console.debug("MapConnections pointer is null or zero, assuming no connections.");
+            return [];
+        }
+
+        // 2. Read the MapConnections struct
+        // Read connection count (s32, but we read as u32 assuming non-negative)
+        const connectionCountAddr = mapConnectionsStructPtr + CONSTANTS.MAP_CONNECTIONS_COUNT_OFFSET;
+        const connectionCount = await readUint32(connectionCountAddr);
+
+        // If count is 0 or an unreasonably large number (sanity check), assume no valid connections.
+        if (connectionCount === 0 || connectionCount > 20) { // Max connections for a map is typically small.
+            if (connectionCount > 20) {
+                 console.warn(`Unusually high map connection count: ${connectionCount}. Interpreting as no valid connections.`);
+            }
+            return [];
+        }
+
+        // Read pointer to the actual connections array
+        const connectionsArrayPtrAddr = mapConnectionsStructPtr + CONSTANTS.MAP_CONNECTIONS_CONNECTION_POINTER_OFFSET;
+        const connectionsArrayPtr = await readUint32(connectionsArrayPtrAddr);
+
+        if (!connectionsArrayPtr || connectionsArrayPtr === 0) {
+            // console.debug("Connections array pointer is null or zero, assuming no connections despite count > 0.");
+            return [];
+        }
+
+        // 3. Iterate through each MapConnection entry
+        for (let i = 0; i < connectionCount; i++) {
+            const currentConnectionBaseAddr = connectionsArrayPtr + (i * CONSTANTS.MAP_CONNECTION_SIZE);
+
+            const directionRaw = await readUint8(currentConnectionBaseAddr + CONSTANTS.MAP_CONNECTION_DIRECTION_OFFSET);
+            const direction = CONSTANTS.FACING_DIRECTION_MAP.get(directionRaw) || `unknown (${directionRaw})`;
+
+            const mapGroup = await readUint8(currentConnectionBaseAddr + CONSTANTS.MAP_CONNECTION_MAP_GROUP_OFFSET);
+            const mapNum = await readUint8(currentConnectionBaseAddr + CONSTANTS.MAP_CONNECTION_MAP_NUM_OFFSET);
+            const mapName = getMapName(mapGroup, mapNum);
+
+            connections.push({
+                direction: direction,
+                mapName: mapName
+                // The 'offset' field (MAP_CONNECTION_OFFSET_OFFSET) is ignored as per the request.
+            });
+        }
+    } catch (error) {
+        console.error("Error reading map connections:", error);
+        return []; // Return an empty array on any error to prevent crashes.
+    }
+
+    return connections;
+}
