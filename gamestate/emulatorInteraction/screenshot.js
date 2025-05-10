@@ -83,7 +83,7 @@ export async function getGameImagesBase64() {
 
     // --- Parallel Fetching (Screenshot & Player Position) ---
     const screenshotResponse = await fetch(`http://localhost:5000/core/screenshot?path=${originalScreenshotPath}`, { method: 'POST' });
-    await delay(10);
+    await delay(250);
     const playerX = await getPlayerX();
     const playerY = await getPlayerY();
 
