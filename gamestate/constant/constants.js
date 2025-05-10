@@ -99,7 +99,14 @@ export const MAP_HEADER_MAP_CONNECTIONS_OFFSET = 0x0C; // Offset to pointer to M
 // MapLayout struct offsets
 export const MAP_LAYOUT_WIDTH_OFFSET = 0x00; // Offset to map width (u32)
 export const MAP_LAYOUT_HEIGHT_OFFSET = 0x04; // Offset to map height (u32)
-export const MAP_LAYOUT_DATA_OFFSET = 0x0C; // Offset to map data array pointer (const u16 *)
+export const MAP_LAYOUT_MAPGRID_OFFSET = 0x0C; // Offset to map data array pointer (const u16 *)
+export const MAP_LAYOUT_PRIMARY_TILESET_OFFSET = 0x10; // Offset to secondary tileset pointer (const struct Tileset *)
+export const MAP_LAYOUT_SECONDARY_TILESET_OFFSET = 0x14; // Offset to secondary tileset pointer (const struct Tileset *)
+
+// --- Mapgrid ---
+
+export const MAPGRID_METATILE_ID_MASK = 0x03FF; // The part of the mapgrid info that holds the metatile ID
+export const MAPGRID_COLLISION_MASK = 0xC00; // The part of the mapgrid info that holds the collision info
 
 // --- Map Events (Templates for Warps, NPCs, etc.) ---
 
@@ -126,10 +133,12 @@ export const OBJECT_EVENT_SIZE = 0x24;          // Size of one ObjectEvent struc
 // ObjectEvent struct offsets (relative to start of one 32-byte struct)
 export const OBJECT_EVENT_FLAGS_OFFSET = 0x00;      // Offset to the 32-bit flags field (u32)
 export const OBJECT_EVENT_GRAPHICS_ID_OFFSET = 0x05; // Offset to graphics ID (u8)
+export const OBJECT_EVENT_MOVEMENT_TYPE_OFFSET = 0x06; // Offest to object event movement type (u8)
 export const OBJECT_EVENT_X_OFFSET = 0x10;          // Offset to current X coordinate (s16)
 export const OBJECT_EVENT_Y_OFFSET = 0x12;          // Offset to current Y coordinate (s16)
 export const OBJECT_EVENT_FROZEN_BIT = 8;      // Bit 8: 1 = Frozen/Inactive movement
 export const OBJECT_EVENT_OFFSCREEN_BIT = 14;  // Bit 14: 1 = Offscreen/Inactive rendering (technically this gives an extra tile of buffer but I don't care)
+export const OBJECT_EVENT_WANDERING_TYPES = [0x2, 0x3, 0x4, 0x5, 0x6]; // Types for the movement type byte which indicate the NPC wanders around on the map
 
 // --- Map Connections ---
 
@@ -144,8 +153,6 @@ export const MAP_CONNECTION_OFFSET_OFFSET = 0x04; // Offset to "offset" field (s
 export const MAP_CONNECTION_MAP_GROUP_OFFSET = 0x08; // Offset to destination map group (u8)
 export const MAP_CONNECTION_MAP_NUM_OFFSET = 0x09; // Offset to destination map num (u8)
 // 2 bytes padding
-
-
 
 // Current Map Location
 export const MAP_BANK_ADDR = selectedConstants.MAP_BANK_ADDR;

@@ -88,10 +88,11 @@ export async function getCurrentMapWarps() {
  * Reads the live Object Events data from memory (gObjectEvents).
  * Filters out the player object (index 0) and any NPCs marked as off-screen.
  * Adjusts coordinates relative to the map origin.
+ * Determines if an NPC is of a wandering type.
  *
- * @returns {Promise<Array<{x: number, y: number, graphicsId: number}>>}
+ * @returns {Promise<Array<{id: number, x: number, y: number, graphicsId: number, isOffScreen: boolean, wandering: boolean}>>}
  *          An array of active NPC objects, each containing the NPC's current
- *          coordinates (x, y) relative to the map origin and their graphics ID.
+ *          coordinates (x, y) relative to the map origin, their graphics ID, off-screen status, and wandering status.
  *          Returns an empty array if no active NPCs are found or on error.
  */
 export async function getCurrentMapNpcs() {
@@ -138,13 +139,16 @@ export async function getCurrentMapNpcs() {
                 continue;
             }
 
+            // Movement Type (u8)
+            const movementType = dataView.getUint8(currentOffset + CONSTANTS.OBJECT_EVENT_MOVEMENT_TYPE_OFFSET);
+            const wandering = CONSTANTS.OBJECT_EVENT_WANDERING_TYPES.includes(movementType);
+
             // Current X coordinate (s16, Little Endian), adjusted by MAP_OFFSET
             const x = dataView.getInt16(currentOffset + CONSTANTS.OBJECT_EVENT_X_OFFSET, true) - CONSTANTS.MAP_OFFSET;
 
             // Current Y coordinate (s16, Little Endian), adjusted by MAP_OFFSET
             const y = dataView.getInt16(currentOffset + CONSTANTS.OBJECT_EVENT_Y_OFFSET, true) - CONSTANTS.MAP_OFFSET;
-
-            npcs.push({ id: i, x, y, graphicsId, isOffScreen });
+            npcs.push({ id: i, x, y, graphicsId, isOffScreen, wandering });
         }
         return npcs;
     } catch (error) {

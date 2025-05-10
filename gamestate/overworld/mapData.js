@@ -148,7 +148,7 @@ function processMemoryDataToCollisionMap(memory_data, mapWidthTiles) {
  *              height: number,
  *              tile_passability: { "O": string, "X": string },
  *              map_data: string[][], // e.g., ["0,0:X", "1,0:O"]
- *              player_state: { position: [number, number], facing: string },
+ *              player_state: { position: [number, number], facing: string},
  *              warps: Array<{ position: [number, number], destination: string }>,
  *              npcs: Array<{ id: number, position: [number, number], type: string, isOffScreen: boolean }>,
  *              connections: Array<{direction: string, mapName: string}>
@@ -209,6 +209,7 @@ export async function getMapStateJson() {
                 position: [npc.x, npc.y],
                 type: getEventObjectName(npc.graphicsId) || `Unknown NPC (ID: ${npc.graphicsId})`,
                 isOffScreen: npc.isOffScreen,
+                wandering: npc.wandering,
             }));
 
         // Assemble the final JSON object
@@ -287,7 +288,7 @@ function isValidFullMapState(state) {
  *          tile_passability (with 'X'/'O'/'W'/'!'),
  *          map_data (with 'X'/'O'/'W'/'!' markers),
  *          player_state, filtered warps, and filtered npcs.
- *          Also includes `connections` filtered by viewport visibility.
+ *          NPCs include `id`, `position`, `type`, and `wandering` status.
  */
 function trimMapStateToViewport(fullMapState) {
     // --- Input Validation ---
@@ -391,7 +392,8 @@ function trimMapStateToViewport(fullMapState) {
                 trimmedNpcs.push({
                     id: npc.id,
                     position: [npcX, npcY],
-                    type: npc.type // Already formatted
+                    type: npc.type, // Already formatted
+                    wandering: npc.wandering
                 });
                 npcLocations.add(`${npcX},${npcY}`);
             }
@@ -547,6 +549,11 @@ export async function validatePath(path, mapState) {
     }
 
     const { map_data: viewportMapData, width: viewportWidth, height: viewportHeight, player_state } = mapState;
+    const [playerStartX, playerStartY] = player_state.position;
+
+    // Initialize previous coordinates with the player's starting position
+    let prevX = playerStartX;
+    let prevY = playerStartY;
 
     // Determine the absolute coordinate bounds of the current viewport
     // This requires knowing the top-left absolute coordinate of the viewport.
@@ -557,7 +564,22 @@ export async function validatePath(path, mapState) {
         [viewportAbsStartX, viewportAbsStartY] = viewportMapData[0][0].split(':')[0].split(',').map(Number);
     }
 
-    for (const [pX, pY] of path) {
+    for (let i = 0; i < path.length; i++) {
+        const [pX, pY] = path[i];
+
+        // 0. Adjacency Check (Manhattan distance must be 1)
+        const deltaX = Math.abs(pX - prevX);
+        const deltaY = Math.abs(pY - prevY);
+
+        if (deltaX + deltaY !== 1) {
+            const previousPointDisplay = i === 0 ? `player start (${prevX},${prevY})` : `previous step (${prevX},${prevY})`;
+            return {
+                isValid: false,
+                failurePoint: [pX, pY],
+                reason: `Step (${pX},${pY}) is not adjacent to ${previousPointDisplay}. Distance: dx=${deltaX}, dy=${deltaY}.`
+            };
+        }
+
         // 1. Check if coordinate is within the *current viewport's absolute bounds*
         if (pX < viewportAbsStartX || pX >= viewportAbsStartX + viewportWidth || pY < viewportAbsStartY || pY >= viewportAbsStartY + viewportHeight) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Coordinate (${pX},${pY}) is out of current viewport bounds ([${viewportAbsStartX},${viewportAbsStartY}] to [${viewportAbsStartX + viewportWidth -1 },${viewportAbsStartY + viewportHeight - 1}]).` };
@@ -591,6 +613,10 @@ export async function validatePath(path, mapState) {
         if (tileType === TILE_BLOCKED || tileType === TILE_NPC) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is not walkable. Type: '${tileType}'.` };
         }
+
+        // Update previous coordinates for the next iteration
+        prevX = pX;
+        prevY = pY;
     }
 
     return { isValid: true };

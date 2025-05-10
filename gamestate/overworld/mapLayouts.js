@@ -90,7 +90,7 @@ export async function getMainMapTiles(mapWidth, mapHeight) {
         console.error("Failed to get main map layout base address for tiles.");
         return []; // Return empty array on error
     }
-    const mapDataAddress = await readUint32(baseAddress + CONSTANTS.MAP_LAYOUT_DATA_OFFSET);
+    const mapDataAddress = await readUint32(baseAddress + CONSTANTS.MAP_LAYOUT_MAPGRID_OFFSET);
     if (!mapDataAddress) {
         console.error("Failed to get main map data address.");
         return []; // Return empty array on error
