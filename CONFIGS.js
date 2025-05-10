@@ -56,6 +56,7 @@ Please include:
 4. Your current location and Pokémon team status
 5. Any strategies or plans you've mentioned
 6. Important suggestions and interactions with Twitch chatters
+7. Solutions to significant loops you've encountered, whether discovered personally or proposed by Twitch chat.
 
 The summary should be comprehensive enough that you can continue gameplay without losing important context about what has happened so far.
 If the most recent conversation is characterized by looping and a lack of progress, make note of this - it is important not to propogate hallucinations or mistakes.
