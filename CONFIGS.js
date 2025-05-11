@@ -5,7 +5,7 @@ export const GOOGLE_MODEL_NAME = "gemini-2.5-flash-preview-04-17";
 // export const GOOGLE_MODEL_NAME = "gemini-2.5-pro-exp-03-25";
 export const HISTORY_LENGTH = 30; // Keep the last X pairs of user/model messages
 export const LOOP_DELAY_MS = 5000; // Delay between loop iterations (e.g., 5 seconds) - ADJUST AS NEEDED!
-export const MAX_SUMMARIES = 60; // Maximum number of summary messages to keep in history
+export const MAX_SUMMARIES = 30; // Maximum number of summary messages to keep in history
 
 // FRLG-specific gameplay information prompt
 const SYSTEM_PROMPT_FRLG_INFORMATION = `
@@ -94,7 +94,7 @@ A JSON object containing data about the currently onscreen part of the map, incl
 \tOnscreen warps to other maps, marked with a W in the tile data and with their destinations noted in the list of warps. Note some warps require you to take an additional action (usually walking onto a nearby impassable tile) while standing on their tile to be triggered. This list of warps is complete; if you believe you see a warp not listed, you are mistaken. Note this does not include overworld connections between maps.
 \tOnscreen overworld connections to other maps. You can use these by simply walking in the direction indicated off the edge of the map from a passable tile. If a connection is not listed when the edge is visible, you will be unable to walk off the edge of the map.
 \tOnscreen NPCs, marked with a ! in the tile data and with their sprite names noted. Some NPCs are marked "wandering", meaning they move between turns. If you wish to interact with these, consider using your "stunNPC" tool to freeze them until they are talked to. This list of NPCs is complete, if you believe you see an NPC not listed then you are mistaken.
-Whether or not you are currently in the battle screen. This includes the time after an opponent is defeated but before you have returned to the overworld. You cannot move in the overworld as long as this value is true.
+Whether or not you are currently in the battle screen. This includes the time after an opponent is defeated but before you have returned to the overworld (the post battle defeat screen and text). You cannot move in the overworld as long as this value is true.
 Whether or not there is an overworld textbox open. Note that this ONLY applies to the large textbox at the bottom of the screen, and ONLY applies when interacting with NPCs or objects in the overworld. There may be other text on screen, menus open, etc, but if this value is false you can assume that you are not in a conversation.
 General information about your current Pokemon party.
 The contents of the five pouches of your inventory.

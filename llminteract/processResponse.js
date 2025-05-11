@@ -72,6 +72,7 @@ export async function processLLMResponse(llmResponse, currentMapState) {
                 case "pressButtons":
                     if (args.buttons) {
                         await pressButtons(args.buttons);
+                        console.log(args);
                         return { toolExecutionText: "Successfully executed 'pressButtons' tool.", pathValidationResult: pathValidationOutcome };
                     } else {
                         console.warn("Tool 'pressButtons' called with invalid args:", args);
@@ -80,6 +81,7 @@ export async function processLLMResponse(llmResponse, currentMapState) {
                 case "stunNPC":
                     if (args.npcID) {
                         await stunNPC(args.npcID);
+                        console.log(args);
                         return { toolExecutionText: "Successfully executed 'stunNPC' tool.", pathValidationResult: pathValidationOutcome };
                     } else {
                         console.warn("Tool 'stunNPC' called with invalid args:", args);

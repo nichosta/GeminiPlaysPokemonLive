@@ -51,7 +51,7 @@ export async function getGameInfoText(visibleMapState) {
     const gameInfo = `
       Map Data:\n${mapStateJSON ? JSON.stringify(mapStateJSON) : "Error: Map data unavailable."}
       In Battle: ${inBattleStatus ? "Yes" : "No"}
-      ${partyMenuSlot === 7 ? "" : `Party Menu Slot: ${partyMenuSlot}`}
+      ${partyMenuSlot === 7 ? "" : `Party Menu Slot: ${partyMenuSlot} (${(await getPokemonData(partyMenuSlot)).nickname})`}
       ${inBattleStatus ? "" : `Overworld Textbox Onscreen: ${overworldTextboxOpen ? "Yes" : "No"}`}
       Party Count: ${partyCount}
       Pokemon:\n        ${pokemonInfo.length > 0 ? pokemonInfo.join("\n") : "No available pokemon"}
