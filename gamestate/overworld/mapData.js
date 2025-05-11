@@ -607,11 +607,6 @@ export async function validatePath(path, mapState) {
             };
         }
 
-        // 1. Check if coordinate is within the *current viewport's absolute bounds*
-        if (pX < viewportAbsStartX || pX >= viewportAbsStartX + viewportWidth || pY < viewportAbsStartY || pY >= viewportAbsStartY + viewportHeight) {
-            return { isValid: false, failurePoint: [pX, pY], reason: `Coordinate (${pX},${pY}) is out of current viewport bounds ([${viewportAbsStartX},${viewportAbsStartY}] to [${viewportAbsStartX + viewportWidth -1 },${viewportAbsStartY + viewportHeight - 1}]).` };
-        }
-
         // 2. Find the tile in the viewportMapData (which uses absolute coordinates in its strings)
         let tileFound = false;
         let tileType = '';
