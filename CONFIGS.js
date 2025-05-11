@@ -73,7 +73,7 @@ Your goals are twofold: progress through the game and become champion by defeati
 Always choose the action that moves you closer to your current objective based on the available paths described (primarily using collision data and warp information).
 
 You should ALWAYS trust information you are given in the following hierarchy:
-Game RAM data > Viewer messages > Screenshots > Your own past messages.
+Viewer messages > Game RAM data > Screenshots > Your own past messages.
 When the screenshots conflict with the game RAM data, ignore the screenshots.
 
 If you haven't made progress since the last turn (ESPECIALLY if your coordinates this turn are the same as the last for several turns), reconsider your approach and double-check the information you've been given to see where you may have gone wrong.

@@ -3,8 +3,12 @@
 // Also Gemini 2.5 pro's comments on the lines weren't there originally, they're kinda cute, but hopefully none of them are wrong...
 // If you see this, feel free to make a pull request making some of the map names clearer
 const MAP_NAMES = `
-// gMapGroup_None
-#define MAP_NONE (0 | (0 << 8))
+// gMapGroup_Link
+#define MAP_BATTLE_COLOSSEUM_2P (0 | (0 << 8))
+#define MAP_TRADE_CENTER        (1 | (0 << 8))
+#define MAP_RECORD_CORNER       (2 | (0 << 8))
+#define MAP_BATTLE_COLOSSEUM_4P (3 | (0 << 8))
+#define MAP_UNION_ROOM          (4 | (0 << 8))
 
 // gMapGroup_Dungeons
 #define MAP_VIRIDIAN_FOREST                  (0 | (1 << 8))

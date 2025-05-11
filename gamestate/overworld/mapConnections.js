@@ -8,9 +8,16 @@ import * as CONSTANTS from "../constant/constants.js";
  * It retrieves the list of connections from the current map to adjacent maps,
  * including the direction of the connection and the name of the connected map.
  *
+ * For connections read from memory, an `offset` property is also included.
+ * This `offset` (a signed integer) represents:
+ *   - For "up" or "down" connections: The X-coordinate shift of the connected map relative to the current map.
+ *     A positive value means the connected map's origin is to the right of the current map's origin.
+ *   - For "left" or "right" connections: The Y-coordinate shift of the connected map relative to the current map.
+ *     A positive value means the connected map's origin is below the current map's origin.
+ * Placeholder connections (where `mapName` is "MAP_NONE") will not have the `offset` property.
+ *
  * @async
- * @returns {Promise<Array<{direction: string, mapName: string}>>} A promise that resolves to an array of connection objects.
- * Each object has a `direction` (e.g., "up", "down", "left", "right") and a `mapName` (e.g., "PALLET TOWN").
+ * @returns {Promise<Array<{direction: string, mapName: string, offset?: number}>>} A promise that resolves to an array of connection objects.
  * Returns an empty array if no connections are found, if pointers are invalid, or if an error occurs during memory reading.
  */
 export async function getCurrentMapConnections() {
@@ -61,11 +68,19 @@ export async function getCurrentMapConnections() {
             const mapGroup = await readUint8(currentConnectionBaseAddr + CONSTANTS.MAP_CONNECTION_MAP_GROUP_OFFSET);
             const mapNum = await readUint8(currentConnectionBaseAddr + CONSTANTS.MAP_CONNECTION_MAP_NUM_OFFSET);
             const mapName = getMapName(mapGroup, mapNum);
-            
+
+            // Read the offset (s32)
+            const offsetRaw = await readUint32(currentConnectionBaseAddr + CONSTANTS.MAP_CONNECTION_OFFSET_OFFSET);
+            // Convert uint32 to int32
+            let offset = offsetRaw;
+            if (offsetRaw > 0x7FFFFFFF) { // Max positive s32 (2,147,483,647)
+                offset = offsetRaw - 0x100000000; // 2^32 (4,294,967,296)
+            }
+
             actualConnections.push({
                 direction: direction,
-                mapName: mapName
-                // The 'offset' field (MAP_CONNECTION_OFFSET_OFFSET) is ignored as per the request.
+                mapName: mapName,
+                offset: offset
             });
         }
     } catch (error) {

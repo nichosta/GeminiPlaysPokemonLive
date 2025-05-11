@@ -94,6 +94,10 @@ export const MAP_OFFSET = 7;
 // export const BACKUP_MAP_LAYOUT_HEIGHT_OFFSET = selectedConstants.BACKUP_MAP_LAYOUT_HEIGHT_OFFSET;
 // export const BACKUP_MAP_DATA_ADDR = selectedConstants.BACKUP_MAP_DATA_ADDR;
 
+// All Map Headers
+export const ALL_MAP_HEADERS_LIST_ADDR = selectedConstants.ALL_MAP_HEADERS_LIST_ADDR; // Pointer to pointer array, organized as [mapGroup][mapNum]
+export const MAP_GROUP_COUNT = selectedConstants.MAP_GROUP_COUNT; // Array of map counts per group
+
 // Current Map Header & Layout
 export const CURRENT_MAP_HEADER_ADDR = selectedConstants.CURRENT_MAP_HEADER_ADDR;
 export const MAP_HEADER_MAP_LAYOUT_OFFSET = 0x00; // Offset to pointer to current map layout structure (struct MapLayout *)
