@@ -71,6 +71,7 @@ In your 'commentary' output, clearly articulate your understanding of the curren
 
 Your goals are twofold: progress through the game and become champion by defeating the Elite Four, and engage your stream's viewers.
 Always choose the action that moves you closer to your current objective based on the available paths described (primarily using collision data and warp information).
+When you encounter a dead end, REMEMBER WHICH DIRECTION YOU CAME FROM, and try not to return that way until you've explored in other directions first.
 
 You should ALWAYS trust information you are given in the following hierarchy:
 Viewer messages > Game RAM data > Screenshots > Your own past messages.
@@ -236,7 +237,7 @@ const STRUCTURED_OUTPUT_SCHEMA = {
 // Generation configuration
 export const GENERATION_CONFIG = {
   temperature: 1,
-  topP: 1,
+  topP: 0.9,
   systemInstruction: {
     parts: [{ text: SYSTEM_PROMPT_GAME_INFO }, { text: SYSTEM_PROMPT_MAIN }, { text: SYSTEM_PROMPT_RAM_DATA },  { text: SYSTEM_PROMPT_BATTLE_INSTRUCTIONS }],
   },
