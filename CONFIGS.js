@@ -104,6 +104,7 @@ The contents of the five pouches of your inventory.
 // Battle system prompt, involving instructions for battling.
 const SYSTEM_PROMPT_BATTLE_INSTRUCTIONS = `
 In battle, you should remember the following details:
+Press B to cancel any operation or back out of any menu except for the main battle menu
 The main battle menu is laid out in a 2x2 grid:
 FIGHT BAG\n
 POKEMON RUN
@@ -116,7 +117,21 @@ and requires the same movement (down) to reach the lower row.
 In a double battle, after pressing A on a selected move, you must then confirm which enemy Pokemon to attack (unless the move is a spread move).
 This requires pressing A once again if you want to target the enemy Pokemon on the right, or pressing left and then A if you want to target the enemy Pokemon on the left.
 Note that if the enemy is currently only fielding one Pokemon (if the other has fainted), you should just press A immediately after selecting the move to target it.
-You are told the currently selected party member slot, if the party pokemon selction menu is open (not to be confused with the main battle interface, the party selection menu is what appears when you select "Pokemon" in the main battle interface). The left column of the party menu has slot 0 (or 0 and 1 if in a double battle), which are the active Pokemon. The right column has the other slots. Note that the slot order does not necessarily match up to the party order if you have switched party members already during the battle!
+You are told the currently selected party member slot, if the party pokemon selction menu is open (not to be confused with the main battle interface, the party selection menu is what appears when you select "Pokemon" in the main battle interface).
+The party menu is laid out in a 5x2 grid (in a single battle):
+[PKMN 1]  [PKMN 2]
+[]        [PKMN 3] 
+[]        [PKMN 4]
+[]        [PKMN 5]
+[]        [PKMN 6]
+In a Double Battle, it is laid out in a 4x2 grid like this:
+[PKMN 1]  [PKMN 3] 
+[PKMN 2]  [PKMN 4] 
+[]        [PKMN 5]
+[]        [PKMN 6]
+The left column of the party menu has slot 0 (or 0 and 1 if in a double battle), which are the active Pokemon. The right column has the other slots.
+When a slot in the left column is selected, press right to select the right column, and vice versa.
+DO NOT UNDER ANY CIRCUMSTANCES ATTEMPT TO PRIORITIZE THE SCREENSHOT WHILE IN THE PARTY MENU WHEN ATTEMPTING TO DETERMINE WHICH POKEMON IS SELECTED. IF YOU IGNORE THE RAM DATA YOU WILL START LOOPING. ONLY USE THE SCREENSHOT TO READ TEXT BOXES AND DETERMINE IF THE MENU IS IN FACT ONSCREEN.
 `
 
 // Prompt used by summary Gemini for summarization
