@@ -169,7 +169,7 @@ async function runGameLoop() {
 
             // Parse the image data URI (use grid version if outside battle + textbox and game started, else use nongrid)
             let imageParts;
-            if ((mapBank === 0 && mapNum === 0) || inBattle || inMsgbox) {
+            if ((mapBank === 0 && mapNum === 0) || inBattle || fieldControlsLocked) {
                 imageParts = parseDataURI(currentImageBase64URI);
             } else {
                 imageParts = parseDataURI(currentImageBase64URIProcessed);
