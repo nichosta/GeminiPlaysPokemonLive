@@ -117,6 +117,7 @@ and requires the same movement (down) to reach the lower row.
 In a double battle, after pressing A on a selected move, you must then confirm which enemy Pokemon to attack (unless the move is a spread move).
 This requires pressing A once again if you want to target the enemy Pokemon on the right, or pressing left and then A if you want to target the enemy Pokemon on the left.
 Note that if the enemy is currently only fielding one Pokemon (if the other has fainted), you should just press A immediately after selecting the move to target it.
+After defeating an opponent, the option to switch is presented. Use this if your current Pokemon is low or has had a stat dropped; otherwise, you should press B to automatically select NO.
 You are told the currently selected party member slot, if the party pokemon selction menu is open (not to be confused with the main battle interface, the party selection menu is what appears when you select "Pokemon" in the main battle interface).
 The party menu is laid out in a 5x2 grid (in a single battle):
 [PKMN 1]  [PKMN 2]
