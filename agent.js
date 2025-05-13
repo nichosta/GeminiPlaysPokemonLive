@@ -4,7 +4,7 @@ import { isInBattle } from "./gamestate/pokemonData.js";
 import * as CONFIGS from "./CONFIGS.js";
 import { readAndClearFile } from "./readInputFile.js";
 import { getVisibleMapStateJson } from "./gamestate/overworld/mapData.js";
-import { getCurrentMapBank, getCurrentMapNumber } from "./gamestate/overworld/playerData.js";
+import { areFieldControlsLocked, getCurrentMapBank, getCurrentMapNumber } from "./gamestate/overworld/playerData.js";
 import { isFieldMessageBoxActive, isScriptPtrSet } from "./gamestate/textReader.js";
 
 // Imports for refactored functions
@@ -164,7 +164,7 @@ async function runGameLoop() {
             let mapBank = await getCurrentMapBank();
             let mapNum = await getCurrentMapNumber();
             let inBattle = await isInBattle();
-            let inMsgbox = await isScriptPtrSet();
+            let fieldControlsLocked = await areFieldControlsLocked();
             const { original: currentImageBase64URI, processed: currentImageBase64URIProcessed } = await getGameImagesBase64(); // Get full data URI
 
             // Parse the image data URI (use grid version if outside battle + textbox and game started, else use nongrid)

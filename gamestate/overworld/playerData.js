@@ -29,16 +29,16 @@ export async function getPlayerFacingDirection() {
 
 /**
  * Gets the base address of the player/camera object structure in EWRAM.
- * Reads the pointer stored at PLAYER_OBJECT_POINTER_ADDR.
+ * Reads the pointer stored at SAVESTATE_OBJECT_POINTER_ADDR.
  * @returns {Promise<number>} The base address (pointer value).
  */
 async function getPlayerObjectBaseAddress() {
-    return await readUint32(CONSTANTS.PLAYER_OBJECT_POINTER_ADDR);
+    return await readUint32(CONSTANTS.SAVESTATE_OBJECT_POINTER_ADDR);
 }
 
 /**
  * Gets the player's current X coordinate (in tile units).
- * Reads the pointer at PLAYER_OBJECT_POINTER_ADDR and adds the offset.
+ * Reads the pointer at SAVESTATE_OBJECT_POINTER_ADDR and adds the offset.
  * @returns {Promise<number>} The player's X coordinate.
  */
 export async function getPlayerX() {
@@ -49,7 +49,7 @@ export async function getPlayerX() {
 
 /**
  * Gets the player's current Y coordinate (in tile units).
- * Reads the pointer at PLAYER_OBJECT_POINTER_ADDR and adds the offset.
+ * Reads the pointer at SAVESTATE_OBJECT_POINTER_ADDR and adds the offset.
  * @returns {Promise<number>} The player's Y coordinate.
  */
 export async function getPlayerY() {
@@ -76,4 +76,15 @@ export async function getPlayerPosition() {
 export async function isPlayerSurfing() {
     const playerAvatarFlags = await readUint8(CONSTANTS.PLAYER_AVATAR_ADDR + CONSTANTS.PLAYER_AVATAR_FLAGS_OFFSET);
     return (playerAvatarFlags & CONSTANTS.PLAYER_AVATAR_FLAG_SURFING) !== 0;
+}
+
+// Check if player field controls are locked
+/**
+ * Checks if the player's field controls are currently locked.
+ * @returns {Promise<boolean>} True if controls are locked, false otherwise.
+ */
+export async function areFieldControlsLocked() {
+    // If the value at the address is non-zero, controls are locked.
+    const lockValue = await readUint8(CONSTANTS.SCRIPT_LOCK_FIELD_CONTROLS);
+    return lockValue !== 0;
 }

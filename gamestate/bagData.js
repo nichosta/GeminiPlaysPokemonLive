@@ -216,8 +216,8 @@ export function prettyPrintBag(bagContents) {
  */
 export async function getPlayerMoney() {
     try {
-        // 1. Read the base pointer from PLAYER_OBJECT_POINTER_ADDR
-        const basePointer = await readUint32(CONSTANTS.PLAYER_OBJECT_POINTER_ADDR);
+        // 1. Read the base pointer from SAVESTATE_OBJECT_POINTER_ADDR
+        const basePointer = await readUint32(CONSTANTS.SAVESTATE_OBJECT_POINTER_ADDR);
         if (basePointer === 0) {
             throw new Error("Player object base pointer is null.");
         }

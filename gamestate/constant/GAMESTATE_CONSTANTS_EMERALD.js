@@ -20,8 +20,8 @@ export const POCKET_NAMES = [
   "Key Items",
 ];
 
-// --- Player Object ---
-export const PLAYER_OBJECT_POINTER_ADDR = 0x03005d8c; // Address of pointer to player object structure in IWRAM
+// --- Savestate Object ---
+export const SAVESTATE_OBJECT_POINTER = 0x03005d8c; // Address of pointer to savetate 1 object structure in IWRAM
 
 // --- Player Avatar ---
 export const PLAYER_AVATAR_ADDR = 0x02037590; // Address of gPlayerAvatar struct
@@ -34,6 +34,7 @@ export const PARTY_BASE_ADDR = 0x020244ec; // Base address for party Pokémon da
 // There's probably horrific issues this is going to cause down the line, but I noticed this pointer only seems to be set
 // when there's an overworld text box open, so...
 export const SCRIPT_CONTEXT_ADDRESS = 0x03000e40; // Pointer to the sGlobalScriptContext object with script state
+export const SCRIPT_LOCK_FIELD_CONTROLS = 0x03000F2C // Address of sLockFieldControls (does what it saids)
 
 // --- Field Message Box ---
 export const FIELD_MESSAGE_BOX_ADDR = 0x020375bc; // Address of the sFieldMessageBoxMode byte in Emerald

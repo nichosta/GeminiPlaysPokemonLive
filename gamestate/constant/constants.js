@@ -22,13 +22,13 @@ if (gameVersion === 'EMERALD') {
 }
 
 // --- Player Object ---
-export const PLAYER_OBJECT_POINTER_ADDR = selectedConstants.PLAYER_OBJECT_POINTER_ADDR;
+export const SAVESTATE_OBJECT_POINTER_ADDR = selectedConstants.SAVESTATE_OBJECT_POINTER;
 export const PLAYER_X_OFFSET = 0x000; // Offset to player X coordinate (u16) within player object
 export const PLAYER_Y_OFFSET = 0x002; // Offset to player Y coordinate (u16) within player object
 export const MONEY_OFFSET = 0x490; // Offset to player money (u32) within player object
 
 // --- Player Avatar ---
-export const PLAYER_AVATAR_ADDR = selectedConstants.PLAYER_AVATAR_ADDR;
+export const PLAYER_AVATAR_ADDR = selectedConstants.PLAYER_AVATAR_ADDR; // Address of gPlayerAvatar struct
 export const PLAYER_AVATAR_FLAGS_OFFSET = 0x00; // Offset to player avatar flags (u8)
 export const PLAYER_AVATAR_FLAG_SURFING = 1 << 3; // Mask on player flags to determine if player is surfing
 
@@ -75,6 +75,7 @@ export const SPECIES_NONE = 0; // The species ID representing an empty slot
 // Script Context
 export const SCRIPT_CONTEXT_ADDRESS = selectedConstants.SCRIPT_CONTEXT_ADDRESS;
 export const SCRIPT_CONTEXT_POINTER_OFFSET = 0x08;      // Offset from start of sGlobalScriptContext to pointer to scriptPtr
+export const SCRIPT_LOCK_FIELD_CONTROLS = selectedConstants.SCRIPT_LOCK_FIELD_CONTROLS; // Address of sLockFieldControls (does what it saids)
 
 // Field message box
 export const FIELD_MESSAGE_BOX_ADDR = selectedConstants.FIELD_MESSAGE_BOX_ADDR;
@@ -142,6 +143,7 @@ export const WARP_EVENT_MAP_GROUP_OFFSET = 0x07; // Offset to destination map gr
 
 // Live Object Events
 export const OBJECT_EVENTS_ADDR = selectedConstants.OBJECT_EVENTS_ADDR;
+export const OBJECT_EVENTS_PLAYER_INDEX = 0; // Index of the player avatar's ObjectEvent struct
 export const OBJECT_EVENT_COUNT = 16;         // Number of objects to read (Player + 15 NPCs)
 export const OBJECT_EVENT_SIZE = 0x24;          // Size of one ObjectEvent struct (0x24 bytes)
 

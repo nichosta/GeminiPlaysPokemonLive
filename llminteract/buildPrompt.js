@@ -3,6 +3,7 @@ import { getPartyCount, getPokemonData, isInBattle } from "../gamestate/pokemonD
 import { getBagContents, prettyPrintBag, getPlayerMoney } from "../gamestate/bagData.js";
 import { isScriptPtrSet } from "../gamestate/textReader.js";
 import { getPartyMenuSlotId } from "../gamestate/menustate/partyMenu.js";
+import { areFieldControlsLocked } from "../gamestate/overworld/playerData.js";
 
 /**
  * @description Formats the data for a single Pokemon into a readable string.
@@ -44,7 +45,8 @@ export async function getGameInfoText(visibleMapState) {
 
     let mapStateJSON = visibleMapState; // Use the passed visibleMapState
     let inBattleStatus = await isInBattle(); // Renamed to avoid conflict with import
-    let overworldTextboxOpen = await isScriptPtrSet();
+    // let overworldTextboxOpen = await isScriptPtrSet();
+    let fieldControlsLocked = await areFieldControlsLocked();
     let playerMoney = await getPlayerMoney();
     let partyMenuSlot = await getPartyMenuSlotId();
 
@@ -52,7 +54,7 @@ export async function getGameInfoText(visibleMapState) {
       Map Data:\n${mapStateJSON ? JSON.stringify(mapStateJSON) : "Error: Map data unavailable."}
       In Battle: ${inBattleStatus ? "Yes" : "No"}
       ${partyMenuSlot === 7 ? "" : `Party Menu Slot: ${partyMenuSlot} (${(await getPokemonData(partyMenuSlot)).nickname})`}
-      ${inBattleStatus ? "" : `Overworld Textbox Onscreen: ${overworldTextboxOpen ? "Yes" : "No"}`}
+      ${inBattleStatus ? "" : `Overworld Controls Locked: ${fieldControlsLocked ? "Yes" : "No"}`}
       Party Count: ${partyCount}
       Pokemon:\n        ${pokemonInfo.length > 0 ? pokemonInfo.join("\n") : "No available pokemon"}
       Money: ${playerMoney}
