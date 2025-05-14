@@ -1,7 +1,6 @@
 // Imports from other files
 import { getPartyCount, getPokemonData, isInBattle } from "../gamestate/pokemonData.js";
 import { getBagContents, prettyPrintBag, getPlayerMoney } from "../gamestate/bagData.js";
-import { isScriptPtrSet } from "../gamestate/textReader.js";
 import { getPartyMenuSlotId } from "../gamestate/menustate/partyMenu.js";
 import { areFieldControlsLocked } from "../gamestate/overworld/playerData.js";
 
@@ -45,7 +44,6 @@ export async function getGameInfoText(visibleMapState) {
 
     let mapStateJSON = visibleMapState; // Use the passed visibleMapState
     let inBattleStatus = await isInBattle(); // Renamed to avoid conflict with import
-    // let overworldTextboxOpen = await isScriptPtrSet();
     let fieldControlsLocked = await areFieldControlsLocked();
     let playerMoney = await getPlayerMoney();
     let partyMenuSlot = await getPartyMenuSlotId();

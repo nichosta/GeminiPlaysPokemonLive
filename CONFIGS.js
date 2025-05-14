@@ -96,7 +96,7 @@ A JSON object containing data about the currently onscreen part of the map, incl
 \tOnscreen overworld connections to other maps. You can use these by simply walking in the direction indicated off the edge of the map from a passable tile. If a connection is not listed when the edge is visible, you will be unable to walk off the edge of the map.
 \tOnscreen NPCs, marked with a ! in the tile data and with their sprite names noted. Some NPCs are marked "wandering", meaning they move between turns. If you wish to interact with these, consider using your "stunNPC" tool to freeze them until they are talked to. This list of NPCs is complete, if you believe you see an NPC not listed then you are mistaken.
 Whether or not you are currently in the battle screen. This includes the time after an opponent is defeated but before you have returned to the overworld (the post battle defeat screen and text). You cannot move in the overworld as long as this value is true.
-Whether or not your overworld movement is locked. If this flag is set, you cannot move around in the overworld, and most likely need to finish a conversation or close a menu. If you are stuck looping and this flag is set, press B several turns in a row and you should be able to move again.
+Whether or not your overworld movement is locked. If this flag is set, you cannot move around in the overworld, and most likely need to finish a conversation or close a menu. If you are stuck looping and this flag is set, press B several turns in a row and you should be able to move again. If this flag is set, you can be VERY SURE there is no textbox onscreen.
 General information about your current Pokemon party.
 The contents of the five pouches of your inventory.
 (More information may be provided in the future; if there is anything you feel is important, feel free to request it to the developer.) 
@@ -119,7 +119,7 @@ In a double battle, after pressing A on a selected move, you must then confirm w
 This requires pressing A once again if you want to target the enemy Pokemon on the right, or pressing left and then A if you want to target the enemy Pokemon on the left.
 Note that if the enemy is currently only fielding one Pokemon (if the other has fainted), you should just press A immediately after selecting the move to target it.
 After defeating an opponent, the option to switch is presented. Use this if your current Pokemon is low or has had a stat dropped; otherwise, you should press B to automatically select NO.
-You are told the currently selected party member slot, if the party pokemon selction menu is open (not to be confused with the main battle interface, the party selection menu is what appears when you select "Pokemon" in the main battle interface).
+You are told the currently selected party member slot, if the party pokemon selction menu is open (not to be confused with the main battle interface, the party selection menu is what appears when you select "Pokemon" in the main battle interface). Ignore this value if the party selection menu is not open (use the screenshot).
 The party menu is laid out in a 5x2 grid (in a single battle):
 [PKMN 1]  [PKMN 2]
 []        [PKMN 3] 
@@ -230,6 +230,21 @@ const STRUCTURED_OUTPUT_SCHEMA = {
       type: "string",
       description:
         "Errors and potential hallucinations that are leading to looping or impeding progress. Think long and hard about what might be stopping you! If you aren't stuck looping or failing to progress, put N/A here.",
+    },
+    goalLongTerm: {
+      type: "string",
+      description:
+        "Your current long-term goal. Should be something you expect to take 100-500 turns to complete. For example, 'Explore [CITY NAME] and defeat [GYM LEADER],' or 'Catch new Pokemon and train my team for the upcoming rival battle with [RIVAL].'",
+    },
+    goalMidTerm: {
+      type: "string",
+      description:
+        "Your current mid-term goal. Should be something you expect to take 25-50 turns to complete. For example, 'Explore the west side of [CITY NAME] and make note of any warps', or 'Advance through [ROUTE NAME], defeating the [TRAINER TYPE] at the chokepoint.'",
+    },
+    goalShortTerm: {
+      type: "string",
+      description:
+        "Your current short-term goal. Should be something you expect to take 5-10 turns to complete. For example, 'Navigate around the blocked tiles to reach the Pokemon Center', or 'Continue moving east to transition to [NEXT MAP].'",
     },
     // Define the structure for the function call itself
     functionCall: {

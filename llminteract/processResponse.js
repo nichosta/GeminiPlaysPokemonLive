@@ -17,6 +17,10 @@ export async function processLLMResponse(llmResponse, currentMapState) {
     const responseText = llmResponse?.commentary;
     const navigationPath = llmResponse?.navigation; // Array of {x,y}
     const mistakeText = llmResponse?.mistakes;
+    const longTermGoal = llmResponse?.longTermGoal;
+    const midTermGoal = llmResponse?.midTermGoal;
+    const shortTermGoal = llmResponse?.shortTermGoal;
+    
 
     console.log(`LLM Thoughts:\n${responseText ?? "N/A"}`);
 
@@ -44,7 +48,11 @@ export async function processLLMResponse(llmResponse, currentMapState) {
     } else {
         console.log("LLM Proposed Navigation: N/A");
     }
+
     console.log(`LLM Mistakes:\n${mistakeText ?? "N/A"}`);
+    console.log(`LLM Long Term Goal:\n${longTermGoal ?? "N/A"}`);
+    console.log(`LLM Mid Term Goal:\n${midTermGoal ?? "N/A"}`);
+    console.log(`LLM Short Term Goal:\n${shortTermGoal ?? "N/A"}`);
 
     try {
         if (llmResponse.functionCall == null) {

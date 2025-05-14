@@ -89,11 +89,11 @@ export const BYTES_PER_TILE = 2; // 2 bytes per tile object
 // --- Map Coordinate offset (used for Object Event coordinates) ---
 export const MAP_OFFSET = 7;
 
-// Backup Map Layout (Currently hibernating)
-// export const BACKUP_MAP_LAYOUT_ADDR = selectedConstants.BACKUP_MAP_LAYOUT_ADDR;
-// export const BACKUP_MAP_LAYOUT_WIDTH_OFFSET = selectedConstants.BACKUP_MAP_LAYOUT_WIDTH_OFFSET;
-// export const BACKUP_MAP_LAYOUT_HEIGHT_OFFSET = selectedConstants.BACKUP_MAP_LAYOUT_HEIGHT_OFFSET;
-// export const BACKUP_MAP_DATA_ADDR = selectedConstants.BACKUP_MAP_DATA_ADDR;
+// Backup Map Layout
+export const BACKUP_MAP_LAYOUT_ADDR = selectedConstants.BACKUP_MAP_LAYOUT_ADDR; // Address of the gBackupMapLayout object (VMap in FRLG)
+export const BACKUP_MAP_LAYOUT_WIDTH_OFFSET = 0x00; // Offset to backup map layout width (s32)
+export const BACKUP_MAP_LAYOUT_HEIGHT_OFFSET = 0x04; // Offset to backup map layout height (s32)
+export const BACKUP_MAP_DATA_ADDR = 0x08; // Offset to pointer to backup map layout data (*u16)
 
 // All Map Headers
 export const ALL_MAP_HEADERS_LIST_ADDR = selectedConstants.ALL_MAP_HEADERS_LIST_ADDR; // Pointer to pointer array, organized as [mapGroup][mapNum]

@@ -81,7 +81,7 @@ async function readMetatileBehaviorsFromTileset(tilesetBaseAddress, numMetatiles
  * @returns {Promise<number[]|null>} A combined array of metatile behavior bytes, or null on critical error.
  *                                    Returns an empty array if no behaviors could be processed (e.g., no tilesets).
  */
-export async function getAllMetatileBehaviors() {
+export async function getMainMapMetatileBehaviors() {
     try {
         const mapLayoutBaseAddress = await getMainMapLayoutBaseAddress();
         if (!mapLayoutBaseAddress) {
@@ -111,6 +111,47 @@ export async function getAllMetatileBehaviors() {
         return allBehaviors;
     } catch (error) {
         console.error("Critical error in getAllMetatileBehaviors:", error);
+        return null;
+    }
+}
+
+/**
+ * Fetches all metatile behaviors for the backup map's primary and secondary tilesets.
+ * The structure and logic mirror `getMainMapMetatileBehaviors`.
+ * It uses `CONSTANTS.BACKUP_MAP_LAYOUT_ADDR` as the base for the backup map's layout structure.
+ * @returns {Promise<number[]|null>} A combined array of metatile behavior bytes, or null on critical error.
+ *                                    Returns an empty array if no behaviors could be processed (e.g., no tilesets).
+ */
+export async function getBackupMapMetatileBehaviors() {
+    try {
+        // The backup map layout address is a direct constant
+        const mapLayoutBaseAddress = CONSTANTS.BACKUP_MAP_LAYOUT_ADDR;
+        if (!mapLayoutBaseAddress) {
+            // This case should ideally not happen if constants are correctly defined
+            console.error("getBackupMapMetatileBehaviors: BACKUP_MAP_LAYOUT_ADDR is not defined or zero.");
+            return null;
+        }
+
+        const { primaryTilesetAddress, secondaryTilesetAddress } = await getTilesetPointers(mapLayoutBaseAddress);
+
+        let allBehaviors = [];
+
+        if (primaryTilesetAddress) {
+            const primaryBehaviors = await readMetatileBehaviorsFromTileset(primaryTilesetAddress, CONSTANTS.PRIMARY_TILESET_METATILE_COUNT);
+            if (primaryBehaviors) {
+                allBehaviors = allBehaviors.concat(primaryBehaviors);
+            }
+        }
+
+        if (secondaryTilesetAddress) {
+            const secondaryBehaviors = await readMetatileBehaviorsFromTileset(secondaryTilesetAddress, CONSTANTS.PRIMARY_TILESET_METATILE_COUNT);
+            if (secondaryBehaviors) {
+                allBehaviors = allBehaviors.concat(secondaryBehaviors);
+            }
+        }
+        return allBehaviors;
+    } catch (error) {
+        console.error("Critical error in getBackupMapMetatileBehaviors:", error);
         return null;
     }
 }

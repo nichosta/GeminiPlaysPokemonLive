@@ -6,7 +6,7 @@ import { getCurrentMapBank, getCurrentMapNumber, getPlayerFacingDirection, getPl
 import { getCurrentMapNpcs, getCurrentMapWarps } from "./mapEvents.js";
 import { getMainMapHeight, getMainMapMetatileIds, getMainMapTiles, getMainMapWidth } from "./mapLayouts.js";
 import { getCurrentMapConnections } from "./mapConnections.js";
-import { getAllMetatileBehaviors } from "./mapMetatiles.js";
+import { getMainMapMetatileBehaviors } from "./mapMetatiles.js";
 import { getMetatileBehaviorName, WATER_TILES, LEDGE_DIRECTIONS } from "../../constant/metatile_behaviors_map.js";
 
 // --- Constants ---
@@ -185,7 +185,7 @@ export async function getMapStateJson() {
         const mapWidth = await getMainMapWidth();
         const mapHeight = await getMainMapHeight();
         const mapConnections = await getCurrentMapConnections();
-        const allMetatileBehaviors = await getAllMetatileBehaviors();
+        const allMetatileBehaviors = await getMainMapMetatileBehaviors();
 
         const mapName = getMapName(mapBank, mapNumber);
 

@@ -39,6 +39,9 @@ export const SCRIPT_LOCK_FIELD_CONTROLS = 0x03000F9C // Address of sLockFieldCon
 // --- Message Box Type ---
 export const FIELD_MESSAGE_BOX_ADDR = 0x0203709c; // Address of sMessageBoxType byte
 
+// --- Backup Map Layout ---
+export const BACKUP_MAP_LAYOUT_ADDR = 0x03005040; // Called VMap in FRLG
+
 // --- All Map Headers ---
 export const ALL_MAP_HEADERS_LIST_ADDR = 0x083526a8; // Address of the gMapGroups list of pointers to map headers
 export const MAP_GROUP_COUNT = [

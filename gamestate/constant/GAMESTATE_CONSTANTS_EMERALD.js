@@ -37,7 +37,10 @@ export const SCRIPT_CONTEXT_ADDRESS = 0x03000e40; // Pointer to the sGlobalScrip
 export const SCRIPT_LOCK_FIELD_CONTROLS = 0x03000F2C // Address of sLockFieldControls (does what it saids)
 
 // --- Field Message Box ---
-export const FIELD_MESSAGE_BOX_ADDR = 0x020375bc; // Address of the sFieldMessageBoxMode byte in Emerald
+export const FIELD_MESSAGE_BOX_ADDR = 0x020375BC; // Address of the sFieldMessageBoxMode byte in Emerald
+
+// --- Backup Map Layout ---
+export const BACKUP_MAP_LAYOUT_ADDR = 0x03005DC0;
 
 // --- All Map Headers ---
 export const ALL_MAP_HEADERS_LIST_ADDR = 0x08486578;
