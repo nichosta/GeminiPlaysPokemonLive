@@ -3,22 +3,22 @@ import * as FRLG_CONSTANTS from './GAMESTATE_CONSTANTS_FRLG.js';
 import * as EMERALD_CONSTANTS from './GAMESTATE_CONSTANTS_EMERALD.js';
 
 // Determine the game version from an environment variable
-// Default to FRLG if not specified or invalid
-const gameVersion = process.env.POKEMON_GAME_VERSION?.toUpperCase() || 'FRLG';
+// Default to EMERALD if not specified or invalid
+const gameVersion = process.env.POKEMON_GAME_VERSION?.toUpperCase() || 'EMERALD';
 
 let selectedConstants;
 
-if (gameVersion === 'EMERALD') {
-    console.log("Using Emerald gamestate constants.");
-    selectedConstants = EMERALD_CONSTANTS;
-} else {
-    // Default to FRLG for any other value or if undefined
-    if (gameVersion !== 'FRLG') {
-        console.warn(`Unknown POKEMON_GAME_VERSION "${process.env.POKEMON_GAME_VERSION}". Defaulting to FRLG constants.`);
-    } else {
-         console.log("Using FRLG gamestate constants.");
-    }
+if (gameVersion === 'FRLG') {
+    console.log("Using FRLG gamestate constants.");
     selectedConstants = FRLG_CONSTANTS;
+} else {
+    // Default to EMERALD for any other value or if undefined
+    if (gameVersion !== 'EMERALD') {
+        console.warn(`Unknown POKEMON_GAME_VERSION "${process.env.POKEMON_GAME_VERSION}". Defaulting to EMERALD constants.`);
+    } else {
+         console.log("Using EMERALD gamestate constants.");
+    }
+    selectedConstants = EMERALD_CONSTANTS;
 }
 
 // --- Player Object ---

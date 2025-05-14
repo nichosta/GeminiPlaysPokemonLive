@@ -8,6 +8,8 @@ Unique to this project is that additional outside information is added to the pr
 
 !! This project DOES NOT support Ruby/Sapphire, only FRLG/Emerald!
 
+Update May 13: This project is now mostly focused on Emerald development; FRLG implementation is likely to have bugs due to lack of testing. Please create issues in the repository if you are using the FRLG version and notice inconsistencies.
+
 ## Dependencies
 
 GeminiPlaysPokemonLive has the following dependencies:
@@ -25,7 +27,7 @@ To run the agent, you will need to:
 3.  Start the mGBA-http server and script on the emulator [see here for details](https://github.com/nikouu/mGBA-http?tab=readme-ov-file#quick-start-guide)
 4.  Run `node twitchbot.js`.
 5.  In a separate terminal, set the `GOOGLE_API_KEY` environment variable to your Google AI API key
-6.  In the same terminal, set the `POKEMON_GAME_VERSION` environment variable to either `FRLG` or `EMERALD` (defaults to `FRLG`).
+6.  In the same terminal, set the `POKEMON_GAME_VERSION` environment variable to either `FRLG` or `EMERALD` (defaults to `EMERALD`).
 6.  Run `node agent.js`.
 
 The agent should now run, and you can watch its thoughts in your terminal and its actions in the emulator. If you want to give it advice manually without a twitch channel, enter text in `twitch_chat.txt` and save; on the next iteration, it will receive it.

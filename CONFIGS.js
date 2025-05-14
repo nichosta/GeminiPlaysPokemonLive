@@ -58,7 +58,7 @@ Your task is to play through the game Pokémon Emerald Version with the ultimate
 `
 
 // Select info prompt based on game version
-const SYSTEM_PROMPT_GAME_INFO = process.env.POKEMON_GAME_VERSION?.toUpperCase() === 'EMERALD' ? SYSTEM_PROMPT_EMERALD_INFORMATION : SYSTEM_PROMPT_FRLG_INFORMATION;
+const SYSTEM_PROMPT_GAME_INFO = process.env.POKEMON_GAME_VERSION?.toUpperCase() === 'FRLG' ? SYSTEM_PROMPT_FRLG_INFORMATION : SYSTEM_PROMPT_EMERALD_INFORMATION;
 
 // Main system prompt, very important
 // This heavily influences behavior and personality, so test any change exhaustively

@@ -3,24 +3,23 @@ import { getEventObjectName as getEventObjectNameFRLG } from './event_object_map
 import { getEventObjectName as getEventObjectNameEmerald } from './event_object_map_emerald.js';
 
 // Determine the game version from an environment variable
-// Default to FRLG if not specified or invalid
-const gameVersion = process.env.POKEMON_GAME_VERSION?.toUpperCase() || 'FRLG';
+// Default to EMERALD if not specified or invalid
+const gameVersion = process.env.POKEMON_GAME_VERSION?.toUpperCase() || 'EMERALD';
 
 let selectedGetEventObjectName;
 
-if (gameVersion === 'EMERALD') {
-    console.log("Using Emerald event object name definitions.");
-    selectedGetEventObjectName = getEventObjectNameEmerald;
-} else {
-    // Default to FRLG for any other value or if undefined
-    if (gameVersion !== 'FRLG') {
-        console.warn(`Unknown POKEMON_GAME_VERSION "${process.env.POKEMON_GAME_VERSION}". Defaulting to FRLG event object name definitions.`);
-    } else {
-         console.log("Using FRLG event object name definitions.");
-    }
+if (gameVersion === 'FRLG') {
+    console.log("Using FRLG gamestate constants.");
     selectedGetEventObjectName = getEventObjectNameFRLG;
+} else {
+    // Default to EMERALD for any other value or if undefined
+    if (gameVersion !== 'EMERALD') {
+        console.warn(`Unknown POKEMON_GAME_VERSION "${process.env.POKEMON_GAME_VERSION}". Defaulting to EMERALD constants.`);
+    } else {
+         console.log("Using EMERALD gamestate constants.");
+    }
+    selectedGetEventObjectName = getEventObjectNameEmerald;
 }
 
 // Re-export the selected function
 export const getEventObjectName = selectedGetEventObjectName;
-export const ACTIVE_GAME_VERSION = gameVersion; // Optionally export the version
