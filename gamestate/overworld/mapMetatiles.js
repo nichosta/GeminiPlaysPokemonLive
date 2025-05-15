@@ -132,7 +132,15 @@ export async function getBackupMapMetatileBehaviors() {
             return null;
         }
 
-        const { primaryTilesetAddress, secondaryTilesetAddress } = await getTilesetPointers(mapLayoutBaseAddress);
+        // Still need the base address for the main map to get tilesets
+        // for the backup map.
+        const mainMapLayoutBaseAddress = await getMainMapLayoutBaseAddress();
+        if (!mainMapLayoutBaseAddress) {
+            console.error("getBackupMapMetatileBehaviors: Failed to get main map layout base address.");
+            return null;
+        }
+
+        const { primaryTilesetAddress, secondaryTilesetAddress } = await getTilesetPointers(mainMapLayoutBaseAddress);
 
         let allBehaviors = [];
 

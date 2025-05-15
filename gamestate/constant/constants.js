@@ -86,6 +86,9 @@ export const ACTIVE_GAME_VERSION = gameVersion;
 // --- Map Layout tilesize constant ---
 export const BYTES_PER_TILE = 2; // 2 bytes per tile object
 
+// Undefined tile (border)
+export const MAPGRID_UNDEFINED = 0x3FF;
+
 // --- Map Coordinate offset (used for Object Event coordinates) ---
 export const MAP_OFFSET = 7;
 

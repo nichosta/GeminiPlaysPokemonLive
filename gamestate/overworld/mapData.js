@@ -4,9 +4,9 @@ import { getEventObjectName } from "../../constant/event_object_map.js";
 import * as CONSTANTS from "../constant/constants.js";
 import { getCurrentMapBank, getCurrentMapNumber, getPlayerFacingDirection, getPlayerPosition, isPlayerSurfing } from "./playerData.js";
 import { getCurrentMapNpcs, getCurrentMapWarps } from "./mapEvents.js";
-import { getMainMapHeight, getMainMapMetatileIds, getMainMapTiles, getMainMapWidth } from "./mapLayouts.js";
+import { getMainMapHeight, getMainMapTiles, getMainMapWidth, getBackupMapWidth, getBackupMapHeight, getBackupMapTiles } from "./mapLayouts.js";
 import { getCurrentMapConnections } from "./mapConnections.js";
-import { getMainMapMetatileBehaviors } from "./mapMetatiles.js";
+import { getMainMapMetatileBehaviors, getBackupMapMetatileBehaviors } from "./mapMetatiles.js";
 import { getMetatileBehaviorName, WATER_TILES, LEDGE_DIRECTIONS } from "../../constant/metatile_behaviors_map.js";
 
 // --- Constants ---
@@ -19,15 +19,17 @@ const TILE_LEDGE_EAST = '→';
 const TILE_LEDGE_WEST = '←';
 const TILE_LEDGE_NORTH = '↑';
 const TILE_LEDGE_SOUTH = '↓';
+const TILE_CONNECTION = 'C';
 
 const BASE_TILE_PASSABILITY = Object.freeze({
     [TILE_WALKABLE]: "walkable",
     [TILE_BLOCKED]: "blocked",
     [TILE_WATER]: "requires surf",
-    [TILE_LEDGE_EAST]: "Ledge (only walkable in the indicated direction)",
-    [TILE_LEDGE_WEST]: "Ledge (only walkable in the indicated direction)",
-    [TILE_LEDGE_NORTH]: "Ledge (only walkable in the indicated direction)",
-    [TILE_LEDGE_SOUTH]: "Ledge (only walkable in the indicated direction)",
+    [TILE_LEDGE_EAST]: "ledge (only walkable in the indicated direction)",
+    [TILE_LEDGE_WEST]: "ledge (only walkable in the indicated direction)",
+    [TILE_LEDGE_NORTH]: "ledge (only walkable in the indicated direction)",
+    [TILE_LEDGE_SOUTH]: "ledge (only walkable in the indicated direction)",
+    [TILE_CONNECTION]: "connection to adjacent map area",
 });
 
 const VIEWPORT_TILE_PASSABILITY = Object.freeze({
@@ -95,26 +97,30 @@ async function processMemoryDataToCollisionMap(tileGridData, mapWidthTiles, allM
         for (let x = 0; x < mapWidthTiles; x++) {
             if (tileIndex < numTiles) {
                 const tileValue = tileGridData[tileIndex];
-                const metatileId = tileValue & CONSTANTS.MAPGRID_METATILE_ID_MASK;
                 let tileType;
 
-                const behaviorByte = allMetatileBehaviors[metatileId];
-                const behaviorName = getMetatileBehaviorName(behaviorByte); // Handles undefined behaviorByte
-                const ledgeChar = behaviorName ? LEDGE_DIRECTIONS.get(behaviorName) : undefined;
-
-                if (ledgeChar) {
-                    tileType = ledgeChar;
-                } else if (behaviorName && WATER_TILES.includes(behaviorName)) {
-                    tileType = TILE_WATER;
+                // Priority 1: Check for MAPGRID_UNDEFINED (boundary tile)
+                if (tileValue === CONSTANTS.MAPGRID_UNDEFINED) {
+                    tileType = TILE_BLOCKED;
                 } else {
-                    // Fallback to collision bits if not a defined water tile
-                    // MAPGRID_COLLISION_MASK is 0xC00 (bits 10 and 11)
-                    const collisionBits = (tileValue & CONSTANTS.MAPGRID_COLLISION_MASK) >> 10;
-                    // 0 = walkable (Open), others = blocked (X)
-                    tileType = (collisionBits === 0) ? TILE_WALKABLE : TILE_BLOCKED;
-                }
+                    // Priority 2: Check metatile behaviors (ledges, water)
+                    const metatileId = tileValue & CONSTANTS.MAPGRID_METATILE_ID_MASK;
+                    const behaviorByte = allMetatileBehaviors[metatileId];
+                    const behaviorName = getMetatileBehaviorName(behaviorByte); // Handles undefined behaviorByte
+                    const ledgeChar = behaviorName ? LEDGE_DIRECTIONS.get(behaviorName) : undefined;
 
-                row.push(`${x},${y}:${tileType}`);
+                    if (ledgeChar) {
+                        tileType = ledgeChar;
+                    } else if (behaviorName && WATER_TILES.includes(behaviorName)) {
+                        tileType = TILE_WATER;
+                    } else {
+                        // Priority 3: Fallback to collision bits
+                        const collisionBits = (tileValue & CONSTANTS.MAPGRID_COLLISION_MASK) >> 10;
+                        tileType = (collisionBits === 0) ? TILE_WALKABLE : TILE_BLOCKED;
+                    }
+                 }
+ 
+                 row.push(`${x},${y}:${tileType}`);
                 tileIndex++;
             } else {
                 // If we run out of tiles before filling the expected width/height,
@@ -259,6 +265,288 @@ export async function getMapStateJson() {
     } catch (error) {
         console.error("Error getting complete map state:", error);
         return null; // Return null on error
+    }
+}
+
+/**
+ * Retrieves the complete backup map state in a structured JSON format.
+ * This state includes raw map data indexed from 0,0 of the backup map,
+ * and the necessary offset to translate these to "unoffset" world coordinates.
+ *
+ * @returns {Promise<object|null>} A promise that resolves to an object containing
+ *          backup map details, or null if a critical error occurs.
+ *          Structure:
+ *          {
+ *              map_name: string,
+ *              width: number, // Full padded width of the backup map
+ *              height: number, // Full padded height of the backup map
+ *              tile_passability: { "O": string, "X": string, ... },
+ *              map_data_raw: string[][], // Raw backup map_data, coords are 0-indexed for backup map, may include 'C'
+ *              coord_offset_x: number, // Offset to add to unoffset X to get backup map X
+ *              coord_offset_y: number, // Offset to add to unoffset Y to get backup map Y
+ *              player_state: { position: [number, number], facing: string}, // Unoffset player coords
+ *              warps: Array<{ position: [number, number], destination: string }>, // Warps with unoffset coords
+ *              npcs: Array<{ id: number, position: [number, number], type: string, isOffScreen: boolean, wandering: boolean }>, // NPCs with unoffset coords
+ *              all_connections: Array<{direction: string, mapName: string}>, // All connections of the main map
+ *              main_map_width: number, // Actual width of the main map
+ *              main_map_height: number // Actual height of the main map
+ *          }
+ */
+async function getBackupMapStateJson() {
+    try {
+        // --- Player and Current Map Info (for context) ---
+        const [playerX, playerY] = await getPlayerPosition(); // Unoffset player coords
+        const facingDirection = await getPlayerFacingDirection();
+        const currentMapBank = await getCurrentMapBank();
+        const currentMapNumber = await getCurrentMapNumber();
+        const currentMapName = getMapName(currentMapBank, currentMapNumber) || "Unknown Main Map";
+
+        const backupMapWidth = await getBackupMapWidth();
+        const backupMapHeight = await getBackupMapHeight();
+        const backupMetatileBehaviors = await getBackupMapMetatileBehaviors();
+
+        // --- Main map dimensions needed for connection 'C' tile placement ---
+        // --- and for the final output width/height of the visible backup map state ---
+        const mainMapWidth = await getMainMapWidth();
+        const mainMapHeight = await getMainMapHeight();
+
+        // console.log(`[BackupMapDebug] Main Map Dimensions: ${mainMapWidth}x${mainMapHeight}`);
+        if (mainMapWidth === 0 || mainMapHeight === 0) {
+            console.warn("[BackupMapDebug] Main map width or height is 0. C-tiles will not be processed.");
+        }
+
+        const mainMapConnections = await getCurrentMapConnections();
+        const internalBackupMapName = "Backup Map"; // Internal name for logging, etc.
+
+        if (backupMapWidth <= 0 || backupMapHeight <= 0) {
+            console.warn(`Invalid backup map dimensions fetched for ${internalBackupMapName}: ${backupMapWidth}x${backupMapHeight}. Returning minimal state.`);
+            return {
+                map_name: currentMapName, // Use main map's name
+                width: 0,
+                height: 0,
+                tile_passability: VIEWPORT_TILE_PASSABILITY,
+                map_data_raw: [],
+                coord_offset_x: CONSTANTS.MAP_OFFSET,
+                coord_offset_y: CONSTANTS.MAP_OFFSET,
+                player_state: { position: [playerX, playerY], facing: facingDirection },
+                warps: [],
+                npcs: [],
+                all_connections: mainMapConnections || [], // Pass along whatever was fetched
+                main_map_width: mainMapWidth || 0,
+                main_map_height: mainMapHeight || 0,
+            };
+        }
+
+        if (!backupMetatileBehaviors) {
+            console.error(`Failed to fetch metatile behaviors for ${internalBackupMapName}. Collision map might be inaccurate.`);
+            // Proceed, but collision map will only use collision bits.
+        }
+
+        const backupMapTiles = await getBackupMapTiles(backupMapWidth, backupMapHeight);
+        const collisionData = await processMemoryDataToCollisionMap(backupMapTiles, backupMapWidth, backupMetatileBehaviors || []);
+
+        if (!collisionData) {
+            console.error(`Failed to process backup map tiles into collision data for ${internalBackupMapName}.`);
+            return null;
+        }
+
+        // Helper to check if a tile type is considered walkable for connection purposes.
+        // Extend this if other tile types (e.g., water without surf) should also block connections.
+        const isConnectableTileType = (tileType) => tileType !== TILE_BLOCKED;
+
+        // --- Modify collisionData.map_data to add 'C' for connections ---
+        // Iterate over the backup map's grid (collisionData.map_data)
+        // collisionData.map_data[by][bx] is "backupX,backupY:TileType"
+        // console.log("[BackupMapDebug] Main Map Connections for C-tile logic:", JSON.stringify(mainMapConnections));
+        if (mainMapWidth > 0 && mainMapHeight > 0 && mainMapConnections) { // Only add 'C' if main map dimensions and connections are valid
+            for (let by = 0; by < collisionData.height; by++) {
+                for (let bx = 0; bx < collisionData.width; bx++) {
+                    const tileString = collisionData.map_data[by][bx];
+                    const originalTileType = tileString.split(':')[1];
+                    let isCandidateForC = false; // Flag to see if it's even in a C-tile position
+
+                    // Check if tile is walkable (O, or non-blocking ledges/water)
+                    // For simplicity, let's consider 'O' and ledges/water as potentially connectable.
+                    // TILE_BLOCKED ('X') should not be a connection.
+                    // Condition 1: The backup map tile itself must be connectable.
+                    if (!isConnectableTileType(originalTileType)) {
+                        continue;
+                    }
+
+                    let markAsConnection = false;
+
+                    // --- Check Straight Edges ---
+                    // Left edge of main map (current tile bx is MAP_OFFSET - 1)
+                    if (bx === CONSTANTS.MAP_OFFSET - 1 && (by >= CONSTANTS.MAP_OFFSET && by < CONSTANTS.MAP_OFFSET + mainMapHeight)) {
+                        isCandidateForC = true;
+                        const conn = mainMapConnections.find(c => c.direction === "left");
+                        const mapNameForConn = conn ? conn.mapName : null;
+                        // console.log(`[BackupMapDebug] Left Edge Check at (${bx},${by}): originalType=${originalTileType}, connFound=${!!conn}, mapNameForConn=${mapNameForConn}`);
+                        // Condition 2: Valid connection exists (not MAP_NONE)
+                        if (conn && mapNameForConn) {
+                            const innerAdjTileString = collisionData.map_data[by][bx + 1]; // Tile at main map's edge
+                            const innerAdjType = innerAdjTileString.split(':')[1];
+                            // console.log(`[BackupMapDebug] ... InnerAdjType=${innerAdjType}, isConnectableOuter=${isConnectableTileType(originalTileType)}, isConnectableInner=${isConnectableTileType(innerAdjType)}`);
+                            // Condition 3: Inner adjacent tile is also connectable
+                            if (isConnectableTileType(innerAdjType)) markAsConnection = true;
+                        }
+                    }
+                    // Right edge
+                    if (!markAsConnection && bx === CONSTANTS.MAP_OFFSET + mainMapWidth && (by >= CONSTANTS.MAP_OFFSET && by < CONSTANTS.MAP_OFFSET + mainMapHeight)) {
+                        isCandidateForC = true;
+                        const conn = mainMapConnections.find(c => c.direction === "right");
+                        const mapNameForConn = conn ? conn.mapName : null;
+                        // console.log(`[BackupMapDebug] Right Edge Check at (${bx},${by}): originalType=${originalTileType}, connFound=${!!conn}, mapNameForConn=${mapNameForConn}`);
+                        if (conn && mapNameForConn) {
+                            const innerAdjTileString = collisionData.map_data[by][bx - 1];
+                            const innerAdjType = innerAdjTileString.split(':')[1];
+                            // console.log(`[BackupMapDebug] ... InnerAdjType=${innerAdjType}, isConnectableOuter=${isConnectableTileType(originalTileType)}, isConnectableInner=${isConnectableTileType(innerAdjType)}`);
+                            if (isConnectableTileType(innerAdjType)) markAsConnection = true;
+                        }
+                    }
+                    // Top edge
+                    if (!markAsConnection && by === CONSTANTS.MAP_OFFSET - 1 && (bx >= CONSTANTS.MAP_OFFSET && bx < CONSTANTS.MAP_OFFSET + mainMapWidth)) {
+                        isCandidateForC = true;
+                        const conn = mainMapConnections.find(c => c.direction === "up");
+                        const mapNameForConn = conn ? conn.mapName : null;
+                        // console.log(`[BackupMapDebug] Top Edge Check at (${bx},${by}): originalType=${originalTileType}, connFound=${!!conn}, mapNameForConn=${mapNameForConn}`);
+                        if (conn && mapNameForConn) {
+                            const innerAdjTileString = collisionData.map_data[by + 1][bx];
+                            const innerAdjType = innerAdjTileString.split(':')[1];
+                            // console.log(`[BackupMapDebug] ... InnerAdjType=${innerAdjType}, isConnectableOuter=${isConnectableTileType(originalTileType)}, isConnectableInner=${isConnectableTileType(innerAdjType)}`);
+                            if (isConnectableTileType(innerAdjType)) markAsConnection = true;
+                        }
+                    }
+                    // Bottom edge
+                    if (!markAsConnection && by === CONSTANTS.MAP_OFFSET + mainMapHeight && (bx >= CONSTANTS.MAP_OFFSET && bx < CONSTANTS.MAP_OFFSET + mainMapWidth)) {
+                        isCandidateForC = true;
+                        const conn = mainMapConnections.find(c => c.direction === "down");
+                        const mapNameForConn = conn ? conn.mapName : null;
+                        // console.log(`[BackupMapDebug] Bottom Edge Check at (${bx},${by}): originalType=${originalTileType}, connFound=${!!conn}, mapNameForConn=${mapNameForConn}`);
+                        if (conn && mapNameForConn) {
+                            const innerAdjTileString = collisionData.map_data[by - 1][bx];
+                            const innerAdjType = innerAdjTileString.split(':')[1];
+                            // console.log(`[BackupMapDebug] ... InnerAdjType=${innerAdjType}, isConnectableOuter=${isConnectableTileType(originalTileType)}, isConnectableInner=${isConnectableTileType(innerAdjType)}`);
+                            if (isConnectableTileType(innerAdjType)) markAsConnection = true;
+                        }
+                    }
+
+                    // --- Check Corners ---
+                    // Top-Left Corner (bx = MAP_OFFSET - 1, by = MAP_OFFSET - 1)
+                    if (!markAsConnection && bx === CONSTANTS.MAP_OFFSET - 1 && by === CONSTANTS.MAP_OFFSET - 1) {
+                        isCandidateForC = true;
+                        // console.log(`[BackupMapDebug] Top-Left Corner Check at (${bx},${by}): originalType=${originalTileType}`);
+                        const leftConn = mainMapConnections.find(c => c.direction === "left");
+                        const upConn = mainMapConnections.find(c => c.direction === "up");
+                        const mapNameForLeftConn = leftConn ? getMapName(leftConn.mapGroup, leftConn.mapNum) : null;
+                        const mapNameForUpConn = upConn ? getMapName(upConn.mapGroup, upConn.mapNum) : null;
+
+                        if (leftConn && mapNameForLeftConn && isConnectableTileType(collisionData.map_data[by][bx + 1].split(':')[1])) {
+                            // console.log(`[BackupMapDebug] ... TL Corner via Left: connFound=${!!leftConn}, mapName=${mapNameForLeftConn}, innerType=${collisionData.map_data[by][bx + 1].split(':')[1]}`);
+                            markAsConnection = true;
+                        }
+                        if (!markAsConnection && upConn && mapNameForUpConn && isConnectableTileType(collisionData.map_data[by + 1][bx].split(':')[1])) {
+                            // console.log(`[BackupMapDebug] ... TL Corner via Up: connFound=${!!upConn}, mapName=${mapNameForUpConn}, innerType=${collisionData.map_data[by + 1][bx].split(':')[1]}`);
+                            markAsConnection = true;
+                        }
+                    }
+                    // Top-Right Corner (bx = MAP_OFFSET + mainMapWidth, by = MAP_OFFSET - 1)
+                    if (!markAsConnection && bx === CONSTANTS.MAP_OFFSET + mainMapWidth && by === CONSTANTS.MAP_OFFSET - 1) {
+                        isCandidateForC = true;
+                        // console.log(`[BackupMapDebug] Top-Right Corner Check at (${bx},${by}): originalType=${originalTileType}`);
+                        const rightConn = mainMapConnections.find(c => c.direction === "right");
+                        const upConn = mainMapConnections.find(c => c.direction === "up");
+                        const mapNameForRightConn = rightConn ? getMapName(rightConn.mapGroup, rightConn.mapNum) : null;
+                        const mapNameForUpConn = upConn ? getMapName(upConn.mapGroup, upConn.mapNum) : null;
+
+                        if (rightConn && mapNameForRightConn && isConnectableTileType(collisionData.map_data[by][bx - 1].split(':')[1])) {
+                            markAsConnection = true;
+                        }
+                        if (!markAsConnection && upConn && mapNameForUpConn && isConnectableTileType(collisionData.map_data[by + 1][bx].split(':')[1])) {
+                            markAsConnection = true;
+                        }
+                    }
+                    // Bottom-Left Corner (bx = MAP_OFFSET - 1, by = MAP_OFFSET + mainMapHeight)
+                    if (!markAsConnection && bx === CONSTANTS.MAP_OFFSET - 1 && by === CONSTANTS.MAP_OFFSET + mainMapHeight) {
+                        isCandidateForC = true;
+                        // console.log(`[BackupMapDebug] Bottom-Left Corner Check at (${bx},${by}): originalType=${originalTileType}`);
+                        const leftConn = mainMapConnections.find(c => c.direction === "left");
+                        const downConn = mainMapConnections.find(c => c.direction === "down");
+                        const mapNameForLeftConn = leftConn ? getMapName(leftConn.mapGroup, leftConn.mapNum) : null;
+                        const mapNameForDownConn = downConn ? getMapName(downConn.mapGroup, downConn.mapNum) : null;
+
+                        if (leftConn && mapNameForLeftConn && isConnectableTileType(collisionData.map_data[by][bx + 1].split(':')[1])) {
+                            markAsConnection = true;
+                        }
+                        if (!markAsConnection && downConn && mapNameForDownConn && isConnectableTileType(collisionData.map_data[by - 1][bx].split(':')[1])) {
+                            markAsConnection = true;
+                        }
+                    }
+                    // Bottom-Right Corner (bx = MAP_OFFSET + mainMapWidth, by = MAP_OFFSET + mainMapHeight)
+                    if (!markAsConnection && bx === CONSTANTS.MAP_OFFSET + mainMapWidth && by === CONSTANTS.MAP_OFFSET + mainMapHeight) {
+                        isCandidateForC = true;
+                        // console.log(`[BackupMapDebug] Bottom-Right Corner Check at (${bx},${by}): originalType=${originalTileType}`);
+                        const rightConn = mainMapConnections.find(c => c.direction === "right");
+                        const downConn = mainMapConnections.find(c => c.direction === "down");
+                        const mapNameForRightConn = rightConn ? getMapName(rightConn.mapGroup, rightConn.mapNum) : null;
+                        const mapNameForDownConn = downConn ? getMapName(downConn.mapGroup, downConn.mapNum) : null;
+
+                        if (rightConn && mapNameForRightConn && isConnectableTileType(collisionData.map_data[by][bx - 1].split(':')[1])) {
+                            markAsConnection = true;
+                        }
+                        if (!markAsConnection && downConn && mapNameForDownConn && isConnectableTileType(collisionData.map_data[by - 1][bx].split(':')[1])) {
+                            markAsConnection = true;
+                        }
+                    }
+
+                    if (markAsConnection) {
+                        // console.log(`[BackupMapDebug] Marking (${bx},${by}) as TILE_CONNECTION. Original type was ${originalTileType}.`);
+                        collisionData.map_data[by][bx] = `${bx},${by}:${TILE_CONNECTION}`;
+                    } else if (isCandidateForC && isConnectableTileType(originalTileType)) {
+                        // console.log(`[BackupMapDebug] Candidate C-tile at (${bx},${by}) was not marked. OriginalType=${originalTileType}. Conditions failed.`);
+                    }
+                }
+            }
+        }
+
+        // --- Fetch and Format Warps and NPCs (using current map's events) ---
+        // Coordinates are already unoffset or main-map relative.
+        const rawWarps = await getCurrentMapWarps();
+        const warps = rawWarps.map(warp => ({
+            position: [warp.x, warp.y], // These are main map 0-indexed, effectively unoffset
+            destination: getMapName(warp.destMapGroup, warp.destMapNum) || `Unknown Map (${warp.destMapGroup}-${warp.destMapNum})`
+        }));
+
+        const rawNpcs = await getCurrentMapNpcs(); // These return unoffset coordinates
+        const npcs = rawNpcs.map(npc => ({
+            id: npc.id,
+            position: [npc.x, npc.y], // Already unoffset
+            type: getEventObjectName(npc.graphicsId) || `Unknown NPC (ID: ${npc.graphicsId})`,
+            isOffScreen: npc.isOffScreen,
+            wandering: npc.wandering,
+        }));
+
+        return {
+            map_name: currentMapName, // Use main map's name
+            width: collisionData.width, // This is the full padded width of the backup map
+            height: collisionData.height, // Full padded height
+            tile_passability: VIEWPORT_TILE_PASSABILITY, // Use extended passability as 'C' is added
+            map_data_raw: collisionData.map_data, // Raw data, strings contain "backupX,backupY:T"
+            coord_offset_x: CONSTANTS.MAP_OFFSET,
+            coord_offset_y: CONSTANTS.MAP_OFFSET,
+            player_state: {
+                position: [playerX, playerY], // Unoffset player coordinates
+                facing: facingDirection
+            },
+            warps: warps,
+            npcs: npcs,
+            all_connections: mainMapConnections || [],
+            main_map_width: mainMapWidth || 0,
+            main_map_height: mainMapHeight || 0,
+        };
+    } catch (error) {
+        console.error("Error getting complete backup map state:", error);
+        return null;
     }
 }
 
@@ -508,6 +796,182 @@ function trimMapStateToViewport(fullMapState) {
     };
 }
 
+/**
+ * Trims the full backup map state to a viewport centered around the player.
+ * Coordinates in the output `map_data` are "unoffset" (can be negative).
+ *
+ * @param {object} fullBackupMapState - The backup map state from getBackupMapStateJson().
+ * @returns {object|null} A new map state object for the viewport, or null if input is invalid.
+ *          Output structure:
+ *          {
+ *              map_name: string, // Name of the main map + " (Extended Viewport)"
+ *              width: number, // Width of the main map
+ *              height: number, // Height of the main map
+ *              tile_passability: VIEWPORT_TILE_PASSABILITY,
+ *              map_data: string[][], // Viewport data, strings are "unoffsetX,unoffsetY:T" (T can be W, !, C) 
+ *              player_state: { position: [number, number], facing: string},
+ *              warps: Array<{ position: [number, number], destination: string }>, // Filtered warps
+ *              npcs: Array<{ id: number, position: [number, number], type: string, isOffScreen: boolean, wandering: boolean }>, // Filtered NPCs
+ *              connections: Array<{direction: string, mapName: string}> // Relevant connections for visible 'C' tiles
+ *          }
+ */
+function trimBackupMapStateToViewport(fullBackupMapState) {
+    if (!fullBackupMapState || !fullBackupMapState.map_data_raw || typeof fullBackupMapState.width !== 'number' || typeof fullBackupMapState.coord_offset_x !== 'number') {
+        console.error("Invalid fullBackupMapState provided for trimming.", fullBackupMapState);
+        return null;
+    }
+
+    const {
+        map_name,
+        width: backupPaddedWidth,   // Full width of the backup map (padded)
+        height: backupPaddedHeight, // Full height of the backup map (padded)
+        map_data_raw, // Raw data from backup map, indexed 0..N, tile strings "backupX,backupY:T"
+        coord_offset_x,
+        coord_offset_y,
+        player_state,
+        warps: fullWarps = [],      // Warps with unoffset/main-map coordinates
+        npcs: fullNpcs = [],       // NPCs with unoffset coordinates
+        all_connections: mainMapAllConnections = [], // All connections from the main map
+        main_map_width,             // Actual width of the main map
+        main_map_height             // Actual height of the main map
+    } = fullBackupMapState;
+
+    const [playerX, playerY] = player_state.position; // These are unoffset
+
+    // Calculate viewport boundaries in *unoffset* coordinates
+    const halfWidth = Math.floor(MAX_VIEWPORT_WIDTH / 2);
+    const halfHeight = Math.floor(MAX_VIEWPORT_HEIGHT / 2);
+
+    const viewStartXUnsafe = playerX - halfWidth;
+    const viewStartYUnsafe = playerY - halfHeight;
+
+    const trimmedMapData = [];
+
+    
+    // --- Create Lookup Sets for Warps and NPCs in unoffset coordinates ---
+    const warpLocations = new Set(); // "unoffsetX,unoffsetY"
+    const trimmedWarps = [];
+    for (const warp of fullWarps) {
+        if (warp?.position?.length === 2) {
+            const [wx, wy] = warp.position; // These are already unoffset
+            // Check if warp is within the *potential* viewport area before adding to set
+            if (wx >= viewStartXUnsafe && wx < viewStartXUnsafe + MAX_VIEWPORT_WIDTH &&
+                wy >= viewStartYUnsafe && wy < viewStartYUnsafe + MAX_VIEWPORT_HEIGHT) {
+                warpLocations.add(`${wx},${wy}`);
+                trimmedWarps.push(warp);
+            }
+        }
+    }
+
+    const npcLocations = new Set(); // "unoffsetX,unoffsetY"
+    const trimmedNpcs = [];
+    for (const npc of fullNpcs) {
+        if (npc?.position?.length === 2 && !npc.isOffScreen) { // Consider only on-screen NPCs
+            const [nx, ny] = npc.position; // Already unoffset
+            // Check if NPC is within the *potential* viewport area
+            if (nx >= viewStartXUnsafe && nx < viewStartXUnsafe + MAX_VIEWPORT_WIDTH &&
+                ny >= viewStartYUnsafe && ny < viewStartYUnsafe + MAX_VIEWPORT_HEIGHT) {
+                npcLocations.add(`${nx},${ny}`);
+                trimmedNpcs.push(npc);
+            }
+        }
+    }
+
+    for (let i = 0; i < MAX_VIEWPORT_HEIGHT; i++) {
+        const currentRow = [];
+        const currentUnOffsetY = viewStartYUnsafe + i;
+
+        for (let j = 0; j < MAX_VIEWPORT_WIDTH; j++) {
+            const currentUnOffsetX = viewStartXUnsafe + j;
+
+            // Convert unoffset viewport coordinates to backup map's internal grid coordinates
+            const backupX = currentUnOffsetX + coord_offset_x;
+            const backupY = currentUnOffsetY + coord_offset_y;
+
+            let finalTileType;
+            const unoffsetCoordString = `${currentUnOffsetX},${currentUnOffsetY}`;
+
+            if (warpLocations.has(unoffsetCoordString)) {
+                finalTileType = TILE_WARP;
+            } else if (npcLocations.has(unoffsetCoordString)) {
+                finalTileType = TILE_NPC;
+            } else if (backupX >= 0 && backupX < backupPaddedWidth && backupY >= 0 && backupY < backupPaddedHeight) {
+                const rawTileEntry = map_data_raw[backupY][backupX]; // e.g., "backupX,backupY:T"
+                finalTileType = rawTileEntry.split(':')[1]; // This T can be O, X, C, or ledge/water
+            } else {
+                // This part of the viewport is outside the defined backup map area
+                finalTileType = TILE_BLOCKED;
+            }
+            currentRow.push(`${currentUnOffsetX},${currentUnOffsetY}:${finalTileType}`);
+        }
+        trimmedMapData.push(currentRow);
+    }
+
+    // --- Determine visible connections based on 'C' tiles in viewport ---
+    const visibleConnectionsOutput = [];
+    const addedConnectionDestinations = new Set(); // To avoid duplicate connection entries if multiple 'C' tiles lead to same map
+
+    for (const row of trimmedMapData) {
+        for (const tileString of row) {
+            const parts = tileString.split(':');
+            const coords = parts[0].split(',').map(Number);
+            const tileType = parts[1];
+            const unOffsetX = coords[0];
+            const unOffsetY = coords[1];
+
+            if (tileType === TILE_CONNECTION) {
+                let connectionDirections = [];
+                // Check edges relative to the main map's footprint
+                if (unOffsetX === -1 && unOffsetY >= -1 && unOffsetY <= main_map_height) connectionDirections.push("left");
+                if (unOffsetX === main_map_width && unOffsetY >= -1 && unOffsetY <= main_map_height) connectionDirections.push("right");
+                if (unOffsetY === -1 && unOffsetX >= -1 && unOffsetX <= main_map_width) connectionDirections.push("up");
+                if (unOffsetY === main_map_height && unOffsetX >= -1 && unOffsetX <= main_map_width) connectionDirections.push("down");
+
+                for (const dir of connectionDirections) {
+                    for (const conn of mainMapAllConnections) {
+                        if (conn.direction === dir) {
+                            const connKey = `${conn.direction}_${conn.mapName}`;
+                            if (!addedConnectionDestinations.has(connKey)) {
+                                visibleConnectionsOutput.push(conn);
+                                addedConnectionDestinations.add(connKey);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }    
+
+    return {
+        map_name: `${map_name} (Extended Viewport)`, // Main map's name + suffix
+        width: main_map_width,    // Report main map's width
+        height: main_map_height,  // Report main map's height
+        tile_passability: VIEWPORT_TILE_PASSABILITY, // Use extended passability as map_data can have W, !, C        
+        map_data: trimmedMapData, // Viewport data with unoffset coordinates
+        player_state: player_state,
+        warps: trimmedWarps,       // Filtered warps
+        npcs: trimmedNpcs,        // Filtered NPCs
+        connections: visibleConnectionsOutput // Relevant connections for visible 'C' tiles
+    };
+}
+
+export async function getVisibleBackupMapStateJson() {
+    try {
+        const fullState = await getBackupMapStateJson();
+        if (!fullState) {
+            return null;
+        }
+        const trimmedState = trimBackupMapStateToViewport(fullState);
+        if (!trimmedState) {
+            console.error("Failed to trim backup map state to viewport.");
+            return null;
+        }
+        return trimmedState;
+    } catch (error) {
+        console.error("Error getting visible backup map state:", error);
+        return null;
+    }
+}
 
 /**
  * Retrieves the current map state trimmed to a viewport around the player.
@@ -549,7 +1013,7 @@ export async function getVisibleMapStateJson() {
  * Checks for out-of-bounds coordinates and non-walkable tiles ('O' is walkable).
  *
  * @param {Array<[number, number]>} path - An array of [x, y] coordinates representing the path.
- * @param {object} mapState - The map state object, typically from getVisibleMapStateJson().
+ * @param {object} mapState - The map state object, typically from getVisibleMapStateJson() or getVisibleBackupMapStateJson().
  *                            This object contains map_data (viewport) and viewport width/height.
  *                            The full map dimensions are implicitly handled by the viewport calculation.
  * @returns {Promise<{isValid: boolean, failurePoint?: [number, number], reason?: string}>}
@@ -564,7 +1028,7 @@ export async function validatePath(path, mapState) {
     // It's crucial that mapState here is the *trimmed* viewport state,
     // because map_data in it reflects the viewport's content and coordinates.
     // The width/height in mapState should be the viewport's width/height.
-    // The tile strings "x,y:T" within map_data use *absolute* map coordinates.
+    // The tile strings "x,y:T" within map_data use *absolute* map coordinates (unoffset for backup map).
     if (!mapState || !mapState.map_data || typeof mapState.width !== 'number' || typeof mapState.height !== 'number' || !mapState.player_state) {
         console.warn("validatePath: Invalid mapState provided (must be trimmed viewport state).", mapState);
         return { isValid: false, reason: "Invalid map state provided for validation (expecting trimmed viewport state)." };
@@ -607,32 +1071,38 @@ export async function validatePath(path, mapState) {
             };
         }
 
-        // 2. Find the tile in the viewportMapData (which uses absolute coordinates in its strings)
+        // 2. Find the tile in the viewportMapData (which uses absolute/unoffset coordinates in its strings)
         let tileFound = false;
         let tileType = '';
 
-        for (const row of viewportMapData) {
-            for (const tileString of row) {
-                // tileString is "absX,absY:TileType"
-                const parts = tileString.split(':');
-                const coords = parts[0].split(',');
-                const mapTileX = parseInt(coords[0], 10);
-                const mapTileY = parseInt(coords[1], 10);
+        // The viewportMapData is a 2D array where each element is "x,y:T".
+        // The x,y in the string are the actual coordinates for that tile.
+        // The array indices of viewportMapData are 0..MAX_VIEWPORT_HEIGHT-1 and 0..MAX_VIEWPORT_WIDTH-1.
+        // We need to find the tile string that corresponds to pX, pY.
+        // The viewport's top-left unoffset coordinate is (viewportAbsStartX, viewportAbsStartY).
+        const viewLocalX = pX - viewportAbsStartX;
+        const viewLocalY = pY - viewportAbsStartY;
 
-                if (mapTileX === pX && mapTileY === pY) {
-                    tileType = parts[1];
-                    tileFound = true;
-                    break;
-                }
+        if (viewLocalY >= 0 && viewLocalY < viewportMapData.length &&
+            viewLocalX >= 0 && viewLocalX < viewportMapData[viewLocalY].length) {
+            const tileString = viewportMapData[viewLocalY][viewLocalX];
+            // Double check the coordinate in the string matches, though it should if viewport is constructed correctly.
+            const parts = tileString.split(':');
+            const coordsInString = parts[0].split(',').map(Number);
+            if (coordsInString[0] === pX && coordsInString[1] === pY) {
+                tileType = parts[1];
+                tileFound = true;
+            } else {
+                // This would indicate an issue with viewport construction or path coordinates
+                console.warn(`Path validation coordinate mismatch: searching for (${pX},${pY}), found tile string "${tileString}" at viewport local [${viewLocalY}][${viewLocalX}].`);
             }
-            if (tileFound) break;
         }
 
         if (!tileFound) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Coordinate (${pX},${pY}) not found in current visible map data (viewport).` };
         }
 
-        if (tileType === TILE_BLOCKED || tileType === TILE_NPC) {
+        if (tileType === TILE_BLOCKED || tileType === TILE_NPC) { // TILE_NPC check is for main map, harmless for backup
             return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is not walkable. Type: '${tileType}'.` };
         }
 
@@ -641,29 +1111,22 @@ export async function validatePath(path, mapState) {
         }
 
         // 3. Ledge Check (if applicable)
-        // This check comes after blocked/NPC/water checks.
-        // If it's a ledge, the movement must be in the ledge's direction.
-        const actualDeltaX = pX - prevX; // dx > 0 is East, dx < 0 is West
-        const actualDeltaY = pY - prevY; // dy > 0 is South, dy < 0 is North
+        const actualDeltaX = pX - prevX;
+        const actualDeltaY = pY - prevY;
 
-        if (tileType === TILE_LEDGE_EAST && actualDeltaX !== 1) { // Must move East (dx=1, dy=0)
+        if (tileType === TILE_LEDGE_EAST && actualDeltaX !== 1) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Cannot traverse East-facing ledge (${pX},${pY}) when not moving East. Actual move: dx=${actualDeltaX}, dy=${actualDeltaY}.` };
         }
-        if (tileType === TILE_LEDGE_WEST && actualDeltaX !== -1) { // Must move West (dx=-1, dy=0)
+        if (tileType === TILE_LEDGE_WEST && actualDeltaX !== -1) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Cannot traverse West-facing ledge (${pX},${pY}) when not moving West. Actual move: dx=${actualDeltaX}, dy=${actualDeltaY}.` };
         }
-        if (tileType === TILE_LEDGE_NORTH && actualDeltaY !== -1) { // Must move North (dx=0, dy=-1)
+        if (tileType === TILE_LEDGE_NORTH && actualDeltaY !== -1) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Cannot traverse North-facing ledge (${pX},${pY}) when not moving North. Actual move: dx=${actualDeltaX}, dy=${actualDeltaY}.` };
         }
-        if (tileType === TILE_LEDGE_SOUTH && actualDeltaY !== 1) { // Must move South (dx=0, dy=1)
+        if (tileType === TILE_LEDGE_SOUTH && actualDeltaY !== 1) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Cannot traverse South-facing ledge (${pX},${pY}) when not moving South. Actual move: dx=${actualDeltaX}, dy=${actualDeltaY}.` };
         }
 
-        // If we passed all checks for this step (including specific ledge direction):
-        // - Blocked/NPC check passed.
-        // - Water/surfing check passed.
-        // - Ledge direction check passed.
-        // Update previous coordinates for the next iteration
         prevX = pX;
         prevY = pY;
     }

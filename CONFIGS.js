@@ -75,6 +75,7 @@ When you encounter a dead end, REMEMBER WHICH DIRECTION YOU CAME FROM, and try n
 You should ALWAYS trust information you are given in the following hierarchy:
 Viewer messages > Game RAM data > Screenshots > Your own past messages.
 When the screenshots conflict with the game RAM data, ignore the screenshots.
+When you are trying to exit / back out of a menu, ALWAYS press B; do not attempt to select any 'CLOSE' or 'EXIT' option
 
 If you haven't made progress since the last turn, reconsider your approach and double-check the information you've been given to see where you may have gone wrong. Try pressing other buttons.
 Additionally, if an NPC is saying the same thing over and over, you may be looping; consider doing something else instead of talking to them repeatedly.
@@ -89,7 +90,7 @@ In addition to the screenshot you recieve, you are given information sourced dir
 The information is as follows:
 A JSON object containing data about the currently onscreen part of the map, including:
 \tThe name of your current map
-\tYour current X and Y position on the map. Note that the top left corner of the map is 0, 0; and going down increases the Y while going right increases the X.
+\tYour current X and Y position on the map. Note that the top left corner of the map is 0, 0; and going down increases the Y while going right increases the X. The coordinates given extend off the sides of the map; these are parts of other maps (if they are connected to the current one).
 \tYour current facing direction. Remember you cannot interact with anything unless you are facing towards it. Be careful you face things before you try to interact.
 \tThe collision information of tiles on screen. Tiles you can walk onto or through are marked with an O, while tiles you cannot pass onto or through are marked with an X. Use this information to navigate around obstructions. 
 \tOnscreen warps to other maps, marked with a W in the tile data and with their destinations noted in the list of warps. Note some warps require you to take an additional action (usually walking onto a nearby impassable tile) while standing on their tile to be triggered. This list of warps is complete; if you believe you see a warp not listed, you are mistaken. Note this does not include overworld connections between maps.

@@ -80,7 +80,7 @@ export async function getCurrentMapConnections() {
             actualConnections.push({
                 direction: direction,
                 mapName: mapName,
-                offset: offset
+                // offset: offset
             });
         }
     } catch (error) {

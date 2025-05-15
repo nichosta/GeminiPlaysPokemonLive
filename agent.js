@@ -3,7 +3,7 @@ import { getGameImagesBase64, parseDataURI } from "./gamestate/emulatorInteracti
 import { isInBattle } from "./gamestate/pokemonData.js";
 import * as CONFIGS from "./CONFIGS.js";
 import { readAndClearFile } from "./readInputFile.js";
-import { getVisibleMapStateJson } from "./gamestate/overworld/mapData.js";
+import { getVisibleBackupMapStateJson, getVisibleMapStateJson } from "./gamestate/overworld/mapData.js";
 import { areFieldControlsLocked, getCurrentMapBank, getCurrentMapNumber } from "./gamestate/overworld/playerData.js";
 import { isFieldMessageBoxActive, isScriptPtrSet } from "./gamestate/textReader.js";
 
@@ -153,7 +153,7 @@ async function runGameLoop() {
             console.log(`Turns Till Summary: ${CONFIGS.HISTORY_LENGTH - turnCounter}`);
 
             // 1. Get current game state (map data object and stringified version)
-            const visibleMapState = await getVisibleMapStateJson(); // Get the map state object
+            const visibleMapState = await getVisibleBackupMapStateJson(); // Get the map state object
             if (!visibleMapState) {
                 console.error("Critical: Failed to get visible map state. Skipping iteration.");
                 await delay(CONFIGS.LOOP_DELAY_MS);
@@ -167,9 +167,9 @@ async function runGameLoop() {
             let fieldControlsLocked = await areFieldControlsLocked();
             const { original: currentImageBase64URI, processed: currentImageBase64URIProcessed } = await getGameImagesBase64(); // Get full data URI
 
-            // Parse the image data URI (use grid version if outside battle + textbox and game started, else use nongrid)
+            // Parse the image data URI (use grid version if outside battle + textbox, else use nongrid)
             let imageParts;
-            if ((mapBank === 0 && mapNum === 0) || inBattle || fieldControlsLocked) {
+            if (inBattle || fieldControlsLocked) {
                 imageParts = parseDataURI(currentImageBase64URI);
             } else {
                 imageParts = parseDataURI(currentImageBase64URIProcessed);
