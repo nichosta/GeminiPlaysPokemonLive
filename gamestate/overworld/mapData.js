@@ -1034,17 +1034,13 @@ export async function validatePath(path, mapState) {
         return { isValid: false, reason: "Invalid map state provided for validation (expecting trimmed viewport state)." };
     }
 
-    if (!mapState || !mapState.map_data || typeof mapState.width !== 'number' || typeof mapState.height !== 'number') {
-        console.warn("validatePath: Invalid mapState provided.", mapState);
-        return { isValid: false, reason: "Invalid map state provided for validation." };
-    }
-
     const { map_data: viewportMapData, width: viewportWidth, height: viewportHeight, player_state } = mapState;
     const [playerStartX, playerStartY] = player_state.position;
 
     // Initialize previous coordinates with the player's starting position
     let prevX = playerStartX;
     let prevY = playerStartY;
+    let prevTileType = '';
 
     // Determine the absolute coordinate bounds of the current viewport
     // This requires knowing the top-left absolute coordinate of the viewport.
@@ -1053,6 +1049,23 @@ export async function validatePath(path, mapState) {
     let viewportAbsStartY = 0;
     if (viewportMapData.length > 0 && viewportMapData[0].length > 0 && viewportMapData[0][0].includes(',')) {
         [viewportAbsStartX, viewportAbsStartY] = viewportMapData[0][0].split(':')[0].split(',').map(Number);
+
+        // Determine the tile type of the player's starting position
+        const playerStartViewLocalX = playerStartX - viewportAbsStartX;
+        const playerStartViewLocalY = playerStartY - viewportAbsStartY;
+
+        if (playerStartViewLocalY >= 0 && playerStartViewLocalY < viewportMapData.length &&
+            playerStartViewLocalX >= 0 && playerStartViewLocalX < viewportMapData[playerStartViewLocalY].length) {
+            const playerStartTileString = viewportMapData[playerStartViewLocalY][playerStartViewLocalX];
+            const parts = playerStartTileString.split(':');
+            const coordsInString = parts[0].split(',').map(Number);
+            if (coordsInString[0] === playerStartX && coordsInString[1] === playerStartY) {
+                prevTileType = parts[1];
+            }
+        } else {
+            // Player's starting position is not in the viewport data, which is unexpected if mapState is valid.
+            console.warn(`validatePath: Player start (${playerStartX},${playerStartY}) not found in viewportMapData.`);
+        } 
     }
 
     for (let i = 0; i < path.length; i++) {
@@ -1102,9 +1115,11 @@ export async function validatePath(path, mapState) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Coordinate (${pX},${pY}) not found in current visible map data (viewport).` };
         }
 
-        if (tileType === TILE_BLOCKED || tileType === TILE_NPC) { // TILE_NPC check is for main map, harmless for backup
-            return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is not walkable. Type: '${tileType}'.` };
-        }
+        // Allow stepping onto a blocked/NPC tile if the *previous* tile was a warp.
+        if ((tileType === TILE_BLOCKED || tileType === TILE_NPC) && prevTileType !== TILE_WARP) {
+            const reason = `Tile (${pX},${pY}) is not walkable. Type: '${tileType}'.`;
+            return { isValid: false, failurePoint: [pX, pY], reason: reason };
+        }        
 
         if (tileType === TILE_WATER && !(await isPlayerSurfing())) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is a water tile (~), and the player is not surfing.` }
@@ -1129,6 +1144,7 @@ export async function validatePath(path, mapState) {
 
         prevX = pX;
         prevY = pY;
+        prevTileType = tileType;
     }
 
     return { isValid: true };

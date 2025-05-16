@@ -126,6 +126,10 @@ export async function getCurrentMapNpcs() {
             // Read the 32-bit flags field (Little Endian)
             const flags = dataView.getUint32(currentOffset + CONSTANTS.OBJECT_EVENT_FLAGS_OFFSET, true);
 
+            // Check the active flag (bit 0)
+            const isActive = (flags >> CONSTANTS.OBJECT_EVENT_ACTIVE_BIT) & 1;
+            if (!isActive) continue; // Skip inactive NPCs
+
             // Check the off-screen flag (bit 14)
             const isOffScreen = (flags >> CONSTANTS.OBJECT_EVENT_OFFSCREEN_BIT) & 1;
 

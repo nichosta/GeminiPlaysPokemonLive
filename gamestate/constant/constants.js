@@ -156,6 +156,7 @@ export const OBJECT_EVENT_GRAPHICS_ID_OFFSET = 0x05; // Offset to graphics ID (u
 export const OBJECT_EVENT_MOVEMENT_TYPE_OFFSET = 0x06; // Offest to object event movement type (u8)
 export const OBJECT_EVENT_X_OFFSET = 0x10;          // Offset to current X coordinate (s16)
 export const OBJECT_EVENT_Y_OFFSET = 0x12;          // Offset to current Y coordinate (s16)
+export const OBJECT_EVENT_ACTIVE_BIT = 0;       // Bit 0: 1 = Active
 export const OBJECT_EVENT_FROZEN_BIT = 8;      // Bit 8: 1 = Frozen/Inactive movement
 export const OBJECT_EVENT_OFFSCREEN_BIT = 14;  // Bit 14: 1 = Offscreen/Inactive rendering (technically this gives an extra tile of buffer but I don't care)
 export const OBJECT_EVENT_WANDERING_TYPES = [0x2, 0x3, 0x4, 0x5, 0x6]; // Types for the movement type byte which indicate the NPC wanders around on the map
