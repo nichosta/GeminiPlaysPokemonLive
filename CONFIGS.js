@@ -235,7 +235,7 @@ const STRUCTURED_OUTPUT_SCHEMA = {
     goalLongTerm: {
       type: "string",
       description:
-        "Your current long-term goal. Should be something you expect to take 100-500 turns to complete. For example, 'Explore [CITY NAME] and defeat [GYM LEADER],' or 'Catch new Pokemon and train my team for the upcoming rival battle with [RIVAL].' Do not confuse with your ultimate goal, which is becoming Champion and completing the Pokedex.",
+        "Your current long-term goal. Should be the next major step in game progression, usually a major battle, HM, or Key Item. For example, 'Defeat [GYM LEADER] and obtain the [NEXT BADGE]', or 'Talk to [HM GIVER] to obtain the [NEXT HM].' Do not confuse with your ultimate goal, which is becoming Champion and completing the Pokedex.",
     },
     goalMidTerm: {
       type: "string",
