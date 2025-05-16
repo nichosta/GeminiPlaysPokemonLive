@@ -22,6 +22,7 @@ export const POCKET_NAMES = [
 
 // --- Savestate Object ---
 export const SAVESTATE_OBJECT_POINTER = 0x03005d8c; // Address of pointer to savetate 1 object structure in IWRAM
+export const SAVESTATE_FLAGS_OFFSET = 0x1270; // Offset to player flags (u8) within savestate object
 
 // --- Player Avatar ---
 export const PLAYER_AVATAR_ADDR = 0x02037590; // Address of gPlayerAvatar struct

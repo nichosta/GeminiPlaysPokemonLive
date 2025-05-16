@@ -21,11 +21,12 @@ if (gameVersion === 'FRLG') {
     selectedConstants = EMERALD_CONSTANTS;
 }
 
-// --- Player Object ---
+// --- Savestate Object ---
 export const SAVESTATE_OBJECT_POINTER_ADDR = selectedConstants.SAVESTATE_OBJECT_POINTER;
-export const PLAYER_X_OFFSET = 0x000; // Offset to player X coordinate (u16) within player object
-export const PLAYER_Y_OFFSET = 0x002; // Offset to player Y coordinate (u16) within player object
-export const MONEY_OFFSET = 0x490; // Offset to player money (u32) within player object
+export const SAVESTATE_PLAYER_X_OFFSET = 0x000; // Offset to player X coordinate (u16) within savestate object
+export const SAVESTATE_PLAYER_Y_OFFSET = 0x002; // Offset to player Y coordinate (u16) within savestate object
+export const SAVESTATE_MONEY_OFFSET = 0x490; // Offset to player money (u32) within savestate object
+export const SAVESTATE_FLAGS_OFFSET = selectedConstants.SAVESTATE_FLAGS_OFFSET; // Offset to player flags (u8[]) within savestate object
 
 // --- Player Avatar ---
 export const PLAYER_AVATAR_ADDR = selectedConstants.PLAYER_AVATAR_ADDR; // Address of gPlayerAvatar struct

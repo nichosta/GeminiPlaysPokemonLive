@@ -2,7 +2,7 @@
 import { getPartyCount, getPokemonData, isInBattle } from "../gamestate/pokemonData.js";
 import { getBagContents, prettyPrintBag, getPlayerMoney } from "../gamestate/bagData.js";
 import { getPartyMenuSlotId } from "../gamestate/menustate/partyMenu.js";
-import { areFieldControlsLocked } from "../gamestate/overworld/playerData.js";
+import { areFieldControlsLocked, getPlayerBadges } from "../gamestate/overworld/playerData.js";
 
 /**
  * @description Formats the data for a single Pokemon into a readable string.
@@ -47,6 +47,7 @@ export async function getGameInfoText(visibleMapState) {
     let fieldControlsLocked = await areFieldControlsLocked();
     let playerMoney = await getPlayerMoney();
     let partyMenuSlot = await getPartyMenuSlotId();
+    let badgesObtained = await getPlayerBadges();
 
     const gameInfo = `
       Map Data:\n${mapStateJSON ? JSON.stringify(mapStateJSON) : "Error: Map data unavailable."}
@@ -56,6 +57,7 @@ export async function getGameInfoText(visibleMapState) {
       Party Count: ${partyCount}
       Pokemon:\n        ${pokemonInfo.length > 0 ? pokemonInfo.join("\n") : "No available pokemon"}
       Money: ${playerMoney}
-      ${prettyBagInfo}`;
+      ${prettyBagInfo}
+      Badges: ${badgesObtained ? badgesObtained.join(", ") : "None"}`;
     return gameInfo.replace(/\n +/g, "\n").trim();
 }

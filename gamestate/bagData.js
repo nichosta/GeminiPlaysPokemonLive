@@ -223,7 +223,7 @@ export async function getPlayerMoney() {
         }
 
         // 2. Calculate the actual address of the encrypted money value
-        const encryptedMoneyAddr = basePointer + CONSTANTS.MONEY_OFFSET;
+        const encryptedMoneyAddr = basePointer + CONSTANTS.SAVESTATE_MONEY_OFFSET;
 
         // 3. Read the 32-bit encrypted money value from the calculated address
         const encryptedMoney = await readUint32(encryptedMoneyAddr);
