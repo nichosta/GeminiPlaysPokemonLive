@@ -1,6 +1,6 @@
 import { isValidFullMapState } from "./mapStateValidator.js";
 import { findRelevantConnectionForCoordinate } from "./mapConnectionUtils.js";
-import * as CONSTANTS from "../constantS/constantSs.js";
+import * as CONSTANTS from "../constant/constants.js";
 
 /**
  * Trims the full map state to a viewport centered around the player.

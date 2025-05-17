@@ -3,9 +3,8 @@ import { getGameImagesBase64, parseDataURI } from "./gamestate/emulatorInteracti
 import { isInBattle } from "./gamestate/pokemonData.js";
 import * as CONFIGS from "./CONFIGS.js";
 import { readAndClearFile } from "./readInputFile.js";
-import { getVisibleBackupMapStateJson, getVisibleMapStateJson } from "./gamestate/overworld/mapData.js";
+import { getVisibleBackupMapStateJson } from "./gamestate/overworld/mapApi.js";
 import { areFieldControlsLocked, getCurrentMapBank, getCurrentMapNumber } from "./gamestate/overworld/playerData.js";
-import { isFieldMessageBoxActive, isScriptPtrSet } from "./gamestate/textReader.js";
 
 // Imports for refactored functions
 import { getGameInfoText } from "./llminteract/buildPrompt.js";

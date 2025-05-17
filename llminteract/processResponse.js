@@ -1,7 +1,7 @@
 // Imports from other files
 import { pressButtons } from "../tools/buttonPress.js";
 import { stunNPC } from "../tools/stunNPC.js";
-import { validatePath } from "../gamestate/overworld/mapData.js";
+import { validatePath } from "../gamestate/overworld/mapPathValidator.js";
 
 /**
  * @description Processes the LLM's response, assuming it contains a tool call.

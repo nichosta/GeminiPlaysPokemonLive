@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
-// Import player position functions from mapData.js
+// Import player position functions from playerData.js
 import { getPlayerX, getPlayerY } from '../overworld/playerData.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
