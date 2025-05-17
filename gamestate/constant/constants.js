@@ -93,6 +93,41 @@ export const MAPGRID_UNDEFINED = 0x3FF;
 // --- Map Coordinate offset (used for Object Event coordinates) ---
 export const MAP_OFFSET = 7;
 
+// --- Tile Type Constants ---
+export const TILE_WALKABLE = 'O';
+export const TILE_BLOCKED = 'X';
+export const TILE_WARP = 'W';
+export const TILE_NPC = '!';
+export const TILE_WATER = '~';
+export const TILE_LEDGE_EAST = '→';
+export const TILE_LEDGE_WEST = '←';
+export const TILE_LEDGE_NORTH = '↑';
+export const TILE_LEDGE_SOUTH = '↓';
+export const TILE_CONNECTION = 'C';
+
+// --- Passability Definitions ---
+export const BASE_TILE_PASSABILITY = Object.freeze({
+    [TILE_WALKABLE]: "walkable",
+    [TILE_BLOCKED]: "blocked",
+    [TILE_WATER]: "requires surf",
+    [TILE_LEDGE_EAST]: "ledge (only walkable in the indicated direction)",
+    [TILE_LEDGE_WEST]: "ledge (only walkable in the indicated direction)",
+    [TILE_LEDGE_NORTH]: "ledge (only walkable in the indicated direction)",
+    [TILE_LEDGE_SOUTH]: "ledge (only walkable in the indicated direction)",
+    [TILE_CONNECTION]: "connection to adjacent map area",
+});
+
+export const VIEWPORT_TILE_PASSABILITY = Object.freeze({
+    ...BASE_TILE_PASSABILITY,
+    [TILE_WARP]: "warp",
+    [TILE_NPC]: "npc",
+    // Ledge descriptions are inherited from BASE_TILE_PASSABILITY
+});
+
+// --- Viewport Dimensions ---
+export const MAX_VIEWPORT_WIDTH = 15;
+export const MAX_VIEWPORT_HEIGHT = 10;
+
 // Backup Map Layout
 export const BACKUP_MAP_LAYOUT_ADDR = selectedConstants.BACKUP_MAP_LAYOUT_ADDR; // Address of the gBackupMapLayout object (VMap in FRLG)
 export const BACKUP_MAP_LAYOUT_WIDTH_OFFSET = 0x00; // Offset to backup map layout width (s32)
@@ -121,7 +156,8 @@ export const MAP_LAYOUT_SECONDARY_TILESET_OFFSET = 0x14; // Offset to secondary 
 // --- Mapgrid ---
 
 export const MAPGRID_METATILE_ID_MASK = 0x03FF; // The part of the mapgrid info that holds the metatile ID
-export const MAPGRID_COLLISION_MASK = 0xC00; // The part of the mapgrid info that holds the collision info
+export const MAPGRID_COLLISION_MASK = 0x0C00; // The part of the mapgrid info that holds the collision info
+export const MAPGRID_ELEVATION_MASK = 0xF000; // The part of the mapgrid info that holds the elevation info
 
 // --- Tileset ---
 export const TILESET_METATILE_ATTRIBUTES_POINTER_OFFSET = 0x10; // Offset to metatile attributes array pointer (const u16 *)
@@ -155,6 +191,8 @@ export const OBJECT_EVENT_SIZE = 0x24;          // Size of one ObjectEvent struc
 export const OBJECT_EVENT_FLAGS_OFFSET = 0x00;      // Offset to the 32-bit flags field (u32)
 export const OBJECT_EVENT_GRAPHICS_ID_OFFSET = 0x05; // Offset to graphics ID (u8)
 export const OBJECT_EVENT_MOVEMENT_TYPE_OFFSET = 0x06; // Offest to object event movement type (u8)
+export const OBJECT_EVENT_ELEVATION_OFFSET = 0x0B;          // Offset to the 8-bit current and previous elevation (u8)
+export const OBJECT_EVENT_CURRENT_ELEVATION_MASK = 0x0F; // Mask to isolate the current elevation
 export const OBJECT_EVENT_X_OFFSET = 0x10;          // Offset to current X coordinate (s16)
 export const OBJECT_EVENT_Y_OFFSET = 0x12;          // Offset to current Y coordinate (s16)
 export const OBJECT_EVENT_ACTIVE_BIT = 0;       // Bit 0: 1 = Active

@@ -121,3 +121,13 @@ export async function getPlayerBadges() {
     }
     return earnedBadges;
 }
+
+/**
+ * Gets the current player elevation.
+ * @returns {Promise<number>} The player's elevation.
+ */
+export async function getPlayerElevation() {
+    const playerObjectEventAddress = CONSTANTS.OBJECT_EVENTS_ADDR + (CONSTANTS.OBJECT_EVENTS_PLAYER_INDEX * CONSTANTS.OBJECT_EVENT_SIZE);
+    const elevationByte = await readUint8(playerObjectEventAddress + CONSTANTS.OBJECT_EVENT_ELEVATION_OFFSET);
+    return elevationByte & CONSTANTS.OBJECT_EVENT_CURRENT_ELEVATION_MASK;
+}
