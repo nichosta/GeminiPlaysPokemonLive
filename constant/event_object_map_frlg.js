@@ -1,195 +1,159 @@
-// This is technically less efficient than just converting this into a map constant but it's a lot more readable this way
-// This is directly from pokefirered\include\constants\event_objects.h (slightly edited)
-const EVENT_OBJECT_NAMES = `
-#define OBJ_EVENT_GFX_RED_NORMAL 0
-#define OBJ_EVENT_GFX_RED_BIKE 1
-#define OBJ_EVENT_GFX_RED_SURF 2
-#define OBJ_EVENT_GFX_RED_FIELD_MOVE 3
-#define OBJ_EVENT_GFX_RED_FISH 4
-#define OBJ_EVENT_GFX_RED_VS_SEEKER 5
-#define OBJ_EVENT_GFX_RED_VS_SEEKER_BIKE 6
-#define OBJ_EVENT_GFX_GREEN_NORMAL 7
-#define OBJ_EVENT_GFX_GREEN_BIKE 8
-#define OBJ_EVENT_GFX_GREEN_SURF 9
-#define OBJ_EVENT_GFX_GREEN_FIELD_MOVE 10
-#define OBJ_EVENT_GFX_GREEN_FISH 11
-#define OBJ_EVENT_GFX_GREEN_VS_SEEKER 12
-#define OBJ_EVENT_GFX_GREEN_VS_SEEKER_BIKE 13
-#define OBJ_EVENT_GFX_RS_BRENDAN 14
-#define OBJ_EVENT_GFX_RS_MAY 15
-#define OBJ_EVENT_GFX_LITTLE_BOY 16
-#define OBJ_EVENT_GFX_LITTLE_GIRL 17
-#define OBJ_EVENT_GFX_YOUNGSTER 18
-#define OBJ_EVENT_GFX_BOY 19
-#define OBJ_EVENT_GFX_BUG_CATCHER 20
-#define OBJ_EVENT_GFX_SITTING_BOY 21
-#define OBJ_EVENT_GFX_LASS 22
-#define OBJ_EVENT_GFX_WOMAN_1 23
-#define OBJ_EVENT_GFX_BATTLE_GIRL 24
-#define OBJ_EVENT_GFX_MAN 25
-#define OBJ_EVENT_GFX_ROCKER 26
-#define OBJ_EVENT_GFX_FAT_MAN 27
-#define OBJ_EVENT_GFX_WOMAN_2 28
-#define OBJ_EVENT_GFX_BEAUTY 29
-#define OBJ_EVENT_GFX_BALDING_MAN 30
-#define OBJ_EVENT_GFX_WOMAN_3 31
-#define OBJ_EVENT_GFX_OLD_MAN_1 32
-#define OBJ_EVENT_GFX_OLD_MAN_2 33
-#define OBJ_EVENT_GFX_OLD_MAN_LYING_DOWN 34
-#define OBJ_EVENT_GFX_OLD_WOMAN 35
-#define OBJ_EVENT_GFX_TUBER_M_WATER 36
-#define OBJ_EVENT_GFX_TUBER_F 37
-#define OBJ_EVENT_GFX_TUBER_M_LAND 38
-#define OBJ_EVENT_GFX_CAMPER 39
-#define OBJ_EVENT_GFX_PICNICKER 40
-#define OBJ_EVENT_GFX_COOLTRAINER_M 41
-#define OBJ_EVENT_GFX_COOLTRAINER_F 42
-#define OBJ_EVENT_GFX_SWIMMER_M_WATER 43
-#define OBJ_EVENT_GFX_SWIMMER_F_WATER 44
-#define OBJ_EVENT_GFX_SWIMMER_M_LAND 45
-#define OBJ_EVENT_GFX_SWIMMER_F_LAND 46
-#define OBJ_EVENT_GFX_WORKER_M 47
-#define OBJ_EVENT_GFX_WORKER_F 48
-#define OBJ_EVENT_GFX_ROCKET_M 49
-#define OBJ_EVENT_GFX_ROCKET_F 50
-#define OBJ_EVENT_GFX_GBA_KID 51
-#define OBJ_EVENT_GFX_SUPER_NERD 52
-#define OBJ_EVENT_GFX_BIKER 53
-#define OBJ_EVENT_GFX_BLACKBELT 54
-#define OBJ_EVENT_GFX_SCIENTIST 55
-#define OBJ_EVENT_GFX_HIKER 56
-#define OBJ_EVENT_GFX_FISHER 57
-#define OBJ_EVENT_GFX_CHANNELER 58
-#define OBJ_EVENT_GFX_CHEF 59
-#define OBJ_EVENT_GFX_POLICEMAN 60
-#define OBJ_EVENT_GFX_GENTLEMAN 61
-#define OBJ_EVENT_GFX_SAILOR 62
-#define OBJ_EVENT_GFX_CAPTAIN 63
-#define OBJ_EVENT_GFX_NURSE 64
-#define OBJ_EVENT_GFX_CABLE_CLUB_RECEPTIONIST 65
-#define OBJ_EVENT_GFX_UNION_ROOM_RECEPTIONIST 66
-#define OBJ_EVENT_GFX_UNUSED_MALE_RECEPTIONIST 67
-#define OBJ_EVENT_GFX_CLERK 68
-#define OBJ_EVENT_GFX_MG_DELIVERYMAN 69
-#define OBJ_EVENT_GFX_TRAINER_TOWER_DUDE 70
-#define OBJ_EVENT_GFX_PROF_OAK 71
-#define OBJ_EVENT_GFX_BLUE 72
-#define OBJ_EVENT_GFX_BILL 73
-#define OBJ_EVENT_GFX_LANCE 74
-#define OBJ_EVENT_GFX_AGATHA 75
-#define OBJ_EVENT_GFX_DAISY 76
-#define OBJ_EVENT_GFX_LORELEI 77
-#define OBJ_EVENT_GFX_MR_FUJI 78
-#define OBJ_EVENT_GFX_BRUNO 79
-#define OBJ_EVENT_GFX_BROCK 80
-#define OBJ_EVENT_GFX_MISTY 81
-#define OBJ_EVENT_GFX_LT_SURGE 82
-#define OBJ_EVENT_GFX_ERIKA 83
-#define OBJ_EVENT_GFX_KOGA 84
-#define OBJ_EVENT_GFX_SABRINA 85
-#define OBJ_EVENT_GFX_BLAINE 86
-#define OBJ_EVENT_GFX_GIOVANNI 87
-#define OBJ_EVENT_GFX_MOM 88
-#define OBJ_EVENT_GFX_CELIO 89
-#define OBJ_EVENT_GFX_TEACHY_TV_HOST 90
-#define OBJ_EVENT_GFX_GYM_GUY 91
-#define OBJ_EVENT_GFX_ITEM_BALL 92
-#define OBJ_EVENT_GFX_TOWN_MAP 93
-#define OBJ_EVENT_GFX_POKEDEX 94
-#define OBJ_EVENT_GFX_CUT_TREE 95
-#define OBJ_EVENT_GFX_ROCK_SMASH_ROCK 96
-#define OBJ_EVENT_GFX_PUSHABLE_BOULDER 97
-#define OBJ_EVENT_GFX_FOSSIL 98
-#define OBJ_EVENT_GFX_RUBY 99
-#define OBJ_EVENT_GFX_SAPPHIRE 100
-#define OBJ_EVENT_GFX_OLD_AMBER 101
-#define OBJ_EVENT_GFX_GYM_SIGN 102
-#define OBJ_EVENT_GFX_SIGN 103
-#define OBJ_EVENT_GFX_TRAINER_TIPS 104
-#define OBJ_EVENT_GFX_CLIPBOARD 105
-#define OBJ_EVENT_GFX_METEORITE 106
-#define OBJ_EVENT_GFX_LAPRAS_DOLL 107
-#define OBJ_EVENT_GFX_SEAGALLOP 108
-#define OBJ_EVENT_GFX_SNORLAX 109
-#define OBJ_EVENT_GFX_SPEAROW 110
-#define OBJ_EVENT_GFX_CUBONE 111
-#define OBJ_EVENT_GFX_POLIWRATH 112
-#define OBJ_EVENT_GFX_CLEFAIRY 113
-#define OBJ_EVENT_GFX_PIDGEOT 114
-#define OBJ_EVENT_GFX_JIGGLYPUFF 115
-#define OBJ_EVENT_GFX_PIDGEY 116
-#define OBJ_EVENT_GFX_CHANSEY 117
-#define OBJ_EVENT_GFX_OMANYTE 118
-#define OBJ_EVENT_GFX_KANGASKHAN 119
-#define OBJ_EVENT_GFX_PIKACHU 120
-#define OBJ_EVENT_GFX_PSYDUCK 121
-#define OBJ_EVENT_GFX_NIDORAN_F 122
-#define OBJ_EVENT_GFX_NIDORAN_M 123
-#define OBJ_EVENT_GFX_NIDORINO 124
-#define OBJ_EVENT_GFX_MEOWTH 125
-#define OBJ_EVENT_GFX_SEEL 126
-#define OBJ_EVENT_GFX_VOLTORB 127
-#define OBJ_EVENT_GFX_SLOWPOKE 128
-#define OBJ_EVENT_GFX_SLOWBRO 129
-#define OBJ_EVENT_GFX_MACHOP 130
-#define OBJ_EVENT_GFX_WIGGLYTUFF 131
-#define OBJ_EVENT_GFX_DODUO 132
-#define OBJ_EVENT_GFX_FEAROW 133
-#define OBJ_EVENT_GFX_MACHOKE 134
-#define OBJ_EVENT_GFX_LAPRAS 135
-#define OBJ_EVENT_GFX_ZAPDOS 136
-#define OBJ_EVENT_GFX_MOLTRES 137
-#define OBJ_EVENT_GFX_ARTICUNO 138
-#define OBJ_EVENT_GFX_MEWTWO 139
-#define OBJ_EVENT_GFX_MEW 140
-#define OBJ_EVENT_GFX_ENTEI 141
-#define OBJ_EVENT_GFX_SUICUNE 142
-#define OBJ_EVENT_GFX_RAIKOU 143
-#define OBJ_EVENT_GFX_LUGIA 144
-#define OBJ_EVENT_GFX_HO_OH 145
-#define OBJ_EVENT_GFX_CELEBI 146
-#define OBJ_EVENT_GFX_KABUTO 147
-#define OBJ_EVENT_GFX_DEOXYS_D 148
-#define OBJ_EVENT_GFX_DEOXYS_A 149
-#define OBJ_EVENT_GFX_DEOXYS_N 150
-#define OBJ_EVENT_GFX_SS_ANNE 151
-`
+// constant/event_object_map_frlg.js
 
-/**
- * Parses C preprocessor event object definitions into a JavaScript Map.
- * @param {string} definitionString - The string containing the #define statements.
- * @returns {Map<number, string>} - A Map where keys are event object IDs (numbers)
- *                                   and values are event object names (strings, e.g., "MOM").
- */
-function parseEventObjectDefinitions(definitionString) {
-    const map = new Map();
-    const lines = definitionString.split('\n');
-    // Regex to capture OBJ_NAME and ID
-    const defineRegex = /^#define\s+OBJ_EVENT_GFX_(\w+)\s+(\d+)/;
-
-    for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (trimmedLine.startsWith('#define')) {
-            const match = trimmedLine.match(defineRegex);
-            if (match) {
-                // match[1] is the captured name (e.g., "MOM")
-                // match[2] is the captured ID string (e.g., "88")
-                const eventObjectName = match[1];
-                const eventObjectId = parseInt(match[2], 10);
-
-                if (!isNaN(eventObjectId)) {
-                    map.set(eventObjectId, eventObjectName);
-                } else {
-                    console.warn(`Could not parse event object ID from line: ${trimmedLine}`);
-                }
-            }
-        }
-    }
-    return map;
-}
-
-// Create the lookup map by parsing the string
-const eventObjectMap = parseEventObjectDefinitions(EVENT_OBJECT_NAMES);
+const eventObjectMap = new Map([
+    [0, "RED_NORMAL"],
+    [1, "RED_BIKE"],
+    [2, "RED_SURF"],
+    [3, "RED_FIELD_MOVE"],
+    [4, "RED_FISH"],
+    [5, "RED_VS_SEEKER"],
+    [6, "RED_VS_SEEKER_BIKE"],
+    [7, "GREEN_NORMAL"],
+    [8, "GREEN_BIKE"],
+    [9, "GREEN_SURF"],
+    [10, "GREEN_FIELD_MOVE"],
+    [11, "GREEN_FISH"],
+    [12, "GREEN_VS_SEEKER"],
+    [13, "GREEN_VS_SEEKER_BIKE"],
+    [14, "RS_BRENDAN"],
+    [15, "RS_MAY"],
+    [16, "LITTLE_BOY"],
+    [17, "LITTLE_GIRL"],
+    [18, "YOUNGSTER"],
+    [19, "BOY"],
+    [20, "BUG_CATCHER"],
+    [21, "SITTING_BOY"],
+    [22, "LASS"],
+    [23, "WOMAN_1"],
+    [24, "BATTLE_GIRL"],
+    [25, "MAN"],
+    [26, "ROCKER"],
+    [27, "FAT_MAN"],
+    [28, "WOMAN_2"],
+    [29, "BEAUTY"],
+    [30, "BALDING_MAN"],
+    [31, "WOMAN_3"],
+    [32, "OLD_MAN_1"],
+    [33, "OLD_MAN_2"],
+    [34, "OLD_MAN_LYING_DOWN"],
+    [35, "OLD_WOMAN"],
+    [36, "TUBER_M_WATER"],
+    [37, "TUBER_F"],
+    [38, "TUBER_M_LAND"],
+    [39, "CAMPER"],
+    [40, "PICNICKER"],
+    [41, "COOLTRAINER_M"],
+    [42, "COOLTRAINER_F"],
+    [43, "SWIMMER_M_WATER"],
+    [44, "SWIMMER_F_WATER"],
+    [45, "SWIMMER_M_LAND"],
+    [46, "SWIMMER_F_LAND"],
+    [47, "WORKER_M"],
+    [48, "WORKER_F"],
+    [49, "ROCKET_M"],
+    [50, "ROCKET_F"],
+    [51, "GBA_KID"],
+    [52, "SUPER_NERD"],
+    [53, "BIKER"],
+    [54, "BLACKBELT"],
+    [55, "SCIENTIST"],
+    [56, "HIKER"],
+    [57, "FISHER"],
+    [58, "CHANNELER"],
+    [59, "CHEF"],
+    [60, "POLICEMAN"],
+    [61, "GENTLEMAN"],
+    [62, "SAILOR"],
+    [63, "CAPTAIN"],
+    [64, "NURSE"],
+    [65, "CABLE_CLUB_RECEPTIONIST"],
+    [66, "UNION_ROOM_RECEPTIONIST"],
+    [67, "UNUSED_MALE_RECEPTIONIST"],
+    [68, "CLERK"],
+    [69, "MG_DELIVERYMAN"],
+    [70, "TRAINER_TOWER_DUDE"],
+    [71, "PROF_OAK"],
+    [72, "BLUE"],
+    [73, "BILL"],
+    [74, "LANCE"],
+    [75, "AGATHA"],
+    [76, "DAISY"],
+    [77, "LORELEI"],
+    [78, "MR_FUJI"],
+    [79, "BRUNO"],
+    [80, "BROCK"],
+    [81, "MISTY"],
+    [82, "LT_SURGE"],
+    [83, "ERIKA"],
+    [84, "KOGA"],
+    [85, "SABRINA"],
+    [86, "BLAINE"],
+    [87, "GIOVANNI"],
+    [88, "MOM"],
+    [89, "CELIO"],
+    [90, "TEACHY_TV_HOST"],
+    [91, "GYM_GUY"],
+    [92, "ITEM_BALL"],
+    [93, "TOWN_MAP"],
+    [94, "POKEDEX"],
+    [95, "CUT_TREE"],
+    [96, "ROCK_SMASH_ROCK"],
+    [97, "PUSHABLE_BOULDER"],
+    [98, "FOSSIL"],
+    [99, "RUBY"],
+    [100, "SAPPHIRE"],
+    [101, "OLD_AMBER"],
+    [102, "GYM_SIGN"],
+    [103, "SIGN"],
+    [104, "TRAINER_TIPS"],
+    [105, "CLIPBOARD"],
+    [106, "METEORITE"],
+    [107, "LAPRAS_DOLL"],
+    [108, "SEAGALLOP"],
+    [109, "SNORLAX"],
+    [110, "SPEAROW"],
+    [111, "CUBONE"],
+    [112, "POLIWRATH"],
+    [113, "CLEFAIRY"],
+    [114, "PIDGEOT"],
+    [115, "JIGGLYPUFF"],
+    [116, "PIDGEY"],
+    [117, "CHANSEY"],
+    [118, "OMANYTE"],
+    [119, "KANGASKHAN"],
+    [120, "PIKACHU"],
+    [121, "PSYDUCK"],
+    [122, "NIDORAN_F"],
+    [123, "NIDORAN_M"],
+    [124, "NIDORINO"],
+    [125, "MEOWTH"],
+    [126, "SEEL"],
+    [127, "VOLTORB"],
+    [128, "SLOWPOKE"],
+    [129, "SLOWBRO"],
+    [130, "MACHOP"],
+    [131, "WIGGLYTUFF"],
+    [132, "DODUO"],
+    [133, "FEAROW"],
+    [134, "MACHOKE"],
+    [135, "LAPRAS"],
+    [136, "ZAPDOS"],
+    [137, "MOLTRES"],
+    [138, "ARTICUNO"],
+    [139, "MEWTWO"],
+    [140, "MEW"],
+    [141, "ENTEI"],
+    [142, "SUICUNE"],
+    [143, "RAIKOU"],
+    [144, "LUGIA"],
+    [145, "HO_OH"],
+    [146, "CELEBI"],
+    [147, "KABUTO"],
+    [148, "DEOXYS_D"],
+    [149, "DEOXYS_A"],
+    [150, "DEOXYS_N"],
+    [151, "SS_ANNE"]
+]);
 
 /**
  * @description Gets the event object name from the event object ID.

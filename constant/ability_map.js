@@ -1,121 +1,85 @@
-// This is technically less efficient than just converting this into a map constant but it's a lot more readable this way
-// This is directly from pokefirered\include\constants\abilities.h (slightly edited)
-const ABILITY_NAMES = `
-#define ABILITY_NONE 0
-#define ABILITY_STENCH 1
-#define ABILITY_DRIZZLE 2
-#define ABILITY_SPEED_BOOST 3
-#define ABILITY_BATTLE_ARMOR 4
-#define ABILITY_STURDY 5
-#define ABILITY_DAMP 6
-#define ABILITY_LIMBER 7
-#define ABILITY_SAND_VEIL 8
-#define ABILITY_STATIC 9
-#define ABILITY_VOLT_ABSORB 10
-#define ABILITY_WATER_ABSORB 11
-#define ABILITY_OBLIVIOUS 12
-#define ABILITY_CLOUD_NINE 13
-#define ABILITY_COMPOUND_EYES 14
-#define ABILITY_INSOMNIA 15
-#define ABILITY_COLOR_CHANGE 16
-#define ABILITY_IMMUNITY 17
-#define ABILITY_FLASH_FIRE 18
-#define ABILITY_SHIELD_DUST 19
-#define ABILITY_OWN_TEMPO 20
-#define ABILITY_SUCTION_CUPS 21
-#define ABILITY_INTIMIDATE 22
-#define ABILITY_SHADOW_TAG 23
-#define ABILITY_ROUGH_SKIN 24
-#define ABILITY_WONDER_GUARD 25
-#define ABILITY_LEVITATE 26
-#define ABILITY_EFFECT_SPORE 27
-#define ABILITY_SYNCHRONIZE 28
-#define ABILITY_CLEAR_BODY 29
-#define ABILITY_NATURAL_CURE 30
-#define ABILITY_LIGHTNING_ROD 31
-#define ABILITY_SERENE_GRACE 32
-#define ABILITY_SWIFT_SWIM 33
-#define ABILITY_CHLOROPHYLL 34
-#define ABILITY_ILLUMINATE 35
-#define ABILITY_TRACE 36
-#define ABILITY_HUGE_POWER 37
-#define ABILITY_POISON_POINT 38
-#define ABILITY_INNER_FOCUS 39
-#define ABILITY_MAGMA_ARMOR 40
-#define ABILITY_WATER_VEIL 41
-#define ABILITY_MAGNET_PULL 42
-#define ABILITY_SOUNDPROOF 43
-#define ABILITY_RAIN_DISH 44
-#define ABILITY_SAND_STREAM 45
-#define ABILITY_PRESSURE 46
-#define ABILITY_THICK_FAT 47
-#define ABILITY_EARLY_BIRD 48
-#define ABILITY_FLAME_BODY 49
-#define ABILITY_RUN_AWAY 50
-#define ABILITY_KEEN_EYE 51
-#define ABILITY_HYPER_CUTTER 52
-#define ABILITY_PICKUP 53
-#define ABILITY_TRUANT 54
-#define ABILITY_HUSTLE 55
-#define ABILITY_CUTE_CHARM 56
-#define ABILITY_PLUS 57
-#define ABILITY_MINUS 58
-#define ABILITY_FORECAST 59
-#define ABILITY_STICKY_HOLD 60
-#define ABILITY_SHED_SKIN 61
-#define ABILITY_GUTS 62
-#define ABILITY_MARVEL_SCALE 63
-#define ABILITY_LIQUID_OOZE 64
-#define ABILITY_OVERGROW 65
-#define ABILITY_BLAZE 66
-#define ABILITY_TORRENT 67
-#define ABILITY_SWARM 68
-#define ABILITY_ROCK_HEAD 69
-#define ABILITY_DROUGHT 70
-#define ABILITY_ARENA_TRAP 71
-#define ABILITY_VITAL_SPIRIT 72
-#define ABILITY_WHITE_SMOKE 73
-#define ABILITY_PURE_POWER 74
-#define ABILITY_SHELL_ARMOR 75
-#define ABILITY_CACOPHONY 76
-#define ABILITY_AIR_LOCK 77
-`
+// constant/ability_map.js
 
-/**
- * Parses C preprocessor ability definitions into a JavaScript Map.
- * @param {string} definitionString - The string containing the #define statements.
- * @returns {Map<number, string>} - A Map where keys are ability IDs (numbers)
- *                                   and values are ability names (strings, e.g., "STENCH").
- */
-function parseAbilityDefinitions(definitionString) {
-    const map = new Map();
-    const lines = definitionString.split('\n');
-    // Regex to capture ABILITY_NAME and ID
-    const defineRegex = /^#define\s+ABILITY_(\w+)\s+(\d+)/;
-
-    for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (trimmedLine.startsWith('#define')) {
-            const match = trimmedLine.match(defineRegex);
-            if (match) {
-                // match[1] is the captured name (e.g., "STENCH")
-                // match[2] is the captured ID string (e.g., "1")
-                const abilityName = match[1];
-                const abilityId = parseInt(match[2], 10);
-
-                if (!isNaN(abilityId)) {
-                    map.set(abilityId, abilityName);
-                } else {
-                    console.warn(`Could not parse ability ID from line: ${trimmedLine}`);
-                }
-            }
-        }
-    }
-    return map;
-}
-
-// Create the lookup map by parsing the string
-const abilityMap = parseAbilityDefinitions(ABILITY_NAMES);
+const abilityMap = new Map([
+    [0, "NONE"],
+    [1, "STENCH"],
+    [2, "DRIZZLE"],
+    [3, "SPEED_BOOST"],
+    [4, "BATTLE_ARMOR"],
+    [5, "STURDY"],
+    [6, "DAMP"],
+    [7, "LIMBER"],
+    [8, "SAND_VEIL"],
+    [9, "STATIC"],
+    [10, "VOLT_ABSORB"],
+    [11, "WATER_ABSORB"],
+    [12, "OBLIVIOUS"],
+    [13, "CLOUD_NINE"],
+    [14, "COMPOUND_EYES"],
+    [15, "INSOMNIA"],
+    [16, "COLOR_CHANGE"],
+    [17, "IMMUNITY"],
+    [18, "FLASH_FIRE"],
+    [19, "SHIELD_DUST"],
+    [20, "OWN_TEMPO"],
+    [21, "SUCTION_CUPS"],
+    [22, "INTIMIDATE"],
+    [23, "SHADOW_TAG"],
+    [24, "ROUGH_SKIN"],
+    [25, "WONDER_GUARD"],
+    [26, "LEVITATE"],
+    [27, "EFFECT_SPORE"],
+    [28, "SYNCHRONIZE"],
+    [29, "CLEAR_BODY"],
+    [30, "NATURAL_CURE"],
+    [31, "LIGHTNING_ROD"],
+    [32, "SERENE_GRACE"],
+    [33, "SWIFT_SWIM"],
+    [34, "CHLOROPHYLL"],
+    [35, "ILLUMINATE"],
+    [36, "TRACE"],
+    [37, "HUGE_POWER"],
+    [38, "POISON_POINT"],
+    [39, "INNER_FOCUS"],
+    [40, "MAGMA_ARMOR"],
+    [41, "WATER_VEIL"],
+    [42, "MAGNET_PULL"],
+    [43, "SOUNDPROOF"],
+    [44, "RAIN_DISH"],
+    [45, "SAND_STREAM"],
+    [46, "PRESSURE"],
+    [47, "THICK_FAT"],
+    [48, "EARLY_BIRD"],
+    [49, "FLAME_BODY"],
+    [50, "RUN_AWAY"],
+    [51, "KEEN_EYE"],
+    [52, "HYPER_CUTTER"],
+    [53, "PICKUP"],
+    [54, "TRUANT"],
+    [55, "HUSTLE"],
+    [56, "CUTE_CHARM"],
+    [57, "PLUS"],
+    [58, "MINUS"],
+    [59, "FORECAST"],
+    [60, "STICKY_HOLD"],
+    [61, "SHED_SKIN"],
+    [62, "GUTS"],
+    [63, "MARVEL_SCALE"],
+    [64, "LIQUID_OOZE"],
+    [65, "OVERGROW"],
+    [66, "BLAZE"],
+    [67, "TORRENT"],
+    [68, "SWARM"],
+    [69, "ROCK_HEAD"],
+    [70, "DROUGHT"],
+    [71, "ARENA_TRAP"],
+    [72, "VITAL_SPIRIT"],
+    [73, "WHITE_SMOKE"],
+    [74, "PURE_POWER"],
+    [75, "SHELL_ARMOR"],
+    [76, "CACOPHONY"],
+    [77, "AIR_LOCK"]
+]);
 
 /**
  * @description Gets the ability name from the ability ID.

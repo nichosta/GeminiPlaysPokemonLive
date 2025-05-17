@@ -393,8 +393,6 @@ const SPECIES_NAMES = `
 #define SPECIES_DEOXYS 410
 #define SPECIES_CHIMECHO 411
 #define SPECIES_EGG 412
-
-// I deleted the UNOWN species info because I don't care. If you somehow get one my b lol
 `
 
 /**
