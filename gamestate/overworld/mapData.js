@@ -159,6 +159,37 @@ async function processMemoryDataToCollisionMap(tileGridData, mapWidthTiles, allM
     };
 }
 
+/**
+ * Finds the most relevant connection for a given coordinate along a specific direction.
+ * It selects the connection with the largest offset that is less than or equal to the coordinate.
+ *
+ * @param {Array<object>} connections - Array of connection objects from getCurrentMapConnections.
+ * @param {string} direction - The direction to filter by (e.g., "left", "up").
+ * @param {number} coordinate - The player's or tile's coordinate (e.g., Y for "left"/"right", X for "up"/"down").
+ * @returns {object|null} The most relevant connection object, or null if no suitable connection is found.
+ */
+function findRelevantConnectionForCoordinate(connections, direction, coordinate) {
+    if (!connections) return null;
+
+    const candidates = connections
+        .filter(c => c.direction === direction && c.mapName !== "MAP_NONE" && typeof c.offset === 'number')
+        .sort((a, b) => a.offset - b.offset); // Sort by offset ascending
+
+    let bestMatch = null;
+    for (const conn of candidates) {
+        if (coordinate >= conn.offset) {
+            // This connection's segment starts at or before the coordinate.
+            // It's a candidate. Since candidates are sorted by offset ascending,
+            // this will naturally become the one with the largest offset <= coordinate.
+            bestMatch = conn;
+        } else {
+            // Coordinate is before this current connection's segment starts.
+            // Since connections are sorted by offset, no further connection will match.
+            break;
+        }
+    }
+    return bestMatch;
+}
 
 /**
  * Retrieves the complete current map state in a structured JSON format.
@@ -371,136 +402,59 @@ async function getBackupMapStateJson() {
                     // Condition 1: The backup map tile itself must be connectable.
                     if (!isConnectableTileType(originalTileType)) {
                         continue;
-                    }
-
+                    }                    
                     let markAsConnection = false;
+                    const mainMapTileX = bx - CONSTANTS.MAP_OFFSET;
+                    const mainMapTileY = by - CONSTANTS.MAP_OFFSET;
 
                     // --- Check Straight Edges ---
                     // Left edge of main map (current tile bx is MAP_OFFSET - 1)
-                    if (bx === CONSTANTS.MAP_OFFSET - 1 && (by >= CONSTANTS.MAP_OFFSET && by < CONSTANTS.MAP_OFFSET + mainMapHeight)) {
+                    // mainMapTileY is the relevant coordinate for "left" connections' offsets.
+                    if (bx === CONSTANTS.MAP_OFFSET - 1 && (mainMapTileY >= 0 && mainMapTileY < mainMapHeight)) {
                         isCandidateForC = true;
-                        const conn = mainMapConnections.find(c => c.direction === "left");
-                        const mapNameForConn = conn ? conn.mapName : null;
-                        // console.log(`[BackupMapDebug] Left Edge Check at (${bx},${by}): originalType=${originalTileType}, connFound=${!!conn}, mapNameForConn=${mapNameForConn}`);
-                        // Condition 2: Valid connection exists (not MAP_NONE)
-                        if (conn && mapNameForConn) {
+                        const conn = findRelevantConnectionForCoordinate(mainMapConnections, "left", mainMapTileY);
+                        if (conn) { // conn is null if no actual connection applies or mapName is MAP_NONE
                             const innerAdjTileString = collisionData.map_data[by][bx + 1]; // Tile at main map's edge
                             const innerAdjType = innerAdjTileString.split(':')[1];
-                            // console.log(`[BackupMapDebug] ... InnerAdjType=${innerAdjType}, isConnectableOuter=${isConnectableTileType(originalTileType)}, isConnectableInner=${isConnectableTileType(innerAdjType)}`);
                             // Condition 3: Inner adjacent tile is also connectable
                             if (isConnectableTileType(innerAdjType)) markAsConnection = true;
                         }
                     }
                     // Right edge
-                    if (!markAsConnection && bx === CONSTANTS.MAP_OFFSET + mainMapWidth && (by >= CONSTANTS.MAP_OFFSET && by < CONSTANTS.MAP_OFFSET + mainMapHeight)) {
+                    // mainMapTileY is the relevant coordinate for "right" connections' offsets.
+                    if (!markAsConnection && bx === CONSTANTS.MAP_OFFSET + mainMapWidth && (mainMapTileY >= 0 && mainMapTileY < mainMapHeight)) {
                         isCandidateForC = true;
-                        const conn = mainMapConnections.find(c => c.direction === "right");
-                        const mapNameForConn = conn ? conn.mapName : null;
-                        // console.log(`[BackupMapDebug] Right Edge Check at (${bx},${by}): originalType=${originalTileType}, connFound=${!!conn}, mapNameForConn=${mapNameForConn}`);
-                        if (conn && mapNameForConn) {
+                        const conn = findRelevantConnectionForCoordinate(mainMapConnections, "right", mainMapTileY);
+                        if (conn) {
                             const innerAdjTileString = collisionData.map_data[by][bx - 1];
                             const innerAdjType = innerAdjTileString.split(':')[1];
-                            // console.log(`[BackupMapDebug] ... InnerAdjType=${innerAdjType}, isConnectableOuter=${isConnectableTileType(originalTileType)}, isConnectableInner=${isConnectableTileType(innerAdjType)}`);
                             if (isConnectableTileType(innerAdjType)) markAsConnection = true;
                         }
                     }
                     // Top edge
-                    if (!markAsConnection && by === CONSTANTS.MAP_OFFSET - 1 && (bx >= CONSTANTS.MAP_OFFSET && bx < CONSTANTS.MAP_OFFSET + mainMapWidth)) {
+                    // mainMapTileX is the relevant coordinate for "up" connections' offsets.
+                    if (!markAsConnection && by === CONSTANTS.MAP_OFFSET - 1 && (mainMapTileX >= 0 && mainMapTileX < mainMapWidth)) {
                         isCandidateForC = true;
-                        const conn = mainMapConnections.find(c => c.direction === "up");
-                        const mapNameForConn = conn ? conn.mapName : null;
-                        // console.log(`[BackupMapDebug] Top Edge Check at (${bx},${by}): originalType=${originalTileType}, connFound=${!!conn}, mapNameForConn=${mapNameForConn}`);
-                        if (conn && mapNameForConn) {
+                        const conn = findRelevantConnectionForCoordinate(mainMapConnections, "up", mainMapTileX);
+                        if (conn) {
                             const innerAdjTileString = collisionData.map_data[by + 1][bx];
                             const innerAdjType = innerAdjTileString.split(':')[1];
-                            // console.log(`[BackupMapDebug] ... InnerAdjType=${innerAdjType}, isConnectableOuter=${isConnectableTileType(originalTileType)}, isConnectableInner=${isConnectableTileType(innerAdjType)}`);
                             if (isConnectableTileType(innerAdjType)) markAsConnection = true;
                         }
                     }
                     // Bottom edge
-                    if (!markAsConnection && by === CONSTANTS.MAP_OFFSET + mainMapHeight && (bx >= CONSTANTS.MAP_OFFSET && bx < CONSTANTS.MAP_OFFSET + mainMapWidth)) {
+                    // mainMapTileX is the relevant coordinate for "down" connections' offsets.
+                    if (!markAsConnection && by === CONSTANTS.MAP_OFFSET + mainMapHeight && (mainMapTileX >= 0 && mainMapTileX < mainMapWidth)) {
                         isCandidateForC = true;
-                        const conn = mainMapConnections.find(c => c.direction === "down");
-                        const mapNameForConn = conn ? conn.mapName : null;
-                        // console.log(`[BackupMapDebug] Bottom Edge Check at (${bx},${by}): originalType=${originalTileType}, connFound=${!!conn}, mapNameForConn=${mapNameForConn}`);
-                        if (conn && mapNameForConn) {
+                        const conn = findRelevantConnectionForCoordinate(mainMapConnections, "down", mainMapTileX);
+                        if (conn) {
                             const innerAdjTileString = collisionData.map_data[by - 1][bx];
                             const innerAdjType = innerAdjTileString.split(':')[1];
-                            // console.log(`[BackupMapDebug] ... InnerAdjType=${innerAdjType}, isConnectableOuter=${isConnectableTileType(originalTileType)}, isConnectableInner=${isConnectableTileType(innerAdjType)}`);
                             if (isConnectableTileType(innerAdjType)) markAsConnection = true;
                         }
                     }
 
-                    // --- Check Corners ---
-                    // Top-Left Corner (bx = MAP_OFFSET - 1, by = MAP_OFFSET - 1)
-                    if (!markAsConnection && bx === CONSTANTS.MAP_OFFSET - 1 && by === CONSTANTS.MAP_OFFSET - 1) {
-                        isCandidateForC = true;
-                        // console.log(`[BackupMapDebug] Top-Left Corner Check at (${bx},${by}): originalType=${originalTileType}`);
-                        const leftConn = mainMapConnections.find(c => c.direction === "left");
-                        const upConn = mainMapConnections.find(c => c.direction === "up");
-                        const mapNameForLeftConn = leftConn ? getMapName(leftConn.mapGroup, leftConn.mapNum) : null;
-                        const mapNameForUpConn = upConn ? getMapName(upConn.mapGroup, upConn.mapNum) : null;
-
-                        if (leftConn && mapNameForLeftConn && isConnectableTileType(collisionData.map_data[by][bx + 1].split(':')[1])) {
-                            // console.log(`[BackupMapDebug] ... TL Corner via Left: connFound=${!!leftConn}, mapName=${mapNameForLeftConn}, innerType=${collisionData.map_data[by][bx + 1].split(':')[1]}`);
-                            markAsConnection = true;
-                        }
-                        if (!markAsConnection && upConn && mapNameForUpConn && isConnectableTileType(collisionData.map_data[by + 1][bx].split(':')[1])) {
-                            // console.log(`[BackupMapDebug] ... TL Corner via Up: connFound=${!!upConn}, mapName=${mapNameForUpConn}, innerType=${collisionData.map_data[by + 1][bx].split(':')[1]}`);
-                            markAsConnection = true;
-                        }
-                    }
-                    // Top-Right Corner (bx = MAP_OFFSET + mainMapWidth, by = MAP_OFFSET - 1)
-                    if (!markAsConnection && bx === CONSTANTS.MAP_OFFSET + mainMapWidth && by === CONSTANTS.MAP_OFFSET - 1) {
-                        isCandidateForC = true;
-                        // console.log(`[BackupMapDebug] Top-Right Corner Check at (${bx},${by}): originalType=${originalTileType}`);
-                        const rightConn = mainMapConnections.find(c => c.direction === "right");
-                        const upConn = mainMapConnections.find(c => c.direction === "up");
-                        const mapNameForRightConn = rightConn ? getMapName(rightConn.mapGroup, rightConn.mapNum) : null;
-                        const mapNameForUpConn = upConn ? getMapName(upConn.mapGroup, upConn.mapNum) : null;
-
-                        if (rightConn && mapNameForRightConn && isConnectableTileType(collisionData.map_data[by][bx - 1].split(':')[1])) {
-                            markAsConnection = true;
-                        }
-                        if (!markAsConnection && upConn && mapNameForUpConn && isConnectableTileType(collisionData.map_data[by + 1][bx].split(':')[1])) {
-                            markAsConnection = true;
-                        }
-                    }
-                    // Bottom-Left Corner (bx = MAP_OFFSET - 1, by = MAP_OFFSET + mainMapHeight)
-                    if (!markAsConnection && bx === CONSTANTS.MAP_OFFSET - 1 && by === CONSTANTS.MAP_OFFSET + mainMapHeight) {
-                        isCandidateForC = true;
-                        // console.log(`[BackupMapDebug] Bottom-Left Corner Check at (${bx},${by}): originalType=${originalTileType}`);
-                        const leftConn = mainMapConnections.find(c => c.direction === "left");
-                        const downConn = mainMapConnections.find(c => c.direction === "down");
-                        const mapNameForLeftConn = leftConn ? getMapName(leftConn.mapGroup, leftConn.mapNum) : null;
-                        const mapNameForDownConn = downConn ? getMapName(downConn.mapGroup, downConn.mapNum) : null;
-
-                        if (leftConn && mapNameForLeftConn && isConnectableTileType(collisionData.map_data[by][bx + 1].split(':')[1])) {
-                            markAsConnection = true;
-                        }
-                        if (!markAsConnection && downConn && mapNameForDownConn && isConnectableTileType(collisionData.map_data[by - 1][bx].split(':')[1])) {
-                            markAsConnection = true;
-                        }
-                    }
-                    // Bottom-Right Corner (bx = MAP_OFFSET + mainMapWidth, by = MAP_OFFSET + mainMapHeight)
-                    if (!markAsConnection && bx === CONSTANTS.MAP_OFFSET + mainMapWidth && by === CONSTANTS.MAP_OFFSET + mainMapHeight) {
-                        isCandidateForC = true;
-                        // console.log(`[BackupMapDebug] Bottom-Right Corner Check at (${bx},${by}): originalType=${originalTileType}`);
-                        const rightConn = mainMapConnections.find(c => c.direction === "right");
-                        const downConn = mainMapConnections.find(c => c.direction === "down");
-                        const mapNameForRightConn = rightConn ? getMapName(rightConn.mapGroup, rightConn.mapNum) : null;
-                        const mapNameForDownConn = downConn ? getMapName(downConn.mapGroup, downConn.mapNum) : null;
-
-                        if (rightConn && mapNameForRightConn && isConnectableTileType(collisionData.map_data[by][bx - 1].split(':')[1])) {
-                            markAsConnection = true;
-                        }
-                        if (!markAsConnection && downConn && mapNameForDownConn && isConnectableTileType(collisionData.map_data[by - 1][bx].split(':')[1])) {
-                            markAsConnection = true;
-                        }
-                    }
-
                     if (markAsConnection) {
-                        // console.log(`[BackupMapDebug] Marking (${bx},${by}) as TILE_CONNECTION. Original type was ${originalTileType}.`);
                         collisionData.map_data[by][bx] = `${bx},${by}:${TILE_CONNECTION}`;
                     } else if (isCandidateForC && isConnectableTileType(originalTileType)) {
                         // console.log(`[BackupMapDebug] Candidate C-tile at (${bx},${by}) was not marked. OriginalType=${originalTileType}. Conditions failed.`);
@@ -756,28 +710,51 @@ function trimMapStateToViewport(fullMapState) {
         }
     }
 
-    // --- Filter Connections by Viewport Edges ---
+    // --- Filter Connections by Viewport Edges and Player Position ---
     const trimmedConnections = [];
-    for (const conn of fullConnections) {
-        let isVisible = false;
-        switch (conn.direction) {
+    const STANDARD_DIRECTIONS_VIEWPORT = ["up", "down", "left", "right"];
+
+    for (const dir of STANDARD_DIRECTIONS_VIEWPORT) {
+        let isEdgeVisible = false;
+        let relevantPlayerCoord;
+
+        switch (dir) {
             case "down":
-                isVisible = actualEndY === fullHeight;
+                isEdgeVisible = actualEndY === fullHeight; // Viewport bottom edge is map bottom edge
+                relevantPlayerCoord = playerX; // For down connections, offset is X-coord shift
                 break;
             case "up":
-                isVisible = actualStartY === 0;
+                isEdgeVisible = actualStartY === 0; // Viewport top edge is map top edge
+                relevantPlayerCoord = playerX; // For up connections, offset is X-coord shift
                 break;
             case "left":
-                isVisible = actualStartX === 0;
+                isEdgeVisible = actualStartX === 0; // Viewport left edge is map left edge
+                relevantPlayerCoord = playerY; // For left connections, offset is Y-coord shift
                 break;
             case "right":
-                isVisible = actualEndX === fullWidth;
-                break;
-            default: // For connections like "dive", "emerge", or "unknown", assume they are always "visible" if present
-                isVisible = true;
+                isEdgeVisible = actualEndX === fullWidth; // Viewport right edge is map right edge
+                relevantPlayerCoord = playerY; // For right connections, offset is Y-coord shift
                 break;
         }
-        if (isVisible) {
+
+        if (isEdgeVisible) {
+            const relevantConn = findRelevantConnectionForCoordinate(fullConnections, dir, relevantPlayerCoord);
+            if (relevantConn) {
+                trimmedConnections.push(relevantConn);
+            } else {
+                // If no specific actual connection is relevant for the player's position on this edge,
+                // add the "MAP_NONE" placeholder for this direction if it exists.
+                const placeholderConn = fullConnections.find(c => c.direction === dir && c.mapName === "MAP_NONE");
+                if (placeholderConn) {
+                    trimmedConnections.push(placeholderConn);
+                }
+            }
+        }
+    }
+
+    // Add non-standard connections (e.g., "dive", "emerge") as they are not edge-dependent in the same way
+    for (const conn of fullConnections) {
+        if (!STANDARD_DIRECTIONS_VIEWPORT.includes(conn.direction)) {
             trimmedConnections.push(conn);
         }
     }
@@ -909,35 +886,52 @@ function trimBackupMapStateToViewport(fullBackupMapState) {
 
     // --- Determine visible connections based on 'C' tiles in viewport ---
     const visibleConnectionsOutput = [];
-    const addedConnectionDestinations = new Set(); // To avoid duplicate connection entries if multiple 'C' tiles lead to same map
+    // Use a Set to store unique connection identifiers (e.g., "direction_mapName_offset")
+    // to prevent adding the exact same connection multiple times if multiple 'C' tiles point to it.
+    const addedConnectionDetails = new Set();
 
     for (const row of trimmedMapData) {
         for (const tileString of row) {
             const parts = tileString.split(':');
-            const coords = parts[0].split(',').map(Number);
+            const coords = parts[0].split(',').map(Number); // [unOffsetX, unOffsetY]
             const tileType = parts[1];
             const unOffsetX = coords[0];
             const unOffsetY = coords[1];
 
             if (tileType === TILE_CONNECTION) {
-                let connectionDirections = [];
-                // Check edges relative to the main map's footprint
-                if (unOffsetX === -1 && unOffsetY >= -1 && unOffsetY <= main_map_height) connectionDirections.push("left");
-                if (unOffsetX === main_map_width && unOffsetY >= -1 && unOffsetY <= main_map_height) connectionDirections.push("right");
-                if (unOffsetY === -1 && unOffsetX >= -1 && unOffsetX <= main_map_width) connectionDirections.push("up");
-                if (unOffsetY === main_map_height && unOffsetX >= -1 && unOffsetX <= main_map_width) connectionDirections.push("down");
+                let potentialDirectionsAndCoords = [];
+                // Determine which edge(s) of the main map this C tile is on and the relevant coordinate for offset checking.
+                // A C tile at unOffsetX = -1 is on the left of the main map.
+                // Its Y position (unOffsetY) determines which specific connection it might be.
+                if (unOffsetX === -1 && unOffsetY >= -1 && unOffsetY <= main_map_height) potentialDirectionsAndCoords.push({ dir: "left", coord: unOffsetY });
+                if (unOffsetX === main_map_width && unOffsetY >= -1 && unOffsetY <= main_map_height) potentialDirectionsAndCoords.push({ dir: "right", coord: unOffsetY });
+                if (unOffsetY === -1 && unOffsetX >= -1 && unOffsetX <= main_map_width) potentialDirectionsAndCoords.push({ dir: "up", coord: unOffsetX });
+                if (unOffsetY === main_map_height && unOffsetX >= -1 && unOffsetX <= main_map_width) potentialDirectionsAndCoords.push({ dir: "down", coord: unOffsetX });
+                
+                // Corner C-tiles might be implicitly covered if they align with the above conditions.
+                // For example, a C-tile at unOffsetX = -1, unOffsetY = -1 would trigger both "left" (with coord -1) and "up" (with coord -1).
 
-                for (const dir of connectionDirections) {
-                    for (const conn of mainMapAllConnections) {
-                        if (conn.direction === dir) {
-                            const connKey = `${conn.direction}_${conn.mapName}`;
-                            if (!addedConnectionDestinations.has(connKey)) {
-                                visibleConnectionsOutput.push(conn);
-                                addedConnectionDestinations.add(connKey);
-                            }
+                for (const pd of potentialDirectionsAndCoords) {
+                    const relevantConn = findRelevantConnectionForCoordinate(mainMapAllConnections, pd.dir, pd.coord);
+                    if (relevantConn) { // findRelevantConnectionForCoordinate filters for mapName !== "MAP_NONE" and valid offset
+                        const connKey = `${relevantConn.direction}_${relevantConn.mapName}_${relevantConn.offset}`;
+                        if (!addedConnectionDetails.has(connKey)) {
+                            visibleConnectionsOutput.push(relevantConn);
+                            addedConnectionDetails.add(connKey);
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // Add non-standard connections from the main map's connections, as they are not tied to 'C' tiles.
+    for (const conn of mainMapAllConnections) {
+        if (!["up", "down", "left", "right"].includes(conn.direction)) {
+            const connKey = `${conn.direction}_${conn.mapName}_${conn.offset !== undefined ? conn.offset : 'nooffset'}`;
+            if (!addedConnectionDetails.has(connKey)) { // Avoid duplicates if somehow added above
+                visibleConnectionsOutput.push(conn);
+                addedConnectionDetails.add(connKey);
             }
         }
     }    
