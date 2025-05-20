@@ -318,7 +318,7 @@ export function trimBackupMapStateToViewport(fullBackupMapState) {
     }
 
     return {
-        map_name: `${map_name} (Extended Viewport)`,
+        map_name: `${map_name}`,
         width: main_map_width,
         height: main_map_height,
         tile_passability: CONSTANTS.VIEWPORT_TILE_PASSABILITY,

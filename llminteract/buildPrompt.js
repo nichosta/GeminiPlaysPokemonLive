@@ -5,59 +5,84 @@ import { getPartyMenuSlotId } from "../gamestate/menustate/partyMenu.js";
 import { areFieldControlsLocked, getPlayerBadges } from "../gamestate/overworld/playerData.js";
 
 /**
- * @description Formats the data for a single Pokemon into a readable string.
+ * @description Formats the data for a single Pokemon into a structured object.
  * @param {object} pokemon The Pokemon data object.
- * @returns {string} Formatted string for the Pokemon.
+ * @returns {object|null} Formatted object for the Pokemon, or null if data is invalid.
  */
 function formatPokemonInfo(pokemon) {
-    if (!pokemon) return "Invalid Pokemon data";
-    return `
-    Nickname: ${pokemon.nickname}
-  Species: ${pokemon.species}
-  Level: ${pokemon.level}
-  HP: ${pokemon.currentHP}/${pokemon.maxHP}
-  Moves:
-    \t${pokemon.moves[0]} (PP ${pokemon.currentPP[0]})
-    \t${pokemon.moves[1]} (PP ${pokemon.currentPP[1]})
-    \t${pokemon.moves[2]} (PP ${pokemon.currentPP[2]})
-    \t${pokemon.moves[3]} (PP ${pokemon.currentPP[3]})
-`;
+    if (!pokemon || typeof pokemon !== 'object') {
+        return null;
+    }
+
+    const movesData = [];
+    const pMoves = Array.isArray(pokemon.moves) ? pokemon.moves : [];
+    const pPP = Array.isArray(pokemon.currentPP) ? pokemon.currentPP : [];
+
+    for (let i = 0; i < 4; i++) { // Always create 4 move slots
+        movesData.push({
+            name: pMoves[i] || null,
+            pp: pPP[i] !== undefined ? pPP[i] : null,
+        });
+    }
+
+    return {
+        nickname: pokemon.nickname || null,
+        species: pokemon.species || null,
+        level: pokemon.level !== undefined ? pokemon.level : null,
+        currentHP: pokemon.currentHP !== undefined ? pokemon.currentHP : null,
+        maxHP: pokemon.maxHP !== undefined ? pokemon.maxHP : null,
+        moves: movesData,
+    };
 }
 
 /**
- * @description Gets the current game state information (RAM data) as a formatted string.
+ * @description Gets the current game state information (RAM data) as a JSON string.
  * @param {object} visibleMapState The pre-fetched visible map state object.
- * @returns {Promise<string>} Formatted string containing party, inventory, location, etc.
+ * @returns {Promise<string>} JSON string containing party, inventory, location, etc.
  */
 export async function getGameInfoText(visibleMapState) {
-    // console.log("--- Getting Game Info (for stringification) ---"); // Less verbose logging
-    let partyCount = await getPartyCount();
-    let pokemonInfo = [];
-    if (partyCount > 0) {
-        for (let i = 0; i < partyCount; i++) {
-            pokemonInfo.push(formatPokemonInfo(await getPokemonData(i)));
-        }
+    const gameInfoObject = {};
+
+    gameInfoObject.mapData = visibleMapState ? visibleMapState : "Error: Map data unavailable.";
+
+    const inBattleStatus = await isInBattle();
+    gameInfoObject.inBattle = inBattleStatus;
+
+    const partyMenuSlot = await getPartyMenuSlotId();
+    if (partyMenuSlot !== 7) { // Assuming 7 means not in party menu or relevant selection
+        const pokemonInSlotData = await getPokemonData(partyMenuSlot);
+        gameInfoObject.partyMenuSlotInfo = {
+            slot: partyMenuSlot,
+            pokemonNickname: pokemonInSlotData ? (pokemonInSlotData.nickname || null) : null
+        };
     }
 
-    let bagInfo = await getBagContents();
-    let prettyBagInfo = prettyPrintBag(bagInfo);
+    if (!inBattleStatus) {
+        gameInfoObject.overworldControlsLocked = await areFieldControlsLocked();
+    }
 
-    let mapStateJSON = visibleMapState; // Use the passed visibleMapState
-    let inBattleStatus = await isInBattle(); // Renamed to avoid conflict with import
-    let fieldControlsLocked = await areFieldControlsLocked();
-    let playerMoney = await getPlayerMoney();
-    let partyMenuSlot = await getPartyMenuSlotId();
-    let badgesObtained = await getPlayerBadges();
+    const partyCount = await getPartyCount();
+    gameInfoObject.partyCount = partyCount;
 
-    const gameInfo = `
-      Map Data:\n${mapStateJSON ? JSON.stringify(mapStateJSON) : "Error: Map data unavailable."}
-      In Battle: ${inBattleStatus ? "Yes" : "No"}
-      ${partyMenuSlot === 7 ? "" : `Party Menu Slot: ${partyMenuSlot} (${(await getPokemonData(partyMenuSlot)).nickname})`}
-      ${inBattleStatus ? "" : `Overworld Controls Locked: ${fieldControlsLocked ? "Yes" : "No"}`}
-      Party Count: ${partyCount}
-      Pokemon:\n        ${pokemonInfo.length > 0 ? pokemonInfo.join("\n") : "No available pokemon"}
-      Money: ${playerMoney}
-      ${prettyBagInfo}
-      Badges: ${badgesObtained ? badgesObtained.join(", ") : "None"}`;
-    return gameInfo.replace(/\n +/g, "\n").trim();
+    gameInfoObject.pokemon = [];
+    if (partyCount > 0) {
+        const partyPokemonData = [];
+        for (let i = 0; i < partyCount; i++) {
+            partyPokemonData.push(await getPokemonData(i));
+        }
+        partyPokemonData.forEach(pokemonData => {
+            const formattedPokemon = formatPokemonInfo(pokemonData);
+            if (formattedPokemon) {
+                gameInfoObject.pokemon.push(formattedPokemon);
+            }
+        });
+    }
+
+    gameInfoObject.money = await getPlayerMoney();
+    gameInfoObject.bag = await getBagContents(); // Using raw bag contents for JSON
+
+    const badgesObtained = await getPlayerBadges();
+    gameInfoObject.badges = badgesObtained || []; // Ensure it's an array, empty if no badges
+
+    return JSON.stringify(gameInfoObject);
 }

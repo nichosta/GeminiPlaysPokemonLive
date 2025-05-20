@@ -160,8 +160,6 @@ async function runGameLoop() {
             }
             const currentGameInfoString = await getGameInfoText(visibleMapState); // Get stringified version for LLM
 
-            let mapBank = await getCurrentMapBank();
-            let mapNum = await getCurrentMapNumber();
             let inBattle = await isInBattle();
             let fieldControlsLocked = await areFieldControlsLocked();
             const { original: currentImageBase64URI, processed: currentImageBase64URIProcessed } = await getGameImagesBase64(); // Get full data URI
@@ -200,6 +198,8 @@ async function runGameLoop() {
                 { text: currentPromptText },
                 { text: currentTwitchChat },
             ];
+
+            fs.writeFile('userPrompt_history.json', JSON.stringify(currentUserPromptParts, null, 2));
 
             // 3. Check if summarization is needed BEFORE making the main API call
             if (turnCounter >= CONFIGS.HISTORY_LENGTH) {
@@ -327,8 +327,6 @@ async function runGameLoop() {
 
                 // Save the updated history
                 await saveHistoryToFile(googleHistory, HISTORY_FILE_PATH); // Only save main history here
-                fs.writeFile('userPrompt_history.json', JSON.stringify(currentUserPromptParts));
-
             }
         } catch (error) {
             console.error("Error during game loop iteration:", error);
