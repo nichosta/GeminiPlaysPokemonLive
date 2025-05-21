@@ -161,7 +161,7 @@ export const MAPGRID_ELEVATION_MASK = 0xF000; // The part of the mapgrid info th
 
 // --- Tileset ---
 export const TILESET_METATILE_ATTRIBUTES_POINTER_OFFSET = 0x10; // Offset to metatile attributes array pointer (const u16 *)
-export const PRIMARY_TILESET_METATILE_COUNT = 0x200; // Number of metatiles (max) listed in a tileset
+export const PRIMARY_TILESET_METATILE_COUNT = selectedConstants.PRIMARY_TILESET_METATILE_COUNT; // Number of metatiles (max) listed in a tileset
 export const METATILE_ATTR_BEHAVIOR_MASK = 0x00FF; // Mask for the bits in a u16 metatile that correspond to behavior
 
 // --- Map Events (Templates for Warps, NPCs, etc.) ---
