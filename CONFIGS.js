@@ -1,8 +1,8 @@
 import { type } from "os";
 
 // Choose a Gemini model that supports multimodal input (image + text)
-export const GOOGLE_MODEL_NAME = "gemini-2.5-flash-preview-04-17";
-// export const GOOGLE_MODEL_NAME = "gemini-2.5-pro-exp-03-25";
+export const GOOGLE_MODEL_NAME = "gemini-2.5-flash-preview-05-20";
+// export const GOOGLE_MODEL_NAME = "gemini-2.5-pro-preview-05-06";
 export const HISTORY_LENGTH = 30; // Keep the last X pairs of user/model messages
 export const LOOP_DELAY_MS = 5000; // Delay between loop iterations (e.g., 5 seconds) - ADJUST AS NEEDED!
 export const MAX_SUMMARIES = 30; // Maximum number of summary messages to keep in history

@@ -1,3 +1,5 @@
+// This file doesn't have a counterpart for FRLG. Fix this if you need to use it.
+
 export const metatileBehaviorMap = new Map([
     [0x00, "NORMAL"],
     [0x01, "SECRET_BASE_WALL"],
@@ -251,7 +253,7 @@ export function getMetatileBehaviorName(behaviorId) {
     return metatileBehaviorMap.get(behaviorId);
 }
 
-export const WATER_TILES = [
+export const WATER_TILES = new Set([
     "POND_WATER",
     "OCEAN_WATER",
     "INTERIOR_DEEP_WATER",
@@ -261,11 +263,41 @@ export const WATER_TILES = [
     "WESTWARD_CURRENT",
     "NORTHWARD_CURRENT",
     "SOUTHWARD_CURRENT",
-];
+]);
+
+export const WARP_METATILES = new Set([
+    "EAST_ARROW_WARP",
+    "WEST_ARROW_WARP",
+    "NORTH_ARROW_WARP",
+    "SOUTH_ARROW_WARP",
+    "PETALBURG_GYM_DOOR",
+    "AQUA_HIDEOUT_WARP",
+    "LAVARIDGE_GYM_1F_WARP",
+    "UP_ESCALATOR",
+    "DOWN_ESCALATOR",
+    "NON_ANIMATED_DOOR",
+    "ANIMATED_DOOR",
+    "LADDER",
+    "WATER_DOOR",
+    "WATER_SOUTH_ARROW_WARP",
+    "DEEP_SOUTH_WARP",
+    "STAIRS_OUTSIDE_ABANDONED_SHIP",
+    "SHOAL_CAVE_ENTRANCE"
+])
 
 export const LEDGE_DIRECTIONS = new Map([
     ["JUMP_EAST", "→"],
     ["JUMP_WEST", "←"],
     ["JUMP_NORTH", "↑"],
     ["JUMP_SOUTH", "↓"]
+]);
+
+export const WARP_DIRECTIONS = new Map([
+    ["EAST_ARROW_WARP", "→"],
+    ["WEST_ARROW_WARP", "←"],
+    ["NORTH_ARROW_WARP", "↑"],
+    ["STAIRS_OUTSIDE_ABANDONED_SHIP", "↑"],
+    ["SOUTH_ARROW_WARP", "↓"],
+    ["SHOAL_CAVE_ENTRANCE", "↓"],
+    ["WATER_SOUTH_ARROW_WARP", "↓"],
 ]);

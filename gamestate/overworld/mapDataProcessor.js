@@ -56,7 +56,7 @@ export async function processMemoryDataToCollisionMap(tileGridData, mapWidthTile
 
                     if (ledgeChar) {
                         tileType = ledgeChar;
-                    } else if (behaviorName && WATER_TILES.includes(behaviorName)) {
+                    } else if (behaviorName && WATER_TILES.has(behaviorName)) {
                         tileType = CONSTANTS.TILE_WATER;
                     } else {
                         const collisionBits = (tileValue & CONSTANTS.MAPGRID_COLLISION_MASK) >> 10;
