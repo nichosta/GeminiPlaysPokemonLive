@@ -78,9 +78,9 @@ When the screenshots conflict with the game RAM data, ignore the screenshots.
 When you are trying to exit / back out of a menu, ALWAYS press B; do not attempt to select any 'CLOSE' or 'EXIT' option
 
 If you haven't made progress since the last turn, reconsider your approach and double-check the information you've been given to see where you may have gone wrong. Try pressing other buttons.
-When you talk to an NPC, repeat their words exactly in your commentary. If they say the exact same thing twice, do not speak to them again.
+When you talk to an NPC, repeat their words exactly in your commentary output. If they say the exact same thing twice, do not speak to them again.
 If you determine you are stuck or doing the same thing repeatedly without progress, you MUST IGNORE YOUR OWN PREVIOUS MESSAGES AND DECISIONS that led to or perpetuated this state.
-Instead, re-evaluate your strategy based *only* on the current, trusted game state (Game RAM data first, then Viewer messages, then Screenshots). Articulate this re-evaluation in your commentary. If a clear alternative action isn't apparent from the current data, consider a safe, exploratory action (like moving to an adjacent, unexplored, walkable tile if possible and not part of the recent repetitive behavior).
+Instead, re-evaluate your strategy based *only* on the current, trusted game state (Viewer messages first, then Game RAM data, then Screenshots). Articulate this re-evaluation in your commentary. If a clear alternative action isn't apparent from the current data, consider a safe, exploratory action (like moving to an adjacent, unexplored, walkable tile if possible and not part of the recent repetitive behavior).
 If no such safe action exists or you need more information, explicitly state you are waiting for new data in the next turn to make a more informed decision.
 `;
 
@@ -93,7 +93,7 @@ A JSON object containing data about the currently onscreen part of the map, incl
 \tYour current X and Y position on the map. Note that the top left corner of the map is 0, 0; and going down increases the Y while going right increases the X. The coordinates given extend off the sides of the map; these are parts of other maps (if they are connected to the current one).
 \tYour current facing direction. Remember you cannot interact with anything unless you are facing towards it. Be careful you face things before you try to interact.
 \tThe collision information of tiles on screen. Tiles you can walk onto or through are marked with an O, while tiles you cannot pass onto or through are marked with an X. Use this information to navigate around obstructions. 
-\tOnscreen warps to other maps, marked with a W in the tile data and with their destinations noted in the list of warps. Note some warps require you to take an additional action (usually walking onto a nearby impassable tile) while standing on their tile to be triggered. This list of warps is complete; if you believe you see a warp not listed, you are mistaken. Note this does not include overworld connections between maps.
+\tOnscreen warps to other maps, marked with a W in the tile data and with their destinations noted in the list of warps. This list of warps is complete; if you believe you see a warp not listed, you are mistaken. Note this does not include overworld connections between maps.
 \tOnscreen overworld connections to other maps. You can use these by simply walking in the direction indicated off the edge of the map from a passable tile. If a connection is not listed when the edge is visible, you will be unable to walk off the edge of the map.
 \tOnscreen NPCs, marked with a ! in the tile data and with their sprite names noted. Some NPCs are marked "wandering", meaning they move between turns. If you wish to interact with these, consider using your "stunNPC" tool to freeze them until they are talked to. This list of NPCs is complete, if you believe you see an NPC not listed then you are mistaken.
 Whether or not you are currently in the battle screen. This includes the time after an opponent is defeated but before you have returned to the overworld (the post battle defeat screen and text). You cannot move in the overworld as long as this value is true.
@@ -212,7 +212,7 @@ const STRUCTURED_OUTPUT_SCHEMA = {
     navigation: {
       type: "array",
       description: 
-        "Your navigation plan for the next turn if you are actionable in the overworld. Should always be at least four tiles unless you intend to interact with something before that. Make use of the collision data to navigate around obstacles and reach your destination. Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid. Put [] here if this does not apply.",
+        "Your navigation plan for the next turn if you are actionable in the overworld. Make use of the collision data to navigate around obstacles and reach your destination. Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid. Put [] here if this does not apply.",
       items: {
         type: "object",
           properties: {
@@ -235,7 +235,7 @@ const STRUCTURED_OUTPUT_SCHEMA = {
     goalLongTerm: {
       type: "string",
       description:
-        "Your current long-term goal. Should be the next major step in game progression, usually a major battle, HM, or Key Item. For example, 'Defeat [GYM LEADER] and obtain the [NEXT BADGE]', or 'Talk to [HM GIVER] to obtain the [NEXT HM].' Do not confuse with your ultimate goal, which is becoming Champion and completing the Pokedex.",
+        "Your current long-term goal. Should be the next major step in game progression, usually a major battle, HM, or Key Item. For example, 'Defeat [GYM LEADER] and obtain the [NEXT BADGE]', or 'Talk to [HM GIVER] to obtain the [NEXT HM].' After accomplishing this goal, output a short walkthrough for the next section of the game to help jog your memory, and use that to select the next goal.",
     },
     goalMidTerm: {
       type: "string",
@@ -275,7 +275,7 @@ export const GENERATION_CONFIG = {
     parts: [{ text: SYSTEM_PROMPT_GAME_INFO }, { text: SYSTEM_PROMPT_MAIN }, { text: SYSTEM_PROMPT_RAM_DATA },  { text: SYSTEM_PROMPT_BATTLE_INSTRUCTIONS }],
   },
   thinkingConfig: {
-    // Doesn't work lol
+    // Doesn't work?
     // includeThoughts: true,
 
     // Up this if the model seems stupid and you don't mind waiting a little longer
@@ -287,12 +287,12 @@ export const GENERATION_CONFIG = {
 
 // Summarization configuration
 export const SUMMARIZATION_CONFIG = {
-  temperature: 0.5, // Low summarization temp (IDK if this is a good idea or not tbh)
+  temperature: 0.5, // Low summarization temp (can test higher if you want or even lower)
   systemInstruction: {
     parts: [{ text: SYSTEM_PROMPT_SUMMARY}],
   },
   thinkingConfig: {
-    // Doesn't work lol
+    // Doesn't work
     // includeThoughts: true,
 
     // Big budget for summarization

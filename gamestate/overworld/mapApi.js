@@ -67,5 +67,3 @@ export async function validatePath(path, mapState) {
     // Directly call the internal function from mapPathValidator.js
     return internalValidatePath(path, mapState);
 }
-
-console.log(await getVisibleBackupMapStateJson());
