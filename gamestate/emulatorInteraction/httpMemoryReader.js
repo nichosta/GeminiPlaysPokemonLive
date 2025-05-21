@@ -1,6 +1,6 @@
 // Base URL for the memory reading API
 const API_BASE_URL = "http://localhost:5000/core";
-const READ_RANGE_CHUNK_SIZE = 512; // Define the chunk size
+const READ_RANGE_CHUNK_SIZE = 1024; // Define the chunk size
 
 // --- Helper Functions for Memory Reading ---
 

@@ -81,24 +81,80 @@ export async function getGameImagesBase64() {
     const originalScreenshotPath = path.join(SCREENSHOTS_DIR, 'screenshot.png');
     const processedScreenshotPath = path.join(SCREENSHOTS_DIR, OUTPUT_FILENAME);
 
-    // --- Parallel Fetching (Screenshot & Player Position) ---
+    // --- Get initial state of the screenshot file ---
+    // This helps determine if the screenshot taken by the fetch is new or an update.
+    let initialFileExists = true;
+    let initialMtimeMs = 0;
+    try {
+        const stats = await fs.promises.stat(originalScreenshotPath);
+        initialMtimeMs = stats.mtimeMs;
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            initialFileExists = false; // File doesn't exist yet
+        } else {
+            // Log error but attempt to continue; polling might still catch a new file.
+            console.warn(`Warning: Could not get initial stats for ${originalScreenshotPath}: ${err.message}. Assuming file does not exist or will be overwritten.`);
+            initialFileExists = false; // Treat as if it doesn't exist for update logic
+            // initialMtimeMs remains 0
+        }
+    }
+
+    // --- Trigger Screenshot Generation via API ---
     const screenshotResponse = await fetch(`http://localhost:5000/core/screenshot?path=${originalScreenshotPath}`, { method: 'POST' });
-    await delay(500);
-    const playerX = await getPlayerX();
-    const playerY = await getPlayerY();
 
     if (!screenshotResponse.ok) {
-        console.error(`Error fetching screenshot: ${screenshotResponse.status} ${screenshotResponse.statusText}`);
+        console.error(`Error triggering screenshot generation: ${screenshotResponse.status} ${screenshotResponse.statusText}`);
         return null;
     }
-    if (!fs.existsSync(originalScreenshotPath)) {
-        console.error('Error: Screenshot file not found after fetch:', originalScreenshotPath);
+
+    // --- Wait for the screenshot file to be updated/created on disk ---
+    const MAX_WAIT_MS_FOR_SCREENSHOT = 5000; // Max time to wait for the screenshot file
+    const POLLING_INTERVAL_MS = 100;      // How often to check for the file
+    let elapsedTimeMs = 0;
+    let screenshotFileReady = false;
+
+    while (elapsedTimeMs < MAX_WAIT_MS_FOR_SCREENSHOT) {
+        try {
+            const currentStats = await fs.promises.stat(originalScreenshotPath);
+            // File must exist, have a non-zero size, and:
+            // 1. Be newly created (if it didn't exist before).
+            // 2. Or have a more recent modification time (if it did exist before).
+            if (currentStats.size > 0 && (!initialFileExists || currentStats.mtimeMs > initialMtimeMs)) {
+                screenshotFileReady = true;
+                break;
+            }
+        } catch (err) {
+            if (err.code === 'ENOENT') {
+                // File not found yet, continue polling.
+            } else {
+                // Other errors during stat, log and continue polling.
+                console.warn(`Polling: Error accessing ${originalScreenshotPath}: ${err.message}. Retrying...`);
+            }
+        }
+        await delay(POLLING_INTERVAL_MS);
+        elapsedTimeMs += POLLING_INTERVAL_MS;
+    }
+
+    if (!screenshotFileReady) {
+        let diagnosticMessage = `Timeout: Screenshot file ${originalScreenshotPath} was not ready within ${MAX_WAIT_MS_FOR_SCREENSHOT / 1000}s.`;
+        try {
+            const finalStats = await fs.promises.stat(originalScreenshotPath); // Attempt to get final state for diagnostics
+            diagnosticMessage += ` Last known state: mtime=${finalStats.mtimeMs}, size=${finalStats.size}. (Initial: exists=${initialFileExists}, mtime=${initialMtimeMs})`;
+        } catch (statErr) {
+            diagnosticMessage += ` File may not exist or is inaccessible. (Initial: exists=${initialFileExists}, mtime=${initialMtimeMs}, error: ${statErr.message})`;
+        }
+        console.error(diagnosticMessage);
         return null;
     }
 
     // 1. Read the original image file into a buffer
     const originalBuffer = await fs.promises.readFile(originalScreenshotPath);
     const originalBase64 = originalBuffer.toString('base64'); // Encode original now
+
+    // --- Fetch Player Position (after screenshot is confirmed ready) ---
+    // This ensures player data corresponds to the game state when the screenshot was finalized.
+    const playerX = await getPlayerX();
+    const playerY = await getPlayerY();
 
     // 2. Load the image from the buffer and get metadata
     const image = sharp(originalBuffer); // Use the buffer directly
