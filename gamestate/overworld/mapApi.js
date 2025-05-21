@@ -22,6 +22,7 @@ export async function getVisibleMapStateJson() {
             // Error already logged by internalGetMapStateJson
             return null;
         }
+        console.log(fullState);
 
         const trimmedState = trimMapStateToViewport(fullState);
         if (!trimmedState) {
@@ -66,3 +67,5 @@ export async function validatePath(path, mapState) {
     // Directly call the internal function from mapPathValidator.js
     return internalValidatePath(path, mapState);
 }
+
+console.log(await getVisibleBackupMapStateJson());

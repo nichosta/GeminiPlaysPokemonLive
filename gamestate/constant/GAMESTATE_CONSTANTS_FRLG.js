@@ -54,7 +54,7 @@ export const MAP_GROUP_COUNT = [
 export const CURRENT_MAP_HEADER_ADDR = 0x02036dfc; // Address of the current map header structure
 
 // --- Mapgrid ---
-export const PRIMARY_TILESET_METATILE_COUNT = 0x200; // Number of metatiles (max) listed in a tileset
+export const PRIMARY_TILESET_METATILE_COUNT = 0x280; // Number of metatiles (max) listed in a tileset
 
 // --- Map Events (Templates for Warps, NPCs, etc.) ---
 
