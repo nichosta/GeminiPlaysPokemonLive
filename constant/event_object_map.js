@@ -9,14 +9,14 @@ const gameVersion = process.env.POKEMON_GAME_VERSION?.toUpperCase() || 'EMERALD'
 let selectedGetEventObjectName;
 
 if (gameVersion === 'FRLG') {
-    console.log("Using FRLG gamestate constants.");
+    console.log("Using FRLG gamestate constants for event object names.");
     selectedGetEventObjectName = getEventObjectNameFRLG;
 } else {
     // Default to EMERALD for any other value or if undefined
     if (gameVersion !== 'EMERALD') {
         console.warn(`Unknown POKEMON_GAME_VERSION "${process.env.POKEMON_GAME_VERSION}". Defaulting to EMERALD constants.`);
     } else {
-         console.log("Using EMERALD gamestate constants.");
+         console.log("Using EMERALD gamestate constants for event object names.");
     }
     selectedGetEventObjectName = getEventObjectNameEmerald;
 }
