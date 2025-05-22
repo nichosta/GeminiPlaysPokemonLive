@@ -62,13 +62,12 @@ export async function getMapStateJson() {
         const processedWarps = [];
         for (const rawWarp of rawWarpsOriginal) {
             let { x: currentWarpX, y: currentWarpY, destMapNum, destMapGroup } = rawWarp;
-            let adjustedWarpX = currentWarpX;
-            let adjustedWarpY = currentWarpY;
+            let effectiveWarpX = currentWarpX; // Actual tile player steps on
+            let effectiveWarpY = currentWarpY;
 
             if (currentWarpX >= 0 && currentWarpX < mapWidth && currentWarpY >= 0 && currentWarpY < mapHeight &&
                 mapTiles && allMetatileBehaviors && mapTiles.length > currentWarpY * mapWidth + currentWarpX &&
                 allMetatileBehaviors.length > (mapTiles[currentWarpY * mapWidth + currentWarpX] & CONSTANTS.MAPGRID_METATILE_ID_MASK)) {
-
                 const tileValue = mapTiles[currentWarpY * mapWidth + currentWarpX];
                 const metatileId = tileValue & CONSTANTS.MAPGRID_METATILE_ID_MASK;
                 const behaviorByte = allMetatileBehaviors[metatileId];
@@ -78,28 +77,43 @@ export async function getMapStateJson() {
                     continue;
                 }
 
+                // Calculate effective (actual trigger) warp position
                 if (WARP_DIRECTIONS.has(behaviorName)) {
                     const direction = WARP_DIRECTIONS.get(behaviorName);
-                    if (direction === '→') adjustedWarpX += 1;
-                    else if (direction === '←') adjustedWarpX -= 1;
-                    else if (direction === '↑') adjustedWarpY -= 1;
-                    else if (direction === '↓') adjustedWarpY += 1;
+                    if (direction === '→') effectiveWarpX += 1;
+                    else if (direction === '←') effectiveWarpX -= 1;
+                    else if (direction === '↑') effectiveWarpY -= 1;
+                    else if (direction === '↓') effectiveWarpY += 1;
                 }
             } else {
+                // Original warp location is not on the main map, or essential data missing.
                 continue;
             }
 
-            if (adjustedWarpX < 0 || adjustedWarpX >= mapWidth || adjustedWarpY < 0 || adjustedWarpY >= mapHeight) {
-                continue;
-            }
-
-            const isBlockedByNpc = rawNpcs.some(npc => npc.x === adjustedWarpX && npc.y === adjustedWarpY && !npc.isOffScreen);
+            // Check if NPC blocks the *effective* (actual trigger) warp tile
+            const isBlockedByNpc = rawNpcs.some(npc => npc.x === effectiveWarpX && npc.y === effectiveWarpY && !npc.isOffScreen);
             if (isBlockedByNpc) {
+                // If the actual trigger tile is blocked, the warp is unusable.
                 continue;
+            }
+
+            // Determine the position to store in the main map state (for minimap display)
+            let displayWarpX, displayWarpY;
+            const effectiveIsOffMainMap = effectiveWarpX < 0 || effectiveWarpX >= mapWidth || effectiveWarpY < 0 || effectiveWarpY >= mapHeight;
+            // currentWarpX/Y (original position) is known to be on the main map if we reached this point.
+
+            if (effectiveIsOffMainMap) {
+                // Effective warp is off-map. For minimap, display at original location.
+                displayWarpX = currentWarpX;
+                displayWarpY = currentWarpY;
+            } else {
+                // Effective warp is on-map. Display it at its effective location.
+                displayWarpX = effectiveWarpX;
+                displayWarpY = effectiveWarpY;
             }
 
             processedWarps.push({
-                position: [adjustedWarpX, adjustedWarpY],
+                position: [displayWarpX, displayWarpY],
                 destination: getMapName(destMapGroup, destMapNum) || `Unknown Map (${destMapGroup}-${destMapNum})`
             });
         }
