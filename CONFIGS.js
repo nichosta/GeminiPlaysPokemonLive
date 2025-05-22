@@ -63,7 +63,7 @@ const SYSTEM_PROMPT_GAME_INFO = process.env.POKEMON_GAME_VERSION?.toUpperCase() 
 // Main system prompt, very important
 // This heavily influences behavior and personality, so test any change exhaustively
 const SYSTEM_PROMPT_MAIN = `
-You have the following two tools: pressButtons, which allows you to press buttons within the emulator; and stunNPC, which freezes NPCs in place (used to talk to moving NPCs).
+You have the following tools: pressButtons, which allows you to press buttons within the emulator; stunNPC, which freezes NPCs in place (used to talk to moving NPCs); and holdButtons, which allows you to hold a button for a specified duration.
 You are provided with a screenshot of the game screen with a grid applied and some additional information about the game state, and you can execute emulator commands to control the game.
 Each turn, carefully consider your current situation and position, then how things have changed from the last turn to determine what your next action should be.
 In your 'commentary' output, clearly articulate your understanding of the current situation, how it has changed from the last turn, your immediate objective, your plan to achieve it, and any uncertainties or alternative strategies you considered. This is especially important if you are trying to break a loop or make a complex decision.
@@ -185,7 +185,7 @@ const PRESS_BUTTONS_ARGS_SCHEMA = {
   required: ["buttons"],
 };
 
-// Schema definition for the arguments of the pressButtons function
+// Schema definition for the arguments of the stunNPC function
 const STUN_NPC_ARGS_SCHEMA = {
   type: "object",
   properties: {
@@ -198,6 +198,39 @@ const STUN_NPC_ARGS_SCHEMA = {
     },
   },
   required: ["npcID"],
+};
+
+// Schema definition for the arguments of the holdButtons function
+const HOLD_BUTTONS_ARGS_SCHEMA = {
+  type: "object",
+  properties: {
+    buttonsToHold: {
+      type: "array",
+      description: "An array of objects, each specifying a button to hold and the duration in milliseconds. Buttons are held sequentially.",
+      items: {
+        type: "object",
+        properties: {
+          buttonName: {
+            type: "string",
+            description: "The name of the GBA button to hold.",
+            enum: [
+              "up", "down", "left", "right",
+              "a", "b", "start", "select", "l", "r"
+            ],
+          },
+          durationFrames: {
+            type: "integer",
+            description: "The duration to hold the button in frames (game runs at 60 FPS).",
+            minimum: 1, // Minimum hold time of 1ms
+          },
+        },
+        required: ["buttonName", "durationFrames"],
+      },
+      minItems: 1,
+      maxItems: 7, // Arbitrary limit, can be adjusted. Consistent with pressButtons.
+    },
+  },
+  required: ["buttonsToHold"],
 };
 
 // Schema definition for the overall structured output
@@ -255,10 +288,10 @@ const STRUCTURED_OUTPUT_SCHEMA = {
         name: {
           type: "string",
           description: "The name of the function to call.",
-          enum: ["pressButtons", "stunNPC"],
+          enum: ["pressButtons", "stunNPC", "holdButtons"],
         },
         args: {
-          anyOf: [PRESS_BUTTONS_ARGS_SCHEMA, STUN_NPC_ARGS_SCHEMA]
+          anyOf: [PRESS_BUTTONS_ARGS_SCHEMA, STUN_NPC_ARGS_SCHEMA, HOLD_BUTTONS_ARGS_SCHEMA]
          }, // Reference the arguments schema defined above
       },
       required: ["name", "args"],

@@ -1,6 +1,7 @@
 // Imports from other files
 import { pressButtons } from "../tools/buttonPress.js";
 import { stunNPC } from "../tools/stunNPC.js";
+import { holdButtons } from "../tools/buttonHold.js";
 import { validatePath } from "../gamestate/overworld/mapPathValidator.js";
 
 /**
@@ -94,6 +95,15 @@ export async function processLLMResponse(llmResponse, currentMapState) {
                     } else {
                         console.warn("Tool 'stunNPC' called with invalid args:", args);
                         return { toolExecutionText: "Tool 'stunNPC' called with invalid args.", pathValidationResult: pathValidationOutcome };
+                    }
+                case "holdButtons":
+                    if (args.buttonsToHold && Array.isArray(args.buttonsToHold) && args.buttonsToHold.every(item => typeof item.buttonName === 'string' && typeof item.durationFrames === 'number' && item.durationFrames > 0)) {
+                        await holdButtons(args.buttonsToHold);
+                        console.log(args);
+                        return { toolExecutionText: "Successfully executed 'holdButtons' tool.", pathValidationResult: pathValidationOutcome };
+                    } else {
+                        console.warn("Tool 'holdButtons' called with invalid args:", args);
+                        return { toolExecutionText: "Tool 'holdButtons' called with invalid args. Expected { buttonsToHold: [{ buttonName: string, durationFrames: number (positive integer) }] }.", pathValidationResult: pathValidationOutcome };
                     }
                 default:
                     console.warn(`Received unknown tool name: ${responseFunctionCall.name}`);
