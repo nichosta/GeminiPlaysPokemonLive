@@ -267,10 +267,6 @@ export async function getBackupMapStateJson() {
             } else {
                 continue;
             }
-            
-            if (adjustedMainMapWarpX < 0 || adjustedMainMapWarpX >= mainMapWidth || adjustedMainMapWarpY < 0 || adjustedMainMapWarpY >= mainMapHeight) {
-                 continue;
-            }
 
             const isBlockedByNpc = rawNpcs.some(npc => npc.x === adjustedMainMapWarpX && npc.y === adjustedMainMapWarpY && !npc.isOffScreen);
             if (isBlockedByNpc) {
