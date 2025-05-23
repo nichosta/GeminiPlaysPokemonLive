@@ -103,6 +103,9 @@ export const TILE_LEDGE_EAST = '→';
 export const TILE_LEDGE_WEST = '←';
 export const TILE_LEDGE_NORTH = '↑';
 export const TILE_LEDGE_SOUTH = '↓';
+export const TILE_ELEVATION_HIGHER = '>';
+export const TILE_ELEVATION_LOWER = '<';
+export const TILE_ELEVATION_TRANSITION = '=';
 export const TILE_CONNECTION = 'C';
 
 // --- Passability Definitions ---
@@ -114,6 +117,9 @@ export const BASE_TILE_PASSABILITY = Object.freeze({
     [TILE_LEDGE_WEST]: "ledge (only walkable in the indicated direction)",
     [TILE_LEDGE_NORTH]: "ledge (only walkable in the indicated direction)",
     [TILE_LEDGE_SOUTH]: "ledge (only walkable in the indicated direction)",
+    [TILE_ELEVATION_HIGHER]: "walkable, higher elevation than player",
+    [TILE_ELEVATION_LOWER]: "walkable, lower elevation than player",
+    [TILE_ELEVATION_TRANSITION]: "walkable, transition elevation (any to any)",
     [TILE_CONNECTION]: "connection to adjacent map area",
 });
 
@@ -122,6 +128,7 @@ export const VIEWPORT_TILE_PASSABILITY = Object.freeze({
     [TILE_WARP]: "warp",
     [TILE_NPC]: "npc",
     // Ledge descriptions are inherited from BASE_TILE_PASSABILITY
+    // Elevation markers are also inherited
 });
 
 // --- Viewport Dimensions ---
