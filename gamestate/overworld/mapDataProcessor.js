@@ -48,21 +48,67 @@ export async function processMemoryDataToCollisionMap(tileGridData, mapWidthTile
                 const tileValue = tileGridData[tileIndex];
                 let tileType;
 
-                if (tileValue === CONSTANTS.MAPGRID_UNDEFINED) {
-                    tileType = CONSTANTS.TILE_BLOCKED;
-                } else {
-                    const metatileId = tileValue & CONSTANTS.MAPGRID_METATILE_ID_MASK;
-                    const behaviorByte = allMetatileBehaviors[metatileId];
-                    const behaviorName = getMetatileBehaviorName(behaviorByte);
-                    const ledgeChar = behaviorName ? LEDGE_DIRECTIONS.get(behaviorName) : undefined;
+                const collisionBits = (tileValue & CONSTANTS.MAPGRID_COLLISION_MASK) >> 10; //
+                const tileElevation = (tileValue & CONSTANTS.MAPGRID_ELEVATION_MASK) >> 12; //
+                const metatileId = tileValue & CONSTANTS.MAPGRID_METATILE_ID_MASK; //
+                const behaviorByte = allMetatileBehaviors[metatileId];
+                const behaviorName = getMetatileBehaviorName(behaviorByte); //
+                const ledgeChar = behaviorName ? LEDGE_DIRECTIONS.get(behaviorName) : undefined; //
 
+                if (tileValue === CONSTANTS.MAPGRID_UNDEFINED) { //
+                    tileType = CONSTANTS.TILE_BLOCKED; //
+                } else if (collisionBits !== 0) {
+                    tileType = CONSTANTS.TILE_BLOCKED; //
+                } else {
+                    // Default to walkable unless specific conditions change it
+                    tileType = CONSTANTS.TILE_WALKABLE; //
+
+                    // Handle elevation 15 (multi-level/bridges)
+                    if (tileElevation === 15) {
+                        if (playerElevation >= 4) {
+                            tileType = CONSTANTS.TILE_WALKABLE; //
+                        } else {
+                            if (behaviorName && BRIDGE_WATER_TILES.has(behaviorName)) { //
+                                tileType = CONSTANTS.TILE_WATER; //
+                            // I think this is actually wrong and this MB should never come up, these tiles should just be a normal elevation like 4
+                            } else if (behaviorName && BRIDGE_BLOCKED_TILES.has(behaviorName)) {
+                                tileType = CONSTANTS.TILE_BLOCKED; //
+                            } else {
+                                tileType = CONSTANTS.TILE_WALKABLE; //
+                            }
+                        }
+                    }
+                    // Handle elevation 0 (transition)
+                    else if (tileElevation === 0) {
+                        tileType = CONSTANTS.TILE_ELEVATION_TRANSITION; //
+                    }
+                    // Handle normal elevations (3-14)
+                    else if (tileElevation >= 3 && tileElevation <= 14) {
+                        if (tileElevation > playerElevation) {
+                            tileType = CONSTANTS.TILE_ELEVATION_HIGHER; //
+                        } else if (tileElevation < playerElevation) {
+                            tileType = CONSTANTS.TILE_ELEVATION_LOWER; //
+                        } else { // tileElevation === playerElevation
+                            tileType = CONSTANTS.TILE_WALKABLE; //
+                        }
+                    }
+                    // Handle elevation 1 (surfable) - primarily for sanity check, water determined by metatile
+                    else if (tileElevation === 1) {
+                        if (behaviorName && WATER_TILES.has(behaviorName)) { //
+                            tileType = CONSTANTS.TILE_WATER; //
+                        }
+                        // If not a water metatile, but elevation 1, treat as walkable for now,
+                        // path validator will handle surf/dismount rules.
+                    }
+
+
+                    // Ledges override other passable types
                     if (ledgeChar) {
                         tileType = ledgeChar;
-                    } else if (behaviorName && WATER_TILES.has(behaviorName)) {
-                        tileType = CONSTANTS.TILE_WATER;
-                    } else {
-                        const collisionBits = (tileValue & CONSTANTS.MAPGRID_COLLISION_MASK) >> 10;
-                        tileType = (collisionBits === 0) ? CONSTANTS.TILE_WALKABLE : CONSTANTS.TILE_BLOCKED;
+                    }
+                    // Water tiles (from metatile behavior) override elevation-based walkability, except for elevation 15 handled above
+                    else if (tileElevation !== 15 && behaviorName && WATER_TILES.has(behaviorName)) { //
+                        tileType = CONSTANTS.TILE_WATER; //
                     }
                 }
                 row.push(`${x},${y}:${tileType}`);

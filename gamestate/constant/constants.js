@@ -117,8 +117,8 @@ export const BASE_TILE_PASSABILITY = Object.freeze({
     [TILE_LEDGE_WEST]: "ledge (only walkable in the indicated direction)",
     [TILE_LEDGE_NORTH]: "ledge (only walkable in the indicated direction)",
     [TILE_LEDGE_SOUTH]: "ledge (only walkable in the indicated direction)",
-    [TILE_ELEVATION_HIGHER]: "walkable, higher elevation than player",
-    [TILE_ELEVATION_LOWER]: "walkable, lower elevation than player",
+    [TILE_ELEVATION_HIGHER]: "walkable, higher elevation than current tile",
+    [TILE_ELEVATION_LOWER]: "walkable, lower elevation than current tile",
     [TILE_ELEVATION_TRANSITION]: "walkable, transition elevation (any to any)",
     [TILE_CONNECTION]: "connection to adjacent map area",
 });
@@ -238,6 +238,6 @@ export const FACING_DIRECTION_MAP = new Map([
 // --- Party Menu ---
 
 // Party pointers
-export const PARTY_MENU_ADDR = selectedConstants.PARTY_MENU_ADDR; 
+export const PARTY_MENU_ADDR = selectedConstants.PARTY_MENU_ADDR;
 export const PARTY_MENU_SLOTID_OFFSET = 0x09; // Offset to slot ID (u8)
 export const PARTY_MENU_INTERNAL_ADDR = selectedConstants.PARTY_MENU_INTERNAL_ADDR;
