@@ -2,7 +2,7 @@
 import { getPartyCount, getPokemonData, isInBattle } from "../gamestate/pokemonData.js";
 import { getBagContents, prettyPrintBag, getPlayerMoney } from "../gamestate/bagData.js";
 import { getPartyMenuSlotId } from "../gamestate/menustate/partyMenu.js";
-import { areFieldControlsLocked, getPlayerBadges } from "../gamestate/overworld/playerData.js";
+import { areFieldControlsLocked, getPlayerBadges, getPlayerElevation, isPlayerSurfing } from "../gamestate/overworld/playerData.js";
 
 /**
  * @description Formats the data for a single Pokemon into a structured object.
@@ -59,6 +59,8 @@ export async function getGameInfoText(visibleMapState) {
 
     if (!inBattleStatus) {
         gameInfoObject.overworldControlsLocked = await areFieldControlsLocked();
+        gameInfoObject.surfing = await isPlayerSurfing();
+        gameInfoObject.elevation = await getPlayerElevation();
     }
 
     const partyCount = await getPartyCount();

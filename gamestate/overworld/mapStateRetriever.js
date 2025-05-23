@@ -1,4 +1,4 @@
-import { getCurrentMapBank, getCurrentMapNumber, getPlayerPosition, getPlayerFacingDirection } from "./playerData.js";
+import { getCurrentMapBank, getCurrentMapNumber, getPlayerPosition, getPlayerFacingDirection, getPlayerElevation } from "./playerData.js";
 import { getCurrentMapWarps, getCurrentMapNpcs } from "./mapEvents.js";
 import { getMainMapHeight, getMainMapTiles, getMainMapWidth, getBackupMapWidth, getBackupMapHeight, getBackupMapTiles, getMainMapLayoutBaseAddress } from "./mapLayouts.js";
 import { getCurrentMapConnections } from "./mapConnections.js";
@@ -20,6 +20,7 @@ export async function getMapStateJson() {
         const mapNumber = await getCurrentMapNumber();
         const [playerX, playerY] = await getPlayerPosition();
         const facingDirection = await getPlayerFacingDirection();
+        const playerElevation = await getPlayerElevation();
         const rawWarpsOriginal = await getCurrentMapWarps();
         const rawNpcs = await getCurrentMapNpcs();
         const mapWidth = await getMainMapWidth();
@@ -52,7 +53,7 @@ export async function getMapStateJson() {
             console.warn(`Failed to fetch main map tiles or tile count mismatch for ${mapName}. Warp validation might be affected.`);
         }
 
-        const collisionData = await processMemoryDataToCollisionMap(mapTiles || [], mapWidth, allMetatileBehaviors || []);
+        const collisionData = await processMemoryDataToCollisionMap(mapTiles || [], mapWidth, allMetatileBehaviors || [], playerElevation);
 
         if (!collisionData) {
             console.error(`Failed to process map tiles into collision data for ${mapName}.`);
@@ -156,6 +157,7 @@ export async function getBackupMapStateJson() {
     try {
         const [playerX, playerY] = await getPlayerPosition();
         const facingDirection = await getPlayerFacingDirection();
+        const playerElevation = await getPlayerElevation();
         const currentMapBank = await getCurrentMapBank();
         const currentMapNumber = await getCurrentMapNumber();
         const currentMapName = getMapName(currentMapBank, currentMapNumber) || "Unknown Main Map";
@@ -201,7 +203,7 @@ export async function getBackupMapStateJson() {
             console.warn(`Failed to fetch backup map tiles or tile count mismatch for ${internalBackupMapName}. Warp validation might be affected.`);
         }
 
-        const collisionData = await processMemoryDataToCollisionMap(backupMapTiles || [], backupMapWidth, backupMetatileBehaviors || []);
+        const collisionData = await processMemoryDataToCollisionMap(backupMapTiles || [], backupMapWidth, backupMetatileBehaviors || [], playerElevation);
 
         if (!collisionData) {
             console.error(`Failed to process backup map tiles into collision data for ${internalBackupMapName}.`);

@@ -98,6 +98,7 @@ A JSON object containing data about the currently onscreen part of the map, incl
 \tOnscreen NPCs, marked with a ! in the tile data and with their sprite names noted. Some NPCs are marked "wandering", meaning they move between turns. If you wish to interact with these, consider using your "stunNPC" tool to freeze them until they are talked to. This list of NPCs is complete, if you believe you see an NPC not listed then you are mistaken.
 Whether or not you are currently in the battle screen. This includes the time after an opponent is defeated but before you have returned to the overworld (the post battle defeat screen and text). You cannot move in the overworld as long as this value is true.
 Whether or not your overworld movement is locked. If this flag is set, you cannot move around in the overworld, and most likely need to finish a conversation or close a menu. If you are stuck looping and this flag is set, press B several turns in a row and you should be able to move again. If this flag is set, you can be VERY SURE there is no textbox onscreen.
+Your current elevation. You can only Surf while at elevation 3.
 General information about your current Pokemon party.
 The contents of the five pouches of your inventory.
 (More information may be provided in the future; if there is anything you feel is important, feel free to request it to the developer.) 

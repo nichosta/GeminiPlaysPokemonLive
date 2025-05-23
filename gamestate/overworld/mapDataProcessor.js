@@ -1,5 +1,6 @@
 import * as CONSTANTS from "../constant/constants.js";
-import { getMetatileBehaviorName, WATER_TILES, LEDGE_DIRECTIONS } from "../../constant/metatile_behaviors_map.js";
+import { getMetatileBehaviorName, WATER_TILES, LEDGE_DIRECTIONS, BRIDGE_WATER_TILES, BRIDGE_BLOCKED_TILES } from "../../constant/metatile_behaviors_map.js";
+import { getPlayerElevation } from "./playerData.js";
 
 /**
  * Processes raw map tile byte data into a structured map object with coordinate-based tile strings.
@@ -7,9 +8,10 @@ import { getMetatileBehaviorName, WATER_TILES, LEDGE_DIRECTIONS } from "../../co
  * @param {number[]} tileGridData - Array of u16 values, where each value represents a map tile's full data.
  * @param {number} mapWidthTiles - The width of the map in tiles.
  * @param {number[]} allMetatileBehaviors - Array of behavior bytes for all metatiles.
+ * @param {number} playerElevation - The player's current elevation.
  * @returns {{width: number, height: number, tile_passability: object, map_data: string[][]}|null}
  */
-export async function processMemoryDataToCollisionMap(tileGridData, mapWidthTiles, allMetatileBehaviors) {
+export async function processMemoryDataToCollisionMap(tileGridData, mapWidthTiles, allMetatileBehaviors, playerElevation) {
     // --- Input Validation ---
     if (!Array.isArray(tileGridData)) {
         console.error("Invalid input: tileGridData must be an array.");

@@ -53,6 +53,7 @@ export async function validatePath(path, mapState) {
         // prevTileType remains empty, logic below should handle it.
     }
 
+    let surfing = await isPlayerSurfing();
 
     for (let i = 0; i < path.length; i++) {
         const [pX, pY] = path[i];
@@ -94,7 +95,7 @@ export async function validatePath(path, mapState) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is not walkable. Type: '${tileType}'.` };
         }
 
-        if (tileType === CONSTANTS.TILE_WATER && !(await isPlayerSurfing())) {
+        if (tileType === CONSTANTS.TILE_WATER && !surfing) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is water, and player is not surfing.` };
         }
 
