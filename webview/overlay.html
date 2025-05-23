@@ -8,9 +8,9 @@
 </head>
 <body>
     <div class="overlay-container">
-        <!-- Left Panel -->
+        <!-- Left Panel with Minimap and Emulator -->
         <div class="left-panel">
-            <!-- Minimap moved back to left panel -->
+            <!-- Minimap above emulator -->
             <div class="panel-card minimap-container">
                 <div class="minimap-header" id="location-display">Loading Location...</div>
                 <div class="minimap-grid" id="minimap-display">
@@ -18,24 +18,35 @@
                 </div>
             </div>
 
-            <!-- Emulator Area -->
-            <div class="emulator-area">
-                    Game Screen Area<br>
-                    <small>Embed your emulator here</small>
-            </div>
-
-            <!-- Navigation Area -->
-            <div class="navigation-area">
-                <div class="navigation-header">🧭 Next Moves</div>
-                <div class="navigation-content" id="navigation-display">
-                    No path planned
-                </div>
+            <!-- Emulator Area (Direct, no container) -->
+            <div class="emulator-placeholder">
+                Game Screen Area<br>
+                <small>Embed your emulator here</small>
             </div>
         </div>
 
-        <!-- Information Panel -->
-        <div class="info-panel">
-            <!-- Goals Grid (moved to top) -->
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <!-- Top Row: Badges and Navigation -->
+            <div class="top-row">
+                <!-- Badges -->
+                <div class="badges-area">
+                    <div class="badges-header">🏆 Gym Badges</div>
+                    <div class="badges-container" id="badges-display">
+                        Loading badges...
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="navigation-area">
+                    <div class="navigation-header">🧭 Next Moves</div>
+                    <div class="navigation-content" id="navigation-display">
+                        No path planned
+                    </div>
+                </div>
+            </div>
+
+            <!-- Goals Row -->
             <div class="goals-grid">
                 <!-- Long Term Goal -->
                 <div class="goal-card">
@@ -56,26 +67,19 @@
                 </div>
             </div>
 
-            <!-- LLM Commentary (moved below goals) -->
+            <!-- AI Commentary -->
             <div class="panel-card commentary-section">
                 <div class="commentary-header">🤖 AI Thoughts</div>
                 <div class="commentary-text" id="commentary-display">
                     Waiting for AI response...
                 </div>
             </div>
+        </div>
 
-            <!-- Badges (moved to info panel) -->
-            <div class="badges-area">
-                <div class="badges-header">🏆 Gym Badges</div>
-                <div class="badges-container" id="badges-display">
-                    Loading badges...
-                </div>
-            </div>
-
-            <!-- Rest of the sections remain in the same order -->
-            <!-- ... party, inventory, etc ... -->
+        <!-- Bottom Full Width Section -->
+        <div class="bottom-section">
             <!-- Pokemon Party -->
-            <div class="panel-card">
+            <div class="panel-card party-section">
                 <div class="info-header">👥 Party Pokemon</div>
                 <div class="party-pokemon" id="party-display">
                     Loading party...
@@ -83,20 +87,16 @@
             </div>
 
             <!-- Inventory -->
-            <div class="panel-card">
+            <div class="panel-card inventory-section">
                 <div class="info-header">🎒 Inventory</div>
+                <div class="money-display" id="money-display">💰 $0</div>
                 <div class="inventory-container">
-                    <div class="inventory-scroll" id="inventory-display">
+                    <div id="inventory-display">
                         Loading inventory...
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Fixed UI Elements -->
-    <div class="money-display" id="money-display">
-        💰 $0
     </div>
 
     <script src="overlay.js"></script>
