@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Emerald AI Stream Overlay</title>
+    <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+    <div class="overlay-container">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <!-- Minimap moved back to left panel -->
+            <div class="panel-card minimap-container">
+                <div class="minimap-header" id="location-display">Loading Location...</div>
+                <div class="minimap-grid" id="minimap-display">
+                    Loading minimap...
+                </div>
+            </div>
+
+            <!-- Emulator Area -->
+            <div class="emulator-area">
+                    Game Screen Area<br>
+                    <small>Embed your emulator here</small>
+            </div>
+
+            <!-- Navigation Area -->
+            <div class="navigation-area">
+                <div class="navigation-header">🧭 Next Moves</div>
+                <div class="navigation-content" id="navigation-display">
+                    No path planned
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Panel -->
+        <div class="info-panel">
+            <!-- Goals Grid (moved to top) -->
+            <div class="goals-grid">
+                <!-- Long Term Goal -->
+                <div class="goal-card">
+                    <div class="goal-header">🎯 Long Term</div>
+                    <div class="goal-content" id="goal-long">Loading...</div>
+                </div>
+
+                <!-- Mid Term Goal -->
+                <div class="goal-card">
+                    <div class="goal-header">📍 Mid Term</div>
+                    <div class="goal-content" id="goal-mid">Loading...</div>
+                </div>
+
+                <!-- Short Term Goal -->
+                <div class="goal-card">
+                    <div class="goal-header">⚡ Short Term</div>
+                    <div class="goal-content" id="goal-short">Loading...</div>
+                </div>
+            </div>
+
+            <!-- LLM Commentary (moved below goals) -->
+            <div class="panel-card commentary-section">
+                <div class="commentary-header">🤖 AI Thoughts</div>
+                <div class="commentary-text" id="commentary-display">
+                    Waiting for AI response...
+                </div>
+            </div>
+
+            <!-- Badges (moved to info panel) -->
+            <div class="badges-area">
+                <div class="badges-header">🏆 Gym Badges</div>
+                <div class="badges-container" id="badges-display">
+                    Loading badges...
+                </div>
+            </div>
+
+            <!-- Rest of the sections remain in the same order -->
+            <!-- ... party, inventory, etc ... -->
+            <!-- Pokemon Party -->
+            <div class="panel-card">
+                <div class="info-header">👥 Party Pokemon</div>
+                <div class="party-pokemon" id="party-display">
+                    Loading party...
+                </div>
+            </div>
+
+            <!-- Inventory -->
+            <div class="panel-card">
+                <div class="info-header">🎒 Inventory</div>
+                <div class="inventory-container">
+                    <div class="inventory-scroll" id="inventory-display">
+                        Loading inventory...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fixed UI Elements -->
+    <div class="money-display" id="money-display">
+        💰 $0
+    </div>
+
+    <script src="overlay.js"></script>
+</body>
+</html>
