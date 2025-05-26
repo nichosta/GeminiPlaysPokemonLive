@@ -21,13 +21,13 @@ export async function validatePath(path, mapState) {
 
     const { map_data: viewportMapData, player_state } = mapState;
     const [playerStartX, playerStartY] = player_state.position;
-    const playerStartElevation = await getPlayerElevation();
-    let currentSurfingStatus = await isPlayerSurfing();
+    const initialPlayerMapElevation = await getPlayerElevation(); // Player's elevation on the map grid
+    let isPlayerCurrentlySurfing = await isPlayerSurfing();
 
     let prevX = playerStartX;
     let prevY = playerStartY;
-    let prevTileType = '';
-    let prevTileElevation = playerStartElevation;
+    let previousTileType = ''; // Type of the tile the player was on
+    let playerCurrentLogicalElevation = initialPlayerMapElevation; // Player's active elevation (1 for surf, actual for land)
 
     let viewportAbsStartX = 0;
     let viewportAbsStartY = 0;
@@ -44,10 +44,12 @@ export async function validatePath(path, mapState) {
             const parts = playerStartTileString.split(':');
             const coordsInString = parts[0].split(',').map(Number);
             if (coordsInString[0] === playerStartX && coordsInString[1] === playerStartY) {
-                prevTileType = parts[1];
-                // Determine previous tile's effective elevation for validation start
-                if (prevTileType === CONSTANTS.TILE_ELEVATION_TRANSITION) prevTileElevation = 0; //
-                else if (prevTileType === CONSTANTS.TILE_WATER) prevTileElevation = 1; //
+                previousTileType = parts[1];
+                // Adjust player's starting logical elevation based on the tile they are on
+                if (previousTileType === CONSTANTS.TILE_ELEVATION_TRANSITION) playerCurrentLogicalElevation = 0;
+                else if (previousTileType === CONSTANTS.TILE_WATER) playerCurrentLogicalElevation = 1; // If starting on water, logical elevation is 1
+                else if (previousTileType === CONSTANTS.TILE_ELEVATION_MULTILEVEL) playerCurrentLogicalElevation = initialPlayerMapElevation; // Preserve logical elevation
+                // else playerCurrentLogicalElevation remains initialPlayerMapElevation
                 // For '>' and '<', the playerStartElevation is the reference.
                 // For 'O', elevation is same as player.
             }
@@ -76,8 +78,7 @@ export async function validatePath(path, mapState) {
         }
 
         let tileFound = false;
-        let tileType = '';
-        let currentTileElevation = -1; // Placeholder for target tile's intrinsic elevation
+        let targetTileType = '';
 
         const viewLocalX = pX - viewportAbsStartX;
         const viewLocalY = pY - viewportAbsStartY;
@@ -88,17 +89,8 @@ export async function validatePath(path, mapState) {
             const parts = tileString.split(':');
             const coordsInString = parts[0].split(',').map(Number);
             if (coordsInString[0] === pX && coordsInString[1] === pY) {
-                tileType = parts[1];
+                targetTileType = parts[1];
                 tileFound = true;
-
-                // Determine currentTileElevation based on tileType
-                if (tileType === CONSTANTS.TILE_ELEVATION_TRANSITION) currentTileElevation = 0; //
-                else if (tileType === CONSTANTS.TILE_WATER) currentTileElevation = 1; //
-                else if (tileType === CONSTANTS.TILE_ELEVATION_HIGHER) currentTileElevation = playerStartElevation + 1; // Represents a tile higher than player
-                else if (tileType === CONSTANTS.TILE_ELEVATION_LOWER) currentTileElevation = playerStartElevation - 1; // Represents a tile lower than player
-                else if (tileType === CONSTANTS.TILE_WALKABLE) currentTileElevation = playerStartElevation; // Same elevation
-                else currentTileElevation = prevTileElevation; // For ledges, NPCs, warps, assume same effective elevation as previous for now
-
             } else {
                  console.warn(`Path validation coordinate mismatch: searching for (${pX},${pY}), found tile string "${tileString}" at viewport local [${viewLocalY}][${viewLocalX}].`);
             }
@@ -108,70 +100,124 @@ export async function validatePath(path, mapState) {
             return { isValid: false, failurePoint: [pX, pY], reason: `Coordinate (${pX},${pY}) not found in current visible map data.` };
         }
 
+        // Determine the physical elevation of the target tile
+        // Note: initialPlayerMapElevation is used as the reference for HIGHER/LOWER types,
+        // as these types are determined relative to the player's elevation during map processing.
+        let targetPhysicalTileElevation;
+        if (targetTileType === CONSTANTS.TILE_ELEVATION_TRANSITION) targetPhysicalTileElevation = 0;
+        else if (targetTileType === CONSTANTS.TILE_WATER) targetPhysicalTileElevation = 1;
+        else if (targetTileType === CONSTANTS.TILE_ELEVATION_MULTILEVEL) targetPhysicalTileElevation = 15;
+        else if (targetTileType === CONSTANTS.TILE_ELEVATION_HIGHER) targetPhysicalTileElevation = initialPlayerMapElevation + 1;
+        else if (targetTileType === CONSTANTS.TILE_ELEVATION_LOWER) targetPhysicalTileElevation = initialPlayerMapElevation - 1;
+        else if (targetTileType === CONSTANTS.TILE_WALKABLE) targetPhysicalTileElevation = initialPlayerMapElevation;
+        else { // Ledges, NPCs, Warps, Connections - assume their physical elevation is compatible or same as current logical for now
+            targetPhysicalTileElevation = playerCurrentLogicalElevation;
+        }
+
         // Basic passability (blocked, NPC)
-        if ((tileType === CONSTANTS.TILE_BLOCKED || tileType === CONSTANTS.TILE_NPC) && prevTileType !== CONSTANTS.TILE_WARP) { //
-            return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is not walkable. Type: '${tileType}'.` };
+        if ((targetTileType === CONSTANTS.TILE_BLOCKED || targetTileType === CONSTANTS.TILE_NPC) && previousTileType !== CONSTANTS.TILE_WARP) { 
+            return { isValid: false, failurePoint: [pX, pY], reason: `Tile (${pX},${pY}) is not walkable. Type: '${targetTileType}'.` };
         }
 
-        // Water and Surfing Logic
-        if (tileType === CONSTANTS.TILE_WATER) { //
-            if (!currentSurfingStatus) { // Trying to enter water without surfing
-                 // Allow entering water if it's elevation 1 (implicitly, tileType is TILE_WATER)
-                if (currentTileElevation !== 1) {
-                     return { isValid: false, failurePoint: [pX, pY], reason: `Cannot enter water tile (${pX},${pY}) without surfing or tile is not surfable elevation.` };
-                }
-                // If logic reaches here, player is entering surfable water, so update status for next step
-                currentSurfingStatus = true;
-            }
-             // If already surfing, can continue on water
-        } else { // Target tile is NOT water
-            if (currentSurfingStatus) { // Trying to leave water
-                if (currentTileElevation !== 3) { // Can only dismount onto elevation 3
-                    return { isValid: false, failurePoint: [pX, pY], reason: `Cannot dismount surf onto tile (${pX},${pY}) as it is not elevation 3. Target tile elevation: ${currentTileElevation}` };
-                }
-                 // If logic reaches here, player is dismounting from surf
-                currentSurfingStatus = false;
-            }
-        }
+        // --- Elevation, Surfing, and Movement Logic ---
+        const isSpecialTransition = (type) =>
+            type === CONSTANTS.TILE_WARP || type === CONSTANTS.TILE_CONNECTION ||
+            type === CONSTANTS.TILE_LEDGE_EAST || type === CONSTANTS.TILE_LEDGE_WEST ||
+            type === CONSTANTS.TILE_LEDGE_NORTH || type === CONSTANTS.TILE_LEDGE_SOUTH;
 
-
-        // Elevation change rules (apply if not dealing with surf transitions handled above)
-        // Also, warps and connections ignore elevation change rules for the step onto them
-        if (prevTileType !== CONSTANTS.TILE_WARP && tileType !== CONSTANTS.TILE_WARP && prevTileType !== CONSTANTS.TILE_CONNECTION && tileType !== CONSTANTS.TILE_CONNECTION) { //
-            if (prevTileElevation !== 0 && currentTileElevation !== 0 && prevTileElevation !== currentTileElevation) {
-                 // Allow if current player is on elevation 1 (surfing) and target is elevation 3 (dismounting)
-                if (!(prevTileElevation === 1 && currentTileElevation === 3)) {
-                     // Allow if current player is on elevation 3 and target is elevation 1 (mounting)
-                    if(!(prevTileElevation === 3 && currentTileElevation === 1)){
-                        return { isValid: false, failurePoint: [pX, pY], reason: `Cannot move directly between different elevations: from ${prevTileElevation} to ${currentTileElevation} at (${pX},${pY}).` };
+        if (isSpecialTransition(targetTileType) || isSpecialTransition(previousTileType)) {
+            // Ledges, warps, connections have their own movement rules.
+            // For ledges, player's logical elevation might change based on the ledge.
+            // For now, assume if the directional ledge check (below) passes, the elevation change is implicitly valid.
+            // If moving onto a ledge that implies a drop, playerCurrentLogicalElevation should become targetPhysicalTileElevation.
+            // This part might need more refinement if ledges have explicit elevation targets.
+            if (targetTileType.startsWith("TILE_LEDGE_")) { // A simple way to check if it's any ledge
+                 playerCurrentLogicalElevation = targetPhysicalTileElevation; // Assume ledge moves to target's physical elevation
+            }
+        } else if (targetTileType === CONSTANTS.TILE_ELEVATION_MULTILEVEL) { // Moving TO Multilevel
+            // Always allowed. playerCurrentLogicalElevation and isPlayerCurrentlySurfing are preserved.
+            // No change to playerCurrentLogicalElevation or isPlayerCurrentlySurfing by this step itself.
+        } else if (previousTileType === CONSTANTS.TILE_ELEVATION_MULTILEVEL) { // Moving FROM Multilevel
+            // playerCurrentLogicalElevation and isPlayerCurrentlySurfing are the preserved values.
+            if (targetTileType === CONSTANTS.TILE_WATER) { // From multilevel to Water
+                if (isPlayerCurrentlySurfing) { // Was surfing on multilevel
+                    playerCurrentLogicalElevation = 1;
+                } else { // Was walking on multilevel, try to mount surf
+                    if (playerCurrentLogicalElevation === 3 || playerCurrentLogicalElevation === 0) {
+                        isPlayerCurrentlySurfing = true;
+                        playerCurrentLogicalElevation = 1;
+                    } else {
+                        return { isValid: false, failurePoint: [pX, pY], reason: `Cannot mount surf from multilevel (effective elevation ${playerCurrentLogicalElevation}) to water.` };
                     }
                 }
+            } else { // From multilevel to Non-Water, Non-Multilevel Land
+                if (isPlayerCurrentlySurfing) { // Was surfing on multilevel, try to dismount
+                    if (targetPhysicalTileElevation === 3) {
+                        isPlayerCurrentlySurfing = false;
+                        playerCurrentLogicalElevation = 3;
+                    } else {
+                        return { isValid: false, failurePoint: [pX, pY], reason: `Cannot dismount surf from multilevel (surfing at logical elevation ${playerCurrentLogicalElevation}) to land with physical elevation ${targetPhysicalTileElevation}. Must be 3.` };
+                    }
+                } else { // Was walking on multilevel, normal land movement
+                    if (playerCurrentLogicalElevation !== targetPhysicalTileElevation &&
+                        targetPhysicalTileElevation !== 0 && playerCurrentLogicalElevation !== 0) {
+                        return { isValid: false, failurePoint: [pX, pY], reason: `Invalid elevation change from multilevel (effective elevation ${playerCurrentLogicalElevation}) to land with physical elevation ${targetPhysicalTileElevation}.` };
+                    }
+                    playerCurrentLogicalElevation = targetPhysicalTileElevation;
+                }
+            }
+        } else if (targetTileType === CONSTANTS.TILE_WATER) { // Moving TO Water (not from multilevel)
+            if (isPlayerCurrentlySurfing) {
+                playerCurrentLogicalElevation = 1;
+            } else { // Not surfing, try to mount
+                if (playerCurrentLogicalElevation === 3 || playerCurrentLogicalElevation === 0) {
+                    isPlayerCurrentlySurfing = true;
+                    playerCurrentLogicalElevation = 1;
+                } else {
+                    return { isValid: false, failurePoint: [pX, pY], reason: `Cannot mount surf from elevation ${playerCurrentLogicalElevation} to water.` };
+                }
+            }
+        } else { // Moving TO Non-Water, Non-Multilevel Land (not from multilevel)
+            if (isPlayerCurrentlySurfing) { // Currently surfing, try to dismount
+                if (targetPhysicalTileElevation === 3) {
+                    isPlayerCurrentlySurfing = false;
+                    playerCurrentLogicalElevation = 3;
+                } else {
+                    return { isValid: false, failurePoint: [pX, pY], reason: `Cannot dismount surf from water to land with physical elevation ${targetPhysicalTileElevation}. Must be 3. Current logical elevation: ${playerCurrentLogicalElevation}` };
+                }
+            } else { // Not surfing, land-to-land movement
+                if (playerCurrentLogicalElevation !== targetPhysicalTileElevation &&
+                    targetPhysicalTileElevation !== 0 && playerCurrentLogicalElevation !== 0) { // Allow to/from elevation 0
+                    return { isValid: false, failurePoint: [pX, pY], reason: `Invalid elevation change from ${playerCurrentLogicalElevation} to ${targetPhysicalTileElevation}.` };
+                }
+                playerCurrentLogicalElevation = targetPhysicalTileElevation;
             }
         }
-
 
         // Ledge Logic
         const actualDeltaX = pX - prevX;
         const actualDeltaY = pY - prevY;
+        // Note: Ledge movement might implicitly change playerCurrentLogicalElevation if the targetPhysicalTileElevation of the ledge tile is different.
+        // This is handled by the isSpecialTransition block setting playerCurrentLogicalElevation = targetPhysicalTileElevation for ledges.
 
-        if (tileType === CONSTANTS.TILE_LEDGE_EAST && actualDeltaX !== 1) { //
+        if (targetTileType === CONSTANTS.TILE_LEDGE_EAST && actualDeltaX !== 1) { //
             return { isValid: false, failurePoint: [pX, pY], reason: `Cannot traverse East-ledge (${pX},${pY}) not moving East.` };
         }
-        if (tileType === CONSTANTS.TILE_LEDGE_WEST && actualDeltaX !== -1) { //
+        if (targetTileType === CONSTANTS.TILE_LEDGE_WEST && actualDeltaX !== -1) { //
             return { isValid: false, failurePoint: [pX, pY], reason: `Cannot traverse West-ledge (${pX},${pY}) not moving West.` };
         }
-        if (tileType === CONSTANTS.TILE_LEDGE_NORTH && actualDeltaY !== -1) { //
+        if (targetTileType === CONSTANTS.TILE_LEDGE_NORTH && actualDeltaY !== -1) { //
             return { isValid: false, failurePoint: [pX, pY], reason: `Cannot traverse North-ledge (${pX},${pY}) not moving North.` };
         }
-        if (tileType === CONSTANTS.TILE_LEDGE_SOUTH && actualDeltaY !== 1) { //
+        if (targetTileType === CONSTANTS.TILE_LEDGE_SOUTH && actualDeltaY !== 1) { //
             return { isValid: false, failurePoint: [pX, pY], reason: `Cannot traverse South-ledge (${pX},${pY}) not moving South.` };
         }
 
         prevX = pX;
         prevY = pY;
-        prevTileType = tileType;
-        prevTileElevation = currentTileElevation; // Update previous tile's elevation to the target's for the next step
-    }
-
-    return { isValid: true };
+        previousTileType = targetTileType; // Update for the next iteration's "moving from" logic
+        // playerCurrentLogicalElevation is already updated by the logic above.
+     }
+ 
+     return { isValid: true };
 }

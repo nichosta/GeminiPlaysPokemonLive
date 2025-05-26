@@ -108,7 +108,7 @@ export const MAP_OFFSET = 7;
 export const TILE_WALKABLE = "🟩";
 export const TILE_BLOCKED = "🟥";
 export const TILE_WARP = "🌀";
-export const TILE_NPC = "🗣️";
+export const TILE_NPC = "❗";
 export const TILE_WATER = "🌊";
 export const TILE_LEDGE_EAST = "→";
 export const TILE_LEDGE_WEST = "←";
@@ -117,20 +117,22 @@ export const TILE_LEDGE_SOUTH = "↓";
 export const TILE_ELEVATION_HIGHER = "🔼";
 export const TILE_ELEVATION_LOWER = "🔽";
 export const TILE_ELEVATION_TRANSITION = "↕️";
+export const TILE_ELEVATION_MULTILEVEL = "🌉";
 export const TILE_CONNECTION = "🔗";
 
 // --- Passability Definitions ---
 export const BASE_TILE_PASSABILITY = Object.freeze({
   [TILE_WALKABLE]: "walkable",
   [TILE_BLOCKED]: "blocked",
-  [TILE_WATER]: "requires surf",
+  [TILE_WATER]: "water, requires surf",
   [TILE_LEDGE_EAST]: "ledge (only walkable in the indicated direction)",
   [TILE_LEDGE_WEST]: "ledge (only walkable in the indicated direction)",
   [TILE_LEDGE_NORTH]: "ledge (only walkable in the indicated direction)",
   [TILE_LEDGE_SOUTH]: "ledge (only walkable in the indicated direction)",
-  [TILE_ELEVATION_HIGHER]: "walkable, higher elevation than current tile",
-  [TILE_ELEVATION_LOWER]: "walkable, lower elevation than current tile",
+  [TILE_ELEVATION_HIGHER]: "walkable but requires transition, higher elevation than current tile",
+  [TILE_ELEVATION_LOWER]: "walkable but requires transition, lower elevation than current tile",
   [TILE_ELEVATION_TRANSITION]: "walkable, transition elevation (any to any)",
+  [TILE_ELEVATION_MULTILEVEL]: "walkable/surfable from any elevation, but cannot change elevation",
   [TILE_CONNECTION]: "connection to adjacent map area",
 });
 
