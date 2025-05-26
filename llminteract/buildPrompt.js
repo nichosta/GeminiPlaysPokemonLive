@@ -32,6 +32,8 @@ function formatPokemonInfo(pokemon) {
         currentHP: pokemon.currentHP !== undefined ? pokemon.currentHP : null,
         maxHP: pokemon.maxHP !== undefined ? pokemon.maxHP : null,
         moves: movesData,
+        types: pokemon.types,
+        ability: pokemon.ability,
     };
 }
 
