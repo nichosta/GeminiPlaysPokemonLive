@@ -31,6 +31,9 @@ export const PLAYER_AVATAR_ADDR = 0x02037590; // Address of gPlayerAvatar struct
 export const IN_BATTLE_BIT_ADDR = 0x30026f9; // Location of the bitmask determining if the player is in battle
 export const PARTY_BASE_ADDR = 0x020244ec; // Base address for party Pokémon data [1]
 
+// --- Species Info ---
+export const SPECIES_INFO_ADDR = 0x083203CC;
+
 // --- Script Context Constants ---
 // There's probably horrific issues this is going to cause down the line, but I noticed this pointer only seems to be set
 // when there's an overworld text box open, so...

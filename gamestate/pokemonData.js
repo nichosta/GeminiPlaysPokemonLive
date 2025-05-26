@@ -2,7 +2,38 @@ import { readUint8, readUint16, readUint32, readRange } from "./emulatorInteract
 import { getSpeciesName } from '../constant/species_map.js';
 import { getMoveName } from '../constant/moves_map.js';
 import { decodeByteArrayToString } from '../constant/text_character_map.js'
+import { getAbilityName } from '../constant/ability_map.js';
 import * as CONSTANTS from "./constant/constants.js";
+
+const POKEMON_TYPE_MAP = new Map([
+  [255, "TYPE_NONE"],
+  [0, "TYPE_NORMAL"],
+  [1, "TYPE_FIGHTING"],
+  [2, "TYPE_FLYING"],
+  [3, "TYPE_POISON"],
+  [4, "TYPE_GROUND"],
+  [5, "TYPE_ROCK"],
+  [6, "TYPE_BUG"],
+  [7, "TYPE_GHOST"],
+  [8, "TYPE_STEEL"],
+  [9, "TYPE_MYSTERY"],
+  [10, "TYPE_FIRE"],
+  [11, "TYPE_WATER"],
+  [12, "TYPE_GRASS"],
+  [13, "TYPE_ELECTRIC"],
+  [14, "TYPE_PSYCHIC"],
+  [15, "TYPE_ICE"],
+  [16, "TYPE_DRAGON"],
+  [17, "TYPE_DARK"],
+]);
+
+// Lookup table for substructure order based on PID % 24 [2]
+const SUBSTRUCTURE_ORDER = [
+    "GAEM", "GAME", "GEAM", "GEMA", "GMAE", "GMEA", // 0-5
+    "AGEM", "AGME", "AEGM", "AEMG", "AMGE", "AMEG", // 6-11
+    "EGAM", "EGMA", "EAGM", "EAMG", "EMGA", "EMAG", // 12-17
+    "MGAE", "MGEA", "MAGE", "MAEG", "MEGA", "MEAG"  // 18-23
+];
 
 /**
  * Checks if the player is currently in a battle.
@@ -188,14 +219,6 @@ function decryptBlock(encryptedBuffer, pid, otid) {
 
     return decryptedBuffer;
 }
-
-// Lookup table for substructure order based on PID % 24 [2]
-const SUBSTRUCTURE_ORDER = [
-    "GAEM", "GAME", "GEAM", "GEMA", "GMAE", "GMEA", // 0-5
-    "AGEM", "AGME", "AEGM", "AEMG", "AMGE", "AMEG", // 6-11
-    "EGAM", "EGMA", "EAGM", "EAMG", "EMGA", "EMAG", // 12-17
-    "MGAE", "MGEA", "MAGE", "MAEG", "MEGA", "MEAG"  // 18-23
-];
 
 /**
  * Unshuffles the decrypted 12-byte substructures based on PID.
@@ -426,6 +449,61 @@ function getRibbonsObedience(miscBuffer) { // Offset 8, u32 [2]
     // Bit 31: Obedience flag
 }
 
+/**
+ * Gets the types of a Pokémon based on its species ID.
+ * @param {number} speciesId - The species ID of the Pokémon.
+ * @returns {Promise<string[]>} An array of type names. Returns empty array for SPECIES_NONE or on error.
+ */
+async function getTypes(speciesId) {
+    if (speciesId === CONSTANTS.SPECIES_NONE || !speciesId) {
+        // console.debug(`[getTypes] SPECIES_NONE or invalid speciesId (${speciesId}), returning empty array.`);
+        return [];
+    }
+    try {
+        const speciesDataAddr = CONSTANTS.SPECIES_INFO_ADDR + (speciesId * CONSTANTS.SPECIES_INFO_SIZE);
+        const typesOffsetAddr = speciesDataAddr + CONSTANTS.SPECIES_INFO_TYPES_OFFSET;
+
+        const typesData = await readRange(typesOffsetAddr, 2); // u8 types[2]
+        const type1Id = typesData[0];
+        const type2Id = typesData[1];
+
+        const type1Name = POKEMON_TYPE_MAP.get(type1Id) || `TYPE_UNKNOWN (${type1Id})`;
+        const resultTypes = [type1Name];
+
+        // Add second type if it's different from the first and not TYPE_NONE (255)
+        if (type1Id !== type2Id && type2Id !== 255) {
+            const type2Name = POKEMON_TYPE_MAP.get(type2Id) || `TYPE_UNKNOWN (${type2Id})`;
+            resultTypes.push(type2Name);
+        }
+        return resultTypes;
+    } catch (error) {
+        console.error(`[getTypes] Error fetching types for species ID ${speciesId}:`, error);
+        return [`TYPE_FETCH_ERROR`]; // Return an array with an error string
+    }
+}
+
+/**
+ * Gets the ability name of a Pokémon.
+ * @param {number} abilitySlot - The ability slot (0 or 1).
+ * @param {number} speciesId - The species ID of the Pokémon.
+ * @returns {Promise<string|null>} The ability name, or null/error string on failure.
+ */
+async function getAbility(abilitySlot, speciesId) {
+    if (speciesId === CONSTANTS.SPECIES_NONE || !speciesId) {
+        return null;
+    }
+    try {
+        const speciesDataAddr = CONSTANTS.SPECIES_INFO_ADDR + (speciesId * CONSTANTS.SPECIES_INFO_SIZE);
+        const abilitiesOffsetAddr = speciesDataAddr + CONSTANTS.SPECIES_INFO_ABILITIES_OFFSET;
+        const abilitiesData = await readRange(abilitiesOffsetAddr, 2); // u8 abilities[2]
+        const abilityId = abilitiesData[abilitySlot === 1 ? 1 : 0]; // Ensure slot is 0 or 1
+        return getAbilityName(abilityId);
+    } catch (error) {
+        console.error(`[getAbility] Error fetching ability for species ID ${speciesId}, slot ${abilitySlot}:`, error);
+        return "ABILITY_FETCH_ERROR";
+    }
+}
+
 
 // --- Main Function to Get Pokemon Data ---
 
@@ -437,35 +515,54 @@ function getRibbonsObedience(miscBuffer) { // Offset 8, u32 [2]
 export async function getPokemonData(slot) {
     try {
         const nickname = await getPokemonNickname(slot);
-
         const pid = await getPokemonPID(slot);
         const otid = await getPokemonOTID(slot);
-        const encryptedBlock = await getEncryptedBlock(slot);
 
+        const encryptedBlock = await getEncryptedBlock(slot);
         if (!encryptedBlock || encryptedBlock.byteLength !== CONSTANTS.ENCRYPTED_BLOCK_SIZE) {
-            console.error(`Failed to read encrypted block for slot ${slot}`);
+            console.error(`[getPokemonData] Failed to read encrypted block for slot ${slot}. PID: ${pid}`);
+            return null;
+        }
+        
+        const decryptedBlock = decryptBlock(encryptedBlock, pid, otid);
+        const substructures = unshuffleSubstructures(decryptedBlock, pid);
+
+        if (!substructures.G || !substructures.M || !substructures.A || !substructures.E) {
+            console.warn(`[getPokemonData] Invalid or incomplete substructures for slot ${slot}. PID: ${pid}. G:${!!substructures.G}, A:${!!substructures.A}, E:${!!substructures.E}, M:${!!substructures.M}`);
             return null;
         }
 
+        const speciesId = getSpeciesId(substructures.G);
+        if (speciesId === CONSTANTS.SPECIES_NONE) {
+            // console.debug(`[getPokemonData] Slot ${slot} confirmed empty (SPECIES_NONE). PID: ${pid}.`);
+            return null; // Definitely an empty slot
+        }
+
+        // Data from unencrypted part or requires speciesId/abilitySlot
         const level = await getPokemonLevel(slot);
         const statusCondition = await getPokemonStatusCondition(slot);
         const currentHP = await getPokemonCurrentHP(slot);
         const maxHP = await getPokemonMaxHP(slot);
-
-        const decryptedBlock = decryptBlock(encryptedBlock, pid, otid);
-        const substructures = unshuffleSubstructures(decryptedBlock, pid);
-
+        
         const ivBitfield = getIVsEggAbilityBitfield(substructures.M);
+        const abilitySlot = getAbilitySlot(ivBitfield);
+
+        // Fetch types and ability name
+        const types = await getTypes(speciesId);
+        const abilityName = await getAbility(abilitySlot, speciesId);
 
         return {
             nickname: nickname,
             pid: pid,
             otid: otid,
             level: level,
+            species: getSpeciesName(speciesId), // Use direct speciesId
+            speciesId: speciesId, // Include speciesId
+            types: types, // Added
+            ability: abilityName, // Added
             statusCondition: statusCondition,
             currentHP: currentHP,
             maxHP: maxHP,
-            species: getSpecies(substructures.G),
             heldItemId: getHeldItem(substructures.G),
             experience: getExperience(substructures.G),
             friendship: getFriendship(substructures.G),
@@ -507,7 +604,12 @@ export async function getPokemonData(slot) {
         };
 
     } catch (error) {
-        console.error(`Error getting decrypted data for slot ${slot}:`, error);
+        // Log specific errors if they are known, otherwise generic
+        if (error.message && (error.message.includes("Invalid Growth buffer") || error.message.includes("Invalid Misc buffer"))) {
+            console.warn(`[getPokemonData] Error processing substructures for slot ${slot} (likely empty/corrupted):`, error.message);
+        } else {
+            console.error(`[getPokemonData] General error getting data for slot ${slot}:`, error);
+        }
         return null;
     }
 }
