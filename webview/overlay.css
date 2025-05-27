@@ -21,23 +21,24 @@ body {
     width: 100%;
     height: 100%;
     display: grid;
-    grid-template-columns: 683px 1fr;
+    grid-template-columns: 820px 1fr;
     grid-template-rows: 1fr 220px;
-    gap: 20px;
-    padding: 20px;
+    gap: 14px;
+    padding: 14px;
 }
 
 /* Left Panel - Minimap and Emulator */
 .left-panel {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
+    align-items: center;
 }
 
 /* Emulator Section - Chromakey ready with 3:2 aspect ratio */
 .emulator-placeholder {
-    width: 1200px;
-    height: 800px; /* 683 * (2/3) = ~455px for 3:2 ratio */
+    width: 820px;
+    height: 547px; /* 820 * (2/3) = ~547px for 3:2 ratio */
     background: #00FF00; /* Pure green for chromakey - not used elsewhere */
     border: 2px solid #1e293b;
     border-radius: 8px;
@@ -46,14 +47,14 @@ body {
     align-items: center;
     justify-content: center;
     color: #000000;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     position: relative;
 }
 
 .emulator-placeholder small {
-    font-size: 12px;
+    font-size: 14px;
     color: #333333;
     margin-top: 8px;
     font-weight: 400;
@@ -61,7 +62,8 @@ body {
 
 /* Minimap */
 .minimap-container {
-    height: 230px;
+    width: 820px;
+    height: 240px;
     position: relative;
     background: linear-gradient(145deg, #1e293b, #2d3748);
     border: 1px solid #374151;
@@ -88,8 +90,8 @@ body {
 
 .minimap-grid {
     font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-    font-size: 10px;
-    line-height: 1.1;
+    font-size: 9px;
+    line-height: 1;
     color: #22d3ee;
     background: #0f172a;
     padding: 32px 16px 12px;
@@ -103,16 +105,17 @@ body {
 .right-panel {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     grid-row: 1;
+    padding-right: 4px;
 }
 
 /* Top Row - Badges and Navigation */
 .top-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    height: 100px;
+    grid-template-columns: 55% 45%;
+    gap: 12px;
+    height: 110px;
 }
 
 /* Panel Card Base Style */
@@ -121,7 +124,7 @@ body {
     border-radius: 12px;
     border: 1px solid #374151;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    padding: 16px;
+    padding: 14px;
     position: relative;
     overflow: hidden;
 }
@@ -151,12 +154,12 @@ body {
 .badges-header {
     background: linear-gradient(135deg, #f59e0b, #d97706);
     color: white;
-    padding: 8px 16px;
-    border-radius: 8px;
+    padding: 6px 12px;
+    border-radius: 6px;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
     text-align: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
@@ -168,34 +171,49 @@ body {
     left: 8px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .badges-container {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: repeat(8, 1fr);
     gap: 6px;
     flex: 1;
+    align-items: center;
 }
 
 .badge {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: white;
-    border-radius: 6px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 9px;
-    font-weight: 600;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    aspect-ratio: 1;
+    filter: grayscale(100%) brightness(0.4);
+    opacity: 0.5;
+    overflow: hidden;
+    width: 100%;
+    max-width: 50px;
+    max-height: 50px;
+}
+
+.badge img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.badge.obtained {
+    filter: grayscale(0%) brightness(1);
+    opacity: 1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
 .badge:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    transform: scale(1.1);
 }
 
 /* Navigation Area */
@@ -214,12 +232,12 @@ body {
 .navigation-header {
     background: linear-gradient(135deg, #3b82f6, #1d4ed8);
     color: white;
-    padding: 8px 16px;
-    border-radius: 8px;
+    padding: 6px 12px;
+    border-radius: 6px;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
     text-align: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
@@ -231,12 +249,12 @@ body {
     left: 8px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .navigation-content {
     color: #e2e8f0;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
     text-align: center;
     flex: 1;
@@ -250,8 +268,8 @@ body {
 .goals-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    height: 90px;
+    gap: 12px;
+    height: 85px;
 }
 
 .goal-card {
@@ -275,12 +293,12 @@ body {
 
 .goal-header {
     color: white;
-    padding: 6px 12px;
+    padding: 5px 10px;
     border-radius: 6px;
     font-weight: 600;
-    font-size: 11px;
+    font-size: 10px;
     text-align: center;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
@@ -300,8 +318,8 @@ body {
 
 .goal-content {
     color: #e2e8f0;
-    font-size: 11px;
-    line-height: 1.4;
+    font-size: 10px;
+    line-height: 1.3;
     text-align: center;
     flex: 1;
     display: flex;
@@ -317,7 +335,7 @@ body {
     border: 1px solid #374151;
     border-radius: 12px;
     flex: 1;
-    min-height: 150px;
+    min-height: 140px;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -328,11 +346,11 @@ body {
 .commentary-header {
     background: linear-gradient(135deg, #8b5cf6, #7c3aed);
     color: white;
-    padding: 12px 20px;
+    padding: 10px 16px;
     border-radius: 12px 12px 0 0;
     font-weight: 600;
-    font-size: 16px;
-    margin: -16px -16px 16px -16px;
+    font-size: 14px;
+    margin: -14px -14px 12px -14px;
     text-align: center;
     box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -345,7 +363,7 @@ body {
     left: 16px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .commentary-header::after {
@@ -375,8 +393,8 @@ body {
 
 .commentary-text {
     color: #e2e8f0;
-    line-height: 1.6;
-    font-size: 14px;
+    line-height: 1.5;
+    font-size: 13px;
     padding: 0 4px;
     flex: 1;
     overflow-y: auto;
@@ -399,7 +417,7 @@ body {
     border-radius: 12px 12px 0 0;
     font-weight: 600;
     font-size: 14px;
-    margin: -16px -16px 12px -16px;
+    margin: -14px -14px 12px -14px;
     text-align: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
@@ -528,60 +546,151 @@ body {
 
 /* Inventory Section */
 .inventory-section {
-    position: relative;
-    max-height: 220px;
+   position: relative;
+   max-height: 220px;
 }
 
 .inventory-section .info-header {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+   background: linear-gradient(135deg, #f59e0b, #d97706);
 }
 
 .inventory-section .info-header::before {
-    content: '🎒';
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 18px;
+   content: '🎒';
+   position: absolute;
+   left: 12px;
+   top: 50%;
+   transform: translateY(-50%);
+   font-size: 18px;
 }
 
 .money-display {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 16px;
-    font-size: 12px;
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
-    z-index: 10;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+   position: absolute;
+   top: 10px;
+   right: 12px;
+   background: linear-gradient(135deg, #f59e0b, #d97706);
+   color: white;
+   padding: 6px 12px;
+   border-radius: 16px;
+   font-size: 12px;
+   font-weight: 600;
+   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+   z-index: 10; /* Ensure money display is above category headers if overlap occurs at top of section */
+   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .inventory-container {
-    height: calc(100% - 48px);
-    overflow-y: auto;
-    padding-right: 4px;
-    padding-bottom: 8px;
+   height: calc(100% - 48px); /* Height for inventory area below the general info-header */
+   overflow-y: auto; /* Allows scrolling for the entire inventory container if columns collectively overflow */
+   padding-right: 4px;
+   display: grid;
+   grid-template-columns: repeat(5, 1fr);
+   gap: 8px;
 }
 
-.inventory-item {
+/* Ensure you have the styles for .inventory-column, .inventory-category, etc. 
+  from the previous fix. The changes below are specific to the animation
+  of .inventory-items-wrapper.
+*/
+
+@keyframes scrollAllInventory {
+   0% {
+      transform: translateY(0); /* Start at the top */
+   }
+   50% {
+      /* Scroll content up by 1.5 times the wrapper's height.
+         This assumes item content is roughly 2.5 times the visible wrapper height
+         to make it appear to reach the "bottom". 
+         - Adjust -150% if your content is typically much longer or shorter.
+         - Example: -100% for content 2x wrapper height.
+         - Example: -200% for content 3x wrapper height.
+      */
+      transform: translateY(-150%); 
+   }
+   100% {
+      transform: translateY(0); /* Return to the top */
+   }
+}
+
+.inventory-items-wrapper {
+   /* Updated animation name and duration. 
+      Increased duration for a smoother scroll over a longer distance.
+   */
+   animation: scrollAllInventory 30s linear infinite; 
+   padding-bottom: 10px; /* Original padding, contributes to scrollable height */
+   flex-grow: 1; /* Takes available space in the column */
+   /* overflow: hidden; /* Not strictly needed as parent .inventory-column clips */
+}
+
+/* Ensure the hover effect to pause animation is still applied to the correct class if desired */
+.inventory-column:hover .inventory-items-wrapper {
+   animation-play-state: paused;
+}
+
+/* Other inventory styles (like .inventory-item, .inventory-category) remain as before */
+
+/* Reminder of .inventory-column for context of overflow */
+.inventory-column {
     display: flex;
-    justify-content: space-between;
-    padding: 6px 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
-    color: #e2e8f0;
-    font-size: 12px;
-    font-weight: 400;
+    flex-direction: column;
+    position: relative;
+    height: 100%;
+    overflow: hidden; /* This is what clips the translating .inventory-items-wrapper */
+}
+
+/* Styles for ::before, ::after fades, and .inventory-category z-index from previous fix should be maintained */
+.inventory-column::before,
+.inventory-column::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 20px;
+    pointer-events: none;
+    z-index: 2; 
+}
+
+.inventory-column::before {
+    top: 28px; 
+    background: linear-gradient(to bottom, #1e293b, transparent);
+}
+
+.inventory-column::after {
+    bottom: 0;
+    background: linear-gradient(to top, #1e293b, transparent);
+    z-index: 2;
 }
 
 .inventory-category {
     color: #22d3ee;
-    font-weight: 600;
-    margin: 12px 0 6px 0;
-    font-size: 13px;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid #22d3ee;
+    padding-bottom: 3px;
+    position: sticky; 
+    top: 0;
+    background: linear-gradient(145deg, #1e293b, #2d3748); 
+    z-index: 3; /* Corrected z-index from previous fix */
+}
+
+.inventory-item {
+   display: flex;
+   justify-content: space-between;
+   padding: 3px 0; /* Reduced vertical padding to fit more items if necessary */
+   border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+   color: #e2e8f0;
+   font-size: 9px;
+   font-weight: 500;
+   line-height: 1.2;
+   white-space: nowrap;
+}
+
+.item-name {
+   overflow: hidden;
+   text-overflow: ellipsis;
+   max-width: calc(100% - 25px); /* Ensure space for item count if present */
 }
 
 /* Scrollbar Styling */

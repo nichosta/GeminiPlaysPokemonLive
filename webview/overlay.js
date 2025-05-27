@@ -1,268 +1,357 @@
 class StreamOverlay {
-    constructor() {
-        this.ws = null;
-        this.reconnectInterval = 5000;
-        this.lastData = null;
-        this.init();
-    }
+  constructor() {
+    this.ws = null;
+    this.reconnectInterval = 5000;
+    this.lastData = null;
+    this.init();
+  }
 
-    init() {
-        this.connectWebSocket();
-        this.startPolling(); // Fallback to polling if WebSocket fails
-    }
+  init() {
+    this.connectWebSocket();
+    this.startPolling(); // Fallback to polling if WebSocket fails
+  }
 
-    connectWebSocket() {
+  connectWebSocket() {
+    try {
+      // Attempt WebSocket connection for real-time updates
+      this.ws = new WebSocket("ws://localhost:8080"); // You'll need to add this to your agent
+
+      this.ws.onopen = () => {
+        console.log("WebSocket connected");
+        this.setStatus("Connected", "success");
+      };
+
+      this.ws.onmessage = (event) => {
         try {
-            // Attempt WebSocket connection for real-time updates
-            this.ws = new WebSocket('ws://localhost:8080'); // You'll need to add this to your agent
-            
-            this.ws.onopen = () => {
-                console.log('WebSocket connected');
-                this.setStatus('Connected', 'success');
-            };
-
-            this.ws.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    this.updateDisplay(data);
-                } catch (error) {
-                    console.error('Error parsing WebSocket data:', error);
-                }
-            };
-
-            this.ws.onclose = () => {
-                console.log('WebSocket disconnected, attempting to reconnect...');
-                this.setStatus('Disconnected', 'error');
-                setTimeout(() => this.connectWebSocket(), this.reconnectInterval);
-            };
-
-            this.ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                this.setStatus('Error', 'error');
-            };
+          const data = JSON.parse(event.data);
+          this.updateDisplay(data);
         } catch (error) {
-            console.error('Failed to create WebSocket:', error);
-            this.setStatus('Connection Failed', 'error');
+          console.error("Error parsing WebSocket data:", error);
         }
+      };
+
+      this.ws.onclose = () => {
+        console.log("WebSocket disconnected, attempting to reconnect...");
+        this.setStatus("Disconnected", "error");
+        setTimeout(() => this.connectWebSocket(), this.reconnectInterval);
+      };
+
+      this.ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        this.setStatus("Error", "error");
+      };
+    } catch (error) {
+      console.error("Failed to create WebSocket:", error);
+      this.setStatus("Connection Failed", "error");
+    }
+  }
+
+  // Fallback polling method
+  async startPolling() {
+    setInterval(async () => {
+      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        try {
+          // Poll the agent for current state
+          // You'll need to add an HTTP endpoint to your agent
+          const response = await fetch("http://localhost:5000/agent/state");
+          if (response.ok) {
+            const data = await response.json();
+            this.updateDisplay(data);
+            this.setStatus("Polling", "success");
+          }
+        } catch (error) {
+          console.error("Polling failed:", error);
+          this.setStatus("Polling Failed", "error");
+        }
+      }
+    }, 2000); // Poll every 2 seconds
+  }
+
+  updateDisplay(data) {
+    this.lastData = data;
+
+    // Update location and minimap
+    if (data.mapData && data.mapData.map_name) {
+      document.getElementById("location-display").textContent =
+        data.mapData.map_name;
+      this.updateMinimap(data.mapData);
     }
 
-    // Fallback polling method
-    async startPolling() {
-        setInterval(async () => {
-            if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-                try {
-                    // Poll the agent for current state
-                    // You'll need to add an HTTP endpoint to your agent
-                    const response = await fetch('http://localhost:5000/agent/state');
-                    if (response.ok) {
-                        const data = await response.json();
-                        this.updateDisplay(data);
-                        this.setStatus('Polling', 'success');
-                    }
-                } catch (error) {
-                    console.error('Polling failed:', error);
-                    this.setStatus('Polling Failed', 'error');
-                }
-            }
-        }, 2000); // Poll every 2 seconds
+    // Update commentary (truncate if too long)
+    if (data.commentary) {
+      let commentary = data.commentary;
+      if (commentary.length > 350) {
+        commentary = commentary.substring(0, 350) + "...";
+      }
+      document.getElementById("commentary-display").textContent = commentary;
     }
 
-    updateDisplay(data) {
-        this.lastData = data;
-        
-        // Update location and minimap
-        if (data.mapData && data.mapData.map_name) {
-            document.getElementById('location-display').textContent = data.mapData.map_name;
-            this.updateMinimap(data.mapData);
-        }
-
-        // Update commentary (truncate if too long)
-        if (data.commentary) {
-            let commentary = data.commentary;
-            if (commentary.length > 300) {
-                commentary = commentary.substring(0, 300) + '...';
-            }
-            document.getElementById('commentary-display').textContent = commentary;
-        }
-
-        // Update navigation (show as simple path)
-        if (data.navigation && Array.isArray(data.navigation)) {
-            const navText = data.navigation.length > 0 
-                ? data.navigation.slice(0, 5).map(coord => `[${coord.x},${coord.y}]`).join(' → ')
-                    + (data.navigation.length > 5 ? ' ...' : '')
-                : 'No path planned';
-            document.getElementById('navigation-display').textContent = navText;
-        }
-
-        // Update goals (truncate each)
-        if (data.goalLongTerm) {
-            let goal = data.goalLongTerm;
-            if (goal.length > 80) goal = goal.substring(0, 80) + '...';
-            document.getElementById('goal-long').textContent = goal;
-        }
-        if (data.goalMidTerm) {
-            let goal = data.goalMidTerm;
-            if (goal.length > 80) goal = goal.substring(0, 80) + '...';
-            document.getElementById('goal-mid').textContent = goal;
-        }
-        if (data.goalShortTerm) {
-            let goal = data.goalShortTerm;
-            if (goal.length > 80) goal = goal.substring(0, 80) + '...';
-            document.getElementById('goal-short').textContent = goal;
-        }
-
-        // Update party
-        if (data.pokemon && Array.isArray(data.pokemon)) {
-            this.updateParty(data.pokemon);
-        }
-
-        // Update inventory
-        if (data.bag) {
-            this.updateInventory(data.bag);
-        }
-
-        // Update badges
-        if (data.badges && Array.isArray(data.badges)) {
-            this.updateBadges(data.badges);
-        }
-
-        // Update money
-        if (typeof data.money === 'number') {
-            document.getElementById('money-display').textContent = `💰 $${data.money.toLocaleString()}`;
-        }
+    // Update navigation (show as simple path)
+    if (data.navigation && Array.isArray(data.navigation)) {
+      const navText =
+        data.navigation.length > 0
+          ? data.navigation
+              .slice(0, 5)
+              .map((coord) => `[${coord.x},${coord.y}]`)
+              .join(" → ") + (data.navigation.length > 5 ? " ..." : "")
+          : "No path planned";
+      document.getElementById("navigation-display").textContent = navText;
     }
 
-    updateMinimap(mapData) {
-        const minimapDisplay = document.getElementById('minimap-display');
-        if (mapData.map_data && Array.isArray(mapData.map_data)) {
-            let mapText = '';
-            mapData.map_data.forEach(row => {
-                if (Array.isArray(row)) {
-                    const rowText = row.map(cell => {
-                        const tileType = cell.split(':')[1];
-                        switch(tileType) {
-                            case 'O': return '.';
-                            case 'X': return '█';
-                            case 'W': return '◊';
-                            case '!': return '!';
-                            case '~': return '~';
-                            case '→': return '→';
-                            case '←': return '←';
-                            case '↑': return '↑';
-                            case '↓': return '↓';
-                            case 'C': return '+';
-                            default: return '?';
-                        }
-                    }).join('');
-                    mapText += rowText + '\n';
-                }
-            });
-            minimapDisplay.textContent = mapText;
+    // Update goals (truncate each)
+    if (data.goalLongTerm) {
+      let goal = data.goalLongTerm;
+      if (goal.length > 60) goal = goal.substring(0, 60) + "...";
+      document.getElementById("goal-long").textContent = goal;
+    }
+    if (data.goalMidTerm) {
+      let goal = data.goalMidTerm;
+      if (goal.length > 60) goal = goal.substring(0, 60) + "...";
+      document.getElementById("goal-mid").textContent = goal;
+    }
+    if (data.goalShortTerm) {
+      let goal = data.goalShortTerm;
+      if (goal.length > 60) goal = goal.substring(0, 60) + "...";
+      document.getElementById("goal-short").textContent = goal;
+    }
+
+    // Update party
+    if (data.pokemon && Array.isArray(data.pokemon)) {
+      this.updateParty(data.pokemon);
+    }
+
+    // Update inventory
+    if (data.bag) {
+      this.updateInventory(data.bag);
+    }
+
+    // Update badges
+    if (data.badges && Array.isArray(data.badges)) {
+      this.updateBadges(data.badges);
+    }
+
+    // Update money
+    if (typeof data.money === "number") {
+      document.getElementById(
+        "money-display"
+      ).textContent = `💰 $${data.money.toLocaleString()}`;
+    }
+  }
+
+  updateMinimap(mapData) {
+    const minimapDisplay = document.getElementById("minimap-display");
+    if (mapData.map_data && Array.isArray(mapData.map_data)) {
+      let mapText = "";
+      mapData.map_data.forEach((row) => {
+        if (Array.isArray(row)) {
+          const rowText = row
+            .map((cell) => {
+              const tileType = cell.split(":")[1];
+              switch (tileType) {
+                case "O":
+                  return ".";
+                case "X":
+                  return "█";
+                case "W":
+                  return "◊";
+                case "!":
+                  return "!";
+                case "~":
+                  return "~";
+                case "→":
+                  return "→";
+                case "←":
+                  return "←";
+                case "↑":
+                  return "↑";
+                case "↓":
+                  return "↓";
+                case "C":
+                  return "+";
+                default:
+                  return "?";
+              }
+            })
+            .join("");
+          mapText += rowText + "\n";
+        }
+      });
+      minimapDisplay.textContent = mapText;
+    } else {
+      minimapDisplay.textContent = "Map data unavailable";
+    }
+  }
+
+  updateParty(pokemon) {
+    const partyDisplay = document.getElementById("party-display");
+    partyDisplay.innerHTML = "";
+
+    pokemon.forEach((mon) => {
+      if (mon && mon.species) {
+        const pokemonCard = document.createElement("div");
+        const isFainted = mon.currentHP === 0;
+        pokemonCard.className = "pokemon-card" + (isFainted ? " fainted" : "");
+
+        // Truncate nickname if too long
+        const displayName = mon.nickname || mon.species;
+        const shortName =
+          displayName.length > 12
+            ? displayName.substring(0, 12) + "..."
+            : displayName;
+
+        // Calculate HP percentage
+        const hpPercent = mon.maxHP > 0 ? (mon.currentHP / mon.maxHP) * 100 : 0;
+        let hpClass = "";
+        if (hpPercent <= 25) hpClass = "hp-red";
+        else if (hpPercent <= 50) hpClass = "hp-yellow";
+
+        pokemonCard.innerHTML = `
+                            <div class="pokemon-name">${shortName}</div>
+                            <div class="pokemon-level">Lv.${mon.level || "?"} ${
+          mon.species || "Unknown"
+        }</div>
+                            <div class="pokemon-hp-container">
+                                <div class="pokemon-hp-text">HP: ${
+                                  mon.currentHP || 0
+                                }/${mon.maxHP || "?"}</div>
+                                <div class="pokemon-hp-bar">
+                                    <div class="pokemon-hp-fill ${hpClass}" style="width: ${hpPercent}%"></div>
+                                </div>
+                            </div>
+                            ${
+                              isFainted
+                                ? '<div class="fainted-indicator">Fainted</div>'
+                                : ""
+                            }
+                        `;
+
+        partyDisplay.appendChild(pokemonCard);
+      }
+    });
+  }
+
+  updateInventory(bag) {
+    const inventoryDisplay = document.getElementById("inventory-display");
+    inventoryDisplay.innerHTML = "";
+
+    const categories = [
+      "Items",
+      "Pokeballs",
+      "TMs & HMs",
+      "Berries",
+      "Key Items",
+    ];
+
+    categories.forEach((categoryName) => {
+      const items = bag[categoryName];
+      if (items && items.length > 0) {
+        const column = document.createElement("div");
+        column.className = "inventory-column";
+
+        const categoryHeader = document.createElement("div");
+        categoryHeader.className = "inventory-category";
+        categoryHeader.textContent = categoryName;
+        column.appendChild(categoryHeader);
+
+        const itemsWrapper = document.createElement("div");
+        itemsWrapper.className = "inventory-items-wrapper";
+
+        // Show all items, no limit
+        items.forEach((item) => {
+          const itemElement = document.createElement("div");
+          itemElement.className = "inventory-item";
+
+          const itemName = document.createElement("span");
+          itemName.className = "item-name";
+          itemName.textContent = item.name;
+          itemName.title = item.name; // Tooltip for full name
+
+          const itemQuantity = document.createElement("span");
+          itemQuantity.textContent = `x${item.quantity}`;
+
+          itemElement.appendChild(itemName);
+          itemElement.appendChild(itemQuantity);
+          itemsWrapper.appendChild(itemElement);
+        });
+
+        // Only apply scrolling animation if there are many items
+        if (items.length > 8) {
+          // Duplicate items for seamless scrolling
+          items.forEach((item) => {
+            const itemElement = document.createElement("div");
+            itemElement.className = "inventory-item";
+
+            const itemName = document.createElement("span");
+            itemName.className = "item-name";
+            itemName.textContent = item.name;
+            itemName.title = item.name;
+
+            const itemQuantity = document.createElement("span");
+            itemQuantity.textContent = `x${item.quantity}`;
+
+            itemElement.appendChild(itemName);
+            itemElement.appendChild(itemQuantity);
+            itemsWrapper.appendChild(itemElement);
+          });
+
+          // Adjust animation duration based on item count
+          const duration = Math.max(20, items.length * 2);
+          itemsWrapper.style.animationDuration = `${duration}s`;
         } else {
-            minimapDisplay.textContent = 'Map data unavailable';
+          // No animation for short lists
+          itemsWrapper.style.animation = "none";
         }
-    }
 
-    updateParty(pokemon) {
-        const partyDisplay = document.getElementById('party-display');
-        partyDisplay.innerHTML = '';
-        
-        pokemon.forEach(mon => {
-            if (mon && mon.species) {
-                const pokemonCard = document.createElement('div');
-                const isFainted = mon.currentHP === 0;
-                pokemonCard.className = 'pokemon-card' + (isFainted ? ' fainted' : '');
-                
-                // Truncate nickname if too long
-                const displayName = (mon.nickname || mon.species);
-                const shortName = displayName.length > 12 ? displayName.substring(0, 12) + '...' : displayName;
-                
-                // Calculate HP percentage
-                const hpPercent = mon.maxHP > 0 ? (mon.currentHP / mon.maxHP) * 100 : 0;
-                let hpClass = '';
-                if (hpPercent <= 25) hpClass = 'hp-red';
-                else if (hpPercent <= 50) hpClass = 'hp-yellow';
-                
-                pokemonCard.innerHTML = `
-                    <div class="pokemon-name">${shortName}</div>
-                    <div class="pokemon-level">Lv.${mon.level || '?'} ${mon.species || 'Unknown'}</div>
-                    <div class="pokemon-hp-container">
-                        <div class="pokemon-hp-text">HP: ${mon.currentHP || 0}/${mon.maxHP || '?'}</div>
-                        <div class="pokemon-hp-bar">
-                            <div class="pokemon-hp-fill ${hpClass}" style="width: ${hpPercent}%"></div>
-                        </div>
-                    </div>
-                    ${isFainted ? '<div class="fainted-indicator">Fainted</div>' : ''}
-                `;
-                
-                partyDisplay.appendChild(pokemonCard);
-            }
-        });
-    }
+        column.appendChild(itemsWrapper);
+        inventoryDisplay.appendChild(column);
+      }
+    });
 
-    updateInventory(bag) {
-        const inventoryDisplay = document.getElementById('inventory-display');
-        let inventoryHTML = '';
-        
-        Object.entries(bag).forEach(([pocketName, items]) => {
-            if (items && items.length > 0) {
-                inventoryHTML += `<div class="inventory-category">${pocketName}:</div>`;
-                items.slice(0, 8).forEach(item => { // Limit items per category
-                    inventoryHTML += `
-                        <div class="inventory-item">
-                            <span>${item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name}</span>
-                            <span>x${item.quantity}</span>
-                        </div>
-                    `;
-                });
-                if (items.length > 8) {
-                    inventoryHTML += `<div class="inventory-item"><span>...and ${items.length - 8} more</span><span></span></div>`;
-                }
-            }
-        });
-        
-        inventoryDisplay.innerHTML = inventoryHTML || 'No items';
+    if (inventoryDisplay.innerHTML === "") {
+      inventoryDisplay.innerHTML =
+        '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8;">No items</div>';
     }
+  }
 
-    updateBadges(badges) {
-        const badgesDisplay = document.getElementById('badges-display');
-        badgesDisplay.innerHTML = '';
-        
-        const allBadges = [
-            'Stone', 'Knuckle', 'Dynamo', 'Heat',
-            'Balance', 'Feather', 'Mind', 'Rain'
-        ];
-        
-        allBadges.forEach((badgeName, index) => {
-            const badge = document.createElement('div');
-            badge.className = 'badge';
-            badge.textContent = badgeName;
-            
-            const fullBadgeName = badgeName + ' Badge';
-            if (!badges.includes(fullBadgeName)) {
-                badge.style.opacity = '0.3';
-                badge.style.background = 'linear-gradient(135deg, #666, #888)';
-            }
-            
-            badgesDisplay.appendChild(badge);
-        });
-    }
+  updateBadges(badges) {
+    const badgeElements = document.querySelectorAll(".badge");
 
-    setStatus(status, type) {
-        // You could add a status indicator here if needed
-        console.log(`Status: ${status} (${type})`);
-    }
+    const badgeNames = [
+      "Stone Badge",
+      "Knuckle Badge",
+      "Dynamo Badge",
+      "Heat Badge",
+      "Balance Badge",
+      "Feather Badge",
+      "Mind Badge",
+      "Rain Badge",
+    ];
+
+    badgeElements.forEach((badgeElement, index) => {
+      const badgeName = badgeNames[index];
+      if (badges.includes(badgeName)) {
+        badgeElement.classList.add("obtained");
+      } else {
+        badgeElement.classList.remove("obtained");
+      }
+    });
+  }
+
+  setStatus(status, type) {
+    // You could add a status indicator here if needed
+    console.log(`Status: ${status} (${type})`);
+  }
 }
 
 // Initialize the overlay when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    new StreamOverlay();
+document.addEventListener("DOMContentLoaded", () => {
+  new StreamOverlay();
 });
 
 // Mock data for testing (remove in production)
 setTimeout(() => {
-    const mockData = {
-mapData: {
+  const mockData = {
+    mapData: {
       map_name: "ROUTE110",
       width: 40,
       height: 100,
@@ -805,11 +894,18 @@ mapData: {
       "Heat Badge",
       "Balance Badge",
     ],
-  }
-    
-    // Simulate receiving data
-    window.setTimeout(() => {
-        const overlay = new StreamOverlay();
-        overlay.updateDisplay(mockData);
-    }, 100);
+    commentary:
+      "Currently surfing on Route 110. The team is in good shape with Azumarill leading the way. Looking to head north towards Mauville City to continue our journey. The weather is clear and the path ahead looks promising.",
+    goalLongTerm:
+      "Complete the Elite Four challenge and become the Pokemon Champion",
+    goalMidTerm: "Collect all 8 gym badges and strengthen the party",
+    goalShortTerm:
+      "Navigate to Mauville City and heal the party at the Pokemon Center",
+  };
+
+  // Simulate receiving data
+  window.setTimeout(() => {
+    const overlay = new StreamOverlay();
+    overlay.updateDisplay(mockData);
+  }, 100);
 }, 2000);
