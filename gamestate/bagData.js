@@ -133,7 +133,6 @@ async function readPocketItems(pocketIndex, securityKey) {
             const itemName = getItemName(itemId); // Look up the name
 
             items.push({
-                id: itemId,
                 name: itemName || `Unknown Item (ID: ${itemId})`, // Provide fallback name
                 quantity: quantity
             });
