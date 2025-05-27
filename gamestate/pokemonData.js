@@ -35,6 +35,16 @@ const SUBSTRUCTURE_ORDER = [
     "MGAE", "MGEA", "MAGE", "MAEG", "MEGA", "MEAG"  // 18-23
 ];
 
+// Masks for status conditions
+const STATUS_CONDITION_MASKS = new Map([
+    [0b111, "SLEEP"], // Sleep uses first 3 bits (to indicate turns)
+    [1 << 3, "POISON"],
+    [1 << 4, "BURN"],
+    [1 << 5, "FREEZE"],
+    [1 << 6, "PARALYSIS"],
+    [1 << 7, "BAD_POISON"], // Toxic
+]);
+
 /**
  * Checks if the player is currently in a battle.
  * @returns {Promise<boolean>} True if in battle, false otherwise.
@@ -156,12 +166,27 @@ async function getPokemonSpDefense(slot) {
  * Gets the status condition bitmask of a Pokémon in the specified party slot.
  * Bits 0-2: Sleep turns | Bit 3: Poison | Bit 4: Burn | Bit 5: Freeze | Bit 6: Paralysis | Bit 7: Bad Poison (Toxic) [1]
  * @param {number} slot - The party slot index (0-5).
- * @returns {Promise<number>} The status condition bitmask (u32).
+ * @returns {Promise<number>} The status condition bitmask (u8).
  */
 async function getPokemonStatusCondition(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readUint32(baseAddr + CONSTANTS.STATUS_OFFSET);
+    return await readUint8(baseAddr + CONSTANTS.STATUS_OFFSET);
 }
+
+/**
+ * Gets the status condition name of a Pokémon based on the bitmask.
+ * @param {number} statusBitmask - The status condition bitmask (u32).
+ * @returns {string} The status condition name (e.g., "POISON", "SLEEP"). NONE if no status.
+ */
+function getPokemonStatusConditionName(statusBitmask) {
+    for (const [mask, name] of STATUS_CONDITION_MASKS.entries()) {
+        if (statusBitmask & mask !== 0) {
+            return name;
+        }
+    }
+    return "NONE";
+}
+
 
 // --- Decryption and Unshuffling Logic ---
 
@@ -550,6 +575,8 @@ export async function getPokemonData(slot) {
         // Fetch types and ability name
         const types = await getTypes(speciesId);
         const abilityName = await getAbility(abilitySlot, speciesId);
+        
+        const statusConditionName = getPokemonStatusConditionName(statusCondition);
 
         return {
             nickname: nickname,
@@ -560,7 +587,7 @@ export async function getPokemonData(slot) {
             speciesId: speciesId, // Include speciesId
             types: types, // Added
             ability: abilityName, // Added
-            statusCondition: statusCondition,
+            statusCondition: statusConditionName,
             currentHP: currentHP,
             maxHP: maxHP,
             heldItemId: getHeldItem(substructures.G),

@@ -34,6 +34,7 @@ function formatPokemonInfo(pokemon) {
         moves: movesData,
         types: pokemon.types,
         ability: pokemon.ability,
+        statusCondition: pokemon.statusCondition,
     };
 }
 
