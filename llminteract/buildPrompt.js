@@ -91,5 +91,3 @@ export async function getGameInfoText(visibleMapState) {
 
     return JSON.stringify(gameInfoObject);
 }
-
-console.log(await getGameInfoText());
