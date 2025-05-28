@@ -92,13 +92,14 @@ A JSON object containing data about the currently onscreen part of the map, incl
 \tThe name of your current map
 \tYour current X and Y position on the map. Note that the top left corner of the map is 0, 0; and going down increases the Y while going right increases the X. The coordinates given extend off the sides of the map; these are parts of other maps (if they are connected to the current one).
 \tYour current facing direction. Remember you cannot interact with anything unless you are facing towards it. Be careful you face things before you try to interact.
-\tThe collision information of tiles on screen. Tiles you can walk onto or through are marked with an O, while tiles you cannot pass onto or through are marked with an X. Use this information to navigate around obstructions. 
-\tOnscreen warps to other maps, marked with a W in the tile data and with their destinations noted in the list of warps. This list of warps is complete; if you believe you see a warp not listed, you are mistaken. Note this does not include overworld connections between maps.
+\tThe collision information of tiles on screen. Tiles you can walk onto or through are marked with a 🟩, while tiles you cannot pass onto or through are marked with a 🟥. Use this information to navigate around obstructions. 
+\tOnscreen warps to other maps, marked with a 🌀 in the tile data and with their destinations noted in the list of warps. This list of warps is complete; if you believe you see a warp not listed, you are mistaken. Note this does not include overworld connections between maps.
 \tOnscreen overworld connections to other maps. You can use these by simply walking in the direction indicated off the edge of the map from a passable tile. If a connection is not listed when the edge is visible, you will be unable to walk off the edge of the map.
-\tOnscreen NPCs, marked with a ! in the tile data and with their sprite names noted. Some NPCs are marked "wandering", meaning they move between turns. If you wish to interact with these, consider using your "stunNPC" tool to freeze them until they are talked to. This list of NPCs is complete, if you believe you see an NPC not listed then you are mistaken.
+\tOnscreen NPCs, marked with a ❗ in the tile data and with their sprite names noted. Some NPCs are marked "wandering", meaning they move between turns. If you wish to interact with these, consider using your "stunNPC" tool to freeze them until they are talked to. This list of NPCs is complete, if you believe you see an NPC not listed then you are mistaken.
 Whether or not you are currently in the battle screen. This includes the time after an opponent is defeated but before you have returned to the overworld (the post battle defeat screen and text). You cannot move in the overworld as long as this value is true.
 Whether or not your overworld movement is locked. If this flag is set, you cannot move around in the overworld, and most likely need to finish a conversation or close a menu. If you are stuck looping and this flag is set, press B several turns in a row and you should be able to move again. If this flag is set, you can be VERY SURE there is no textbox onscreen.
-Your current elevation. You can only Surf while at elevation 3.
+Your current elevation. You can only Surf while at elevation 3. You cannot walk to tiles of higher or lower elevation without using a transition tile (elevation 0). Bridge tiles can be walked or surfed onto from any elevation, but they will preserve your elevation and surfing status and not allow you to walk/surf onto higher or lower tiles. 
+Whether or not you are Surfing. You will move 2 tiles per button press while surfing.
 General information about your current Pokemon party.
 The contents of the five pouches of your inventory.
 (More information may be provided in the future; if there is anything you feel is important, feel free to request it to the developer.) 
@@ -266,20 +267,20 @@ const STRUCTURED_OUTPUT_SCHEMA = {
       description:
         "Errors and potential hallucinations that are leading to looping or impeding progress. Think long and hard about what might be stopping you! If you aren't stuck looping or failing to progress, put N/A here.",
     },
-    goalLongTerm: {
-      type: "string",
-      description:
-        "Your current long-term goal. Should be the next major step in game progression, usually a major battle, HM, or Key Item. For example, 'Defeat [GYM LEADER] and obtain the [NEXT BADGE]', or 'Talk to [HM GIVER] to obtain the [NEXT HM].' After accomplishing this goal, output a short walkthrough for the next section of the game to help jog your memory, and use that to select the next goal.",
-    },
     goalMidTerm: {
       type: "string",
       description:
-        "Your current mid-term goal. Should be something you expect to take 25-50 turns to complete. For example, 'Explore the west side of [CITY NAME] and make note of any warps', or 'Advance through [ROUTE NAME], defeating the [TRAINER TYPE] at the chokepoint.'",
+        "Your current mid-term goal. Should be the next major step in game progression, usually a major battle, HM, or Key Item. For example, 'Defeat [GYM LEADER] and obtain the [NEXT BADGE]', or 'Talk to [HM GIVER] to obtain the [NEXT HM].' After accomplishing this goal, output a short walkthrough for the next section of the game to help jog your memory, and use that to select the next goal.",
     },
     goalShortTerm: {
       type: "string",
       description:
-        "Your current short-term goal. Should be something you expect to take 5-10 turns to complete. For example, 'Navigate around the blocked tiles to reach the Pokemon Center', or 'Continue moving east to transition to [NEXT MAP].'",
+        "Your current short-term goal. Should be something you expect to take 25-50 turns to complete. For example, 'Explore the west side of [CITY NAME] and make note of any warps', or 'Advance through [ROUTE NAME], defeating the [TRAINER TYPE] at the chokepoint.'",
+    },
+    goalImmediateTerm: {
+      type: "string",
+      description:
+        "Your current immediate goal. Should be something you expect to take 5-10 turns to complete. For example, 'Navigate around the blocked tiles to reach the Pokemon Center', or 'Continue moving east to transition to [NEXT MAP].'",
     },
     // Define the structure for the function call itself
     functionCall: {
