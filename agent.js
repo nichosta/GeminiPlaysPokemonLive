@@ -306,9 +306,9 @@ async function runGameLoop() {
                                 : "No navigation proposed in the previous turn.",
                         },
                         { text: `Mistakes Identified: ${parsedResponse.mistakes ?? "N/A"}` },
-                        { text: `Long Term Goal: ${parsedResponse.goalLongTerm ?? "N/A"}` },
-                        { text: `Mid Term Goal: ${parsedResponse.goalMidTerm ?? "N/A"}` },
-                        { text: `Short Term Goal: ${parsedResponse.goalShortTerm ?? "N/A"}` },
+                        { text: `Long Term Goal: ${parsedResponse.goalMidTerm ?? "N/A"}` },
+                        { text: `Mid Term Goal: ${parsedResponse.goalShortTerm ?? "N/A"}` },
+                        { text: `Short Term Goal: ${parsedResponse.goalImmediateTerm ?? "N/A"}` },
                     ],
                 });
                 // Then add the *result* of the LLM's action and path validation

@@ -1,5 +1,5 @@
 import * as CONSTANTS from "../constant/constants.js";
-import { getMetatileBehaviorName, WATER_TILES, LEDGE_DIRECTIONS, BRIDGE_WATER_TILES, BRIDGE_BLOCKED_TILES } from "../../constant/metatile_behaviors_map.js";
+import { getMetatileBehaviorName, WATER_TILES, LEDGE_DIRECTIONS } from "../../constant/metatile_behaviors_map.js";
 import { getPlayerElevation } from "./playerData.js";
 
 /**
@@ -26,7 +26,7 @@ export async function processMemoryDataToCollisionMap(tileGridData, mapWidthTile
         return null;
     }
 
-    let playerElevation = getPlayerElevation();
+    let playerElevation = await getPlayerElevation();
 
     const numTiles = tileGridData.length;
 
@@ -77,7 +77,9 @@ export async function processMemoryDataToCollisionMap(tileGridData, mapWidthTile
                         // If not a water metatile, but elevation 1, it remains TILE_WALKABLE (e.g., for dismounting)
                         // Path validator will handle surf/dismount rules.
                     } else if (tileElevation >= 2 && tileElevation <= 14) { // Handle normal elevations (2-14)
-                        if (tileElevation > playerElevation) {
+                        if (playerElevation === 1 && tileElevation === 3) {
+                            tileType = CONSTANTS.TILE_WALKABLE; // Can dismount surf onto elevation 3
+                        } else if (tileElevation > playerElevation) {
                             tileType = CONSTANTS.TILE_ELEVATION_HIGHER; //
                         } else if (tileElevation < playerElevation) {
                             tileType = CONSTANTS.TILE_ELEVATION_LOWER; //
@@ -89,11 +91,6 @@ export async function processMemoryDataToCollisionMap(tileGridData, mapWidthTile
                     // Ledges override other passable types
                     if (ledgeChar) {
                         tileType = ledgeChar;
-                    }
-                    // Water tiles (from metatile behavior) override other types,
-                    // unless it's elevation 15 (multilevel) or already correctly typed as water from elevation 1.
-                    else if (tileElevation !== 15 && behaviorName && WATER_TILES.has(behaviorName)) { //
-                        tileType = CONSTANTS.TILE_WATER; //
                     }
                 }
                 row.push(`${x},${y}:${tileType}`);
