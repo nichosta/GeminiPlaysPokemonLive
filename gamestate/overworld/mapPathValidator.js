@@ -109,6 +109,7 @@ export async function validatePath(path, mapState) {
         else if (targetTileType === CONSTANTS.TILE_ELEVATION_MULTILEVEL) targetPhysicalTileElevation = 15;
         else if (targetTileType === CONSTANTS.TILE_ELEVATION_HIGHER) targetPhysicalTileElevation = initialPlayerMapElevation + 1;
         else if (targetTileType === CONSTANTS.TILE_ELEVATION_LOWER) targetPhysicalTileElevation = initialPlayerMapElevation - 1;
+        else if (isPlayerCurrentlySurfing && targetTileType === CONSTANTS.TILE_WALKABLE) targetPhysicalTileElevation = 3; // Tiles marked walkable are elev 3 while surfing
         else if (targetTileType === CONSTANTS.TILE_WALKABLE) targetPhysicalTileElevation = initialPlayerMapElevation;
         else { // Ledges, NPCs, Warps, Connections - assume their physical elevation is compatible or same as current logical for now
             targetPhysicalTileElevation = playerCurrentLogicalElevation;
