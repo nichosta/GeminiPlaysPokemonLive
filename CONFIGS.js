@@ -100,6 +100,7 @@ Whether or not you are currently in the battle screen. This includes the time af
 Whether or not your overworld movement is locked. If this flag is set, you cannot move around in the overworld, and most likely need to finish a conversation or close a menu. If you are stuck looping and this flag is set, press B several turns in a row and you should be able to move again. If this flag is set, you can be VERY SURE there is no textbox onscreen.
 Your current elevation. You can only Surf while at elevation 3. You cannot walk to tiles of higher or lower elevation without using a transition tile (elevation 0). Bridge tiles can be walked or surfed onto from any elevation, but they will preserve your elevation and surfing status and not allow you to walk/surf onto higher or lower tiles. 
 Whether or not you are Surfing. You will move 2 tiles per button press while surfing.
+Whether or not you are Biking. When using the Mach bike, use the holdButtons tool to move long distances and build up speed.
 General information about your current Pokemon party.
 The contents of the five pouches of your inventory.
 (More information may be provided in the future; if there is anything you feel is important, feel free to request it to the developer.) 
