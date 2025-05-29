@@ -4,10 +4,10 @@ import { isInBattle } from "./gamestate/pokemonData.js";
 import * as CONFIGS from "./CONFIGS.js";
 import { readAndClearFile } from "./readInputFile.js";
 import { getVisibleBackupMapStateJson } from "./gamestate/overworld/mapApi.js";
-import { areFieldControlsLocked, getCurrentMapBank, getCurrentMapNumber } from "./gamestate/overworld/playerData.js";
+import { areFieldControlsLocked } from "./gamestate/overworld/playerData.js";
 
 // Imports for refactored functions
-import { getGameInfoText } from "./llminteract/buildPrompt.js";
+import { getGameInfoText, saveHumanReadablePromptToFile } from "./llminteract/buildPrompt.js";
 import { processLLMResponse } from "./llminteract/processResponse.js";
 
 // Import Google AI SDK
@@ -20,6 +20,7 @@ import path from 'path'; // <-- Add this for path joining
 // --- Configuration ---
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const SUMMARY_HISTORY_FILE_PATH = path.join(process.cwd(), 'summary_history.json'); // <-- Define summary history file path
+const HUMAN_READABLE_PROMPT_FILE_PATH = path.join(process.cwd(), 'human_readable_prompt_details.txt');
 const HISTORY_FILE_PATH = path.join(process.cwd(), 'chat_history.json'); // <-- Define history file path
 
 if (!GOOGLE_API_KEY) {
@@ -92,7 +93,9 @@ async function summarizeHistory(historyToSummarize) {
         return null;
     }
 
-    console.log(`--- Summarizing History (${historyToSummarize.length} messages) ---`);
+    console.log(`--- Summarizing History (${historyToSummarize.length} messages) and saving gamestate ---`);
+
+    await fetch(`http://localhost:5000/core/savestateslot?slot=8`, { method: "POST"});
 
     try {
         // Construct the prompt for the summarization model
@@ -158,7 +161,8 @@ async function runGameLoop() {
                 await delay(CONFIGS.LOOP_DELAY_MS);
                 continue;
             }
-            const currentGameInfoString = await getGameInfoText(visibleMapState); // Get stringified version for LLM
+            const currentGameInfoObject = await getGameInfoText(visibleMapState); // Get game info as an object
+            const currentGameInfoString = JSON.stringify(currentGameInfoObject); // Stringify for LLM prompt
 
             let inBattle = await isInBattle();
             let fieldControlsLocked = await areFieldControlsLocked();
@@ -199,7 +203,13 @@ async function runGameLoop() {
                 { text: currentTwitchChat },
             ];
 
-            fs.writeFile('userPrompt_history.json', JSON.stringify(currentUserPromptParts, null, 2));
+            // Save the human-readable version of the prompt data
+            await saveHumanReadablePromptToFile(
+                currentGameInfoObject,
+                imageParts,
+                twitch_chat, // Pass the raw twitch_chat string for this turn
+                HUMAN_READABLE_PROMPT_FILE_PATH
+            );
 
             // 3. Check if summarization is needed BEFORE making the main API call
             if (turnCounter >= CONFIGS.HISTORY_LENGTH) {

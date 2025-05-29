@@ -37,6 +37,7 @@ export const PLAYER_AVATAR_ADDR = selectedConstants.PLAYER_AVATAR_ADDR; // Addre
 export const PLAYER_AVATAR_FLAGS_OFFSET = 0x00; // Offset to player avatar flags (u8)
 export const PLAYER_AVATAR_FLAG_BIKING = 1 << 1 | 1 << 2; // Mask on player flags to determine if player is biking (mach or acro)
 export const PLAYER_AVATAR_FLAG_SURFING = 1 << 3; // Mask on player flags to determine if player is surfing
+export const PLAYER_AVATAR_FLAG_DIVING = 1 << 4; // Mask on player flags to determine if player is diving
 
 // --- Bag ---
 export const BAG_MAIN_ADDR = selectedConstants.BAG_MAIN_ADDR;
@@ -110,7 +111,9 @@ export const TILE_WALKABLE = "🟩";
 export const TILE_BLOCKED = "🟥";
 export const TILE_WARP = "🌀";
 export const TILE_NPC = "❗";
-export const TILE_WATER = "🌊";
+export const TILE_WATER = "≋"; // Represents general surfable water
+export const TILE_WATERFALL = "🌊"; // Represents a waterfall that can be climbed with HM (visually a strong wave/cascade)
+export const TILE_DIVE = "⚓"; // Represents a spot where Dive can be used
 export const TILE_LEDGE_EAST = "→";
 export const TILE_LEDGE_WEST = "←";
 export const TILE_LEDGE_NORTH = "↑";
@@ -125,7 +128,7 @@ export const TILE_CONNECTION = "🔗";
 export const BASE_TILE_PASSABILITY = Object.freeze({
   [TILE_WALKABLE]: "walkable",
   [TILE_BLOCKED]: "blocked",
-  [TILE_WATER]: "water, requires surf",
+  [TILE_WATER]: "surfable water, requires Surf HM",
   [TILE_LEDGE_EAST]: "ledge (only walkable in the indicated direction)",
   [TILE_LEDGE_WEST]: "ledge (only walkable in the indicated direction)",
   [TILE_LEDGE_NORTH]: "ledge (only walkable in the indicated direction)",
@@ -134,6 +137,8 @@ export const BASE_TILE_PASSABILITY = Object.freeze({
   [TILE_ELEVATION_LOWER]: "walkable but requires transition, lower elevation than current tile",
   [TILE_ELEVATION_TRANSITION]: "walkable, transition elevation (any to any)",
   [TILE_ELEVATION_MULTILEVEL]: "walkable/surfable from any elevation, but cannot change elevation",
+  [TILE_WATERFALL]: "waterfall, requires Waterfall HM to ascend",
+  [TILE_DIVE]: "dive spot, requires Dive HM to descend/ascend",
   [TILE_CONNECTION]: "connection to adjacent map area",
 });
 

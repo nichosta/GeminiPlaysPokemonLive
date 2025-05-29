@@ -3,5 +3,5 @@ node_modules
 screenshots/*
 chat_history*.json
 twitch_chat.txt
-userPrompt_history.json
+human_readable_prompt_details.txt
 summary_history*.json

@@ -138,7 +138,7 @@ export async function validatePath(path, mapState) {
             return {
                 isValid: false,
                 failurePoint: [pX, pY],
-                reason: `Step (${pX},${pY}) is ${stepManhattanDistance} tile(s) away from ${previousPointDisplay}, but ${expectedStepDistance} was expected. Player was surfing: ${isPlayerCurrentlySurfing}. Target tile type: '${targetTileType}'. Target physical elevation: ${targetPhysicalTileElevation}.`
+                reason: `Step (${pX},${pY}) is ${stepManhattanDistance} tile(s) away from ${previousPointDisplay}, but ${expectedStepDistance} was expected.`
             };
         }
 

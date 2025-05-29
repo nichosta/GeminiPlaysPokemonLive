@@ -173,7 +173,7 @@ const PRESS_BUTTONS_ARGS_SCHEMA = {
     buttons: {
       type: "array",
       description:
-        "The array of buttons to press. When not in need of precision, it is preferred you press multiple directional buttons in one turn. Max 7 buttons.",
+        "The array of buttons to press. When not in need of precision, it is preferred you press multiple directional buttons in one turn, in order to move faster. Max 7 buttons.",
       items: {
         type: "string",
         enum: [
@@ -256,7 +256,7 @@ const STRUCTURED_OUTPUT_SCHEMA = {
     navigation: {
       type: "array",
       description: 
-        "Your navigation plan for the next turn if you are actionable in the overworld. Make use of the collision data to navigate around obstacles and reach your destination. Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid. Put [] here if this does not apply.",
+        "Your navigation plan for the next turn if you are actionable in the overworld. Make use of the collision data to navigate around obstacles and reach your destination. Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid. Put [] here if this does not apply. This is as much for your benefit as for viewers'; having a long plan can help you save time by preventing moving in an unhelpful direction or ending up in a corner. Make use of this tool frequently!",
       items: {
         type: "object",
           properties: {
