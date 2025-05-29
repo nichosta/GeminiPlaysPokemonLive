@@ -209,7 +209,7 @@ const HOLD_BUTTONS_ARGS_SCHEMA = {
   properties: {
     buttonsToHold: {
       type: "array",
-      description: "An array of objects, each specifying a button to hold and the duration in milliseconds. Buttons are held sequentially.",
+      description: "An array of objects, each specifying a button to hold and the duration in frames. Buttons are held sequentially.",
       items: {
         type: "object",
         properties: {
@@ -223,8 +223,8 @@ const HOLD_BUTTONS_ARGS_SCHEMA = {
           },
           durationFrames: {
             type: "integer",
-            description: "The duration to hold the button in frames (game runs at 60 FPS).",
-            minimum: 1, // Minimum hold time of 1ms
+            description: "The duration to hold the button in frames (game runs at 60 FPS). Note that values too low in a direction you are not facing may result in only turning around and not moving.",
+            minimum: 1, // Minimum hold time of 1 frame
           },
         },
         required: ["buttonName", "durationFrames"],
