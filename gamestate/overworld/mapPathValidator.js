@@ -62,20 +62,18 @@ export async function validatePath(path, mapState) {
         }
     }
 
+    // Helper function to check for special transition tiles that are always 1-step moves
+    const isAlwaysOneStepTile = (type) =>
+        type === CONSTANTS.TILE_WARP || type === CONSTANTS.TILE_CONNECTION ||
+        type === CONSTANTS.TILE_LEDGE_EAST || type === CONSTANTS.TILE_LEDGE_WEST ||
+        type === CONSTANTS.TILE_LEDGE_NORTH || type === CONSTANTS.TILE_LEDGE_SOUTH;
 
     for (let i = 0; i < path.length; i++) {
         const [pX, pY] = path[i];
         const deltaX = Math.abs(pX - prevX);
         const deltaY = Math.abs(pY - prevY);
 
-        if (deltaX + deltaY !== 1) {
-            const previousPointDisplay = i === 0 ? `player start (${prevX},${prevY})` : `previous step (${prevX},${prevY})`;
-            return {
-                isValid: false,
-                failurePoint: [pX, pY],
-                reason: `Step (${pX},${pY}) is not adjacent to ${previousPointDisplay}.`
-            };
-        }
+        const stepManhattanDistance = deltaX + deltaY;
 
         let tileFound = false;
         let targetTileType = '';
@@ -113,6 +111,35 @@ export async function validatePath(path, mapState) {
         else if (targetTileType === CONSTANTS.TILE_WALKABLE) targetPhysicalTileElevation = initialPlayerMapElevation;
         else { // Ledges, NPCs, Warps, Connections - assume their physical elevation is compatible or same as current logical for now
             targetPhysicalTileElevation = playerCurrentLogicalElevation;
+        }
+
+        // Determine expected step distance
+        let expectedStepDistance = 1; // Default for non-surfing or special 1-step tiles
+
+        if (isAlwaysOneStepTile(targetTileType)) {
+            expectedStepDistance = 1;
+        } else if (isPlayerCurrentlySurfing) { // If player *was* surfing before this step
+            // Check if this step is a dismount action to suitable land (walkable elev 3)
+            if (targetTileType === CONSTANTS.TILE_WALKABLE && targetPhysicalTileElevation === 3) {
+                expectedStepDistance = 1; // Dismounting is a 1-tile move
+            } else if (targetTileType === CONSTANTS.TILE_WATER ||
+                       (targetTileType === CONSTANTS.TILE_ELEVATION_MULTILEVEL /* surf is preserved on multilevel */)) {
+                expectedStepDistance = 2; // Continuing to surf
+            } else {
+                // Attempting to surf onto other land types or blocked tiles.
+                // The game *attempts* a 2-tile move. This will be caught as invalid by subsequent logic.
+                expectedStepDistance = 2;
+            }
+        }
+        // If not isPlayerCurrentlySurfing and not an always-one-step tile, expectedStepDistance remains 1.
+
+        if (stepManhattanDistance !== expectedStepDistance) {
+            const previousPointDisplay = i === 0 ? `player start (${playerStartX},${playerStartY})` : `previous step (${prevX},${prevY})`;
+            return {
+                isValid: false,
+                failurePoint: [pX, pY],
+                reason: `Step (${pX},${pY}) is ${stepManhattanDistance} tile(s) away from ${previousPointDisplay}, but ${expectedStepDistance} was expected. Player was surfing: ${isPlayerCurrentlySurfing}. Target tile type: '${targetTileType}'. Target physical elevation: ${targetPhysicalTileElevation}.`
+            };
         }
 
         // Basic passability (blocked, NPC)

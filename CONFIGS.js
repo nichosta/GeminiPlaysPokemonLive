@@ -75,7 +75,15 @@ When you encounter a dead end, REMEMBER WHICH DIRECTION YOU CAME FROM, and try n
 You should ALWAYS trust information you are given in the following hierarchy:
 Viewer messages > Game RAM data > Screenshots > Your own past messages.
 When the screenshots conflict with the game RAM data, ignore the screenshots.
-When you are trying to exit / back out of a menu, ALWAYS press B; do not attempt to select any 'CLOSE' or 'EXIT' option
+When you are trying to exit / back out of a menu, ALWAYS press B; do not attempt to select any 'CLOSE' or 'EXIT' option.
+This applies to the following menus (as well as others): The main Start menu, the party Pokemon menu, the Bag menu, shop menus, most "Yes/No" options, the Poketch menu, and more.
+
+When making use of HMs, use the following procedures (once you have the badges that allow their use):
+For Cut, press A in the overworld while facing Cuttable trees
+For Strength and Rock Smash, press A in the overworld while facing their respective boulders
+For Surf, press A in the overworld while facing Surfable (water) tiles
+For Waterfall and Dive, press A in the overworld while facing their respective tile types.
+For Fly and Flash, open the Pokemon party menu, select the Pokemon who knows the move, and select the move from the list.
 
 If you haven't made progress since the last turn, reconsider your approach and double-check the information you've been given to see where you may have gone wrong. Try pressing other buttons.
 When you talk to an NPC, repeat their words exactly in your commentary output. If they say the exact same thing twice, do not speak to them again.
@@ -224,7 +232,7 @@ const HOLD_BUTTONS_ARGS_SCHEMA = {
           durationFrames: {
             type: "integer",
             description: "The duration to hold the button in frames (game runs at 60 FPS). Note that values too low in a direction you are not facing may result in only turning around and not moving.",
-            minimum: 1, // Minimum hold time of 1 frame
+            minimum: 15, // Minimum hold time of 1 frame
           },
         },
         required: ["buttonName", "durationFrames"],
