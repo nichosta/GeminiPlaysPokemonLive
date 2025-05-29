@@ -1,5 +1,5 @@
 import * as CONSTANTS from "../constant/constants.js";
-import { getMetatileBehaviorName, WATER_TILES, LEDGE_DIRECTIONS } from "../../constant/metatile_behaviors_map.js";
+import { getMetatileBehaviorName, LEDGE_DIRECTIONS } from "../../constant/metatile_behaviors_map.js";
 import { getPlayerElevation } from "./playerData.js";
 
 /**
@@ -71,9 +71,10 @@ export async function processMemoryDataToCollisionMap(tileGridData, mapWidthTile
                     } else if (tileElevation === 0) { // Handle elevation 0 (transition)
                         tileType = CONSTANTS.TILE_ELEVATION_TRANSITION; //
                     } else if (tileElevation === 1) { // Handle elevation 1 (surfable)
-                        if (behaviorName && WATER_TILES.has(behaviorName)) { 
-                            tileType = CONSTANTS.TILE_WATER; 
-                        }
+                        // Tentatively disabling metatile check
+                        // if (behaviorName && WATER_TILES.has(behaviorName)) { 
+                        tileType = CONSTANTS.TILE_WATER; 
+                        // }
                         // If not a water metatile, but elevation 1, it remains TILE_WALKABLE (e.g., for dismounting)
                         // Path validator will handle surf/dismount rules.
                     } else if (tileElevation >= 2 && tileElevation <= 14) { // Handle normal elevations (2-14)
@@ -87,12 +88,13 @@ export async function processMemoryDataToCollisionMap(tileGridData, mapWidthTile
                             tileType = CONSTANTS.TILE_WALKABLE; //
                         }
                     }
-
-                    // Ledges override other passable types
-                    if (ledgeChar) {
-                        tileType = ledgeChar;
-                    }
                 }
+
+                // Ledges override other passable types
+                if (ledgeChar) {
+                    tileType = ledgeChar;
+                }
+                
                 row.push(`${x},${y}:${tileType}`);
                 tileIndex++;
             } else {

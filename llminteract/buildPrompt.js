@@ -1,8 +1,10 @@
+import { promises as fs } from 'fs';
+import path from 'path';
 // Imports from other files
 import { getPartyCount, getPokemonData, isInBattle } from "../gamestate/pokemonData.js";
 import { getBagContents, prettyPrintBag, getPlayerMoney } from "../gamestate/bagData.js";
 import { getPartyMenuSlotId } from "../gamestate/menustate/partyMenu.js";
-import { areFieldControlsLocked, getPlayerBadges, getPlayerElevation, isPlayerBiking, isPlayerSurfing } from "../gamestate/overworld/playerData.js";
+import { areFieldControlsLocked, getPlayerBadges, getPlayerElevation, isPlayerBiking, isPlayerDiving, isPlayerSurfing } from "../gamestate/overworld/playerData.js";
 
 /**
  * @description Formats the data for a single Pokemon into a structured object.
@@ -64,6 +66,7 @@ export async function getGameInfoText(visibleMapState) {
         gameInfoObject.overworldControlsLocked = await areFieldControlsLocked();
         gameInfoObject.surfing = await isPlayerSurfing();
         gameInfoObject.biking = await isPlayerBiking();
+        gameInfoObject.diving = await isPlayerDiving();
         gameInfoObject.elevation = await getPlayerElevation();
     }
 
@@ -90,5 +93,62 @@ export async function getGameInfoText(visibleMapState) {
     const badgesObtained = await getPlayerBadges();
     gameInfoObject.badges = badgesObtained || []; // Ensure it's an array, empty if no badges
 
-    return JSON.stringify(gameInfoObject);
+    return gameInfoObject; // Return the object itself, not the stringified version
+}
+
+/**
+ * @description Saves a human-readable version of the prompt data to a file.
+ * @param {object} gameInfoObject The game state information object (which includes mapData).
+ * @param {object} imageParts The parsed image data URI parts.
+ * @param {string} twitchChatContent The raw content from Twitch chat for the current turn.
+ * @param {string} filePath The path to the file where the prompt should be saved.
+ * @returns {Promise<void>}
+ */
+export async function saveHumanReadablePromptToFile(gameInfoObject, imageParts, twitchChatContent, filePath) {
+    try {
+        let humanReadableString = "--- Human-Readable Prompt Details ---\n\n";
+
+        humanReadableString += "== Current Game Screenshot ==\n";
+        if (imageParts && imageParts.data) {
+            humanReadableString += `MIME Type: ${imageParts.mimeType}\n`;
+            humanReadableString += `Data (first 100 chars): ${imageParts.data.substring(0, 100)}...\n\n`;
+        } else {
+            humanReadableString += "No image data available.\n\n";
+        }
+
+        humanReadableString += "== Current Game State (RAM Data) ==\n";
+        humanReadableString += JSON.stringify(gameInfoObject, null, 2) + "\n\n";
+
+        humanReadableString += "== Collision Grid View ==\n";
+        const mapDataForGrid = gameInfoObject.mapData;
+        if (mapDataForGrid && typeof mapDataForGrid === 'object' && mapDataForGrid.map_data && Array.isArray(mapDataForGrid.map_data)) {
+            for (const row of mapDataForGrid.map_data) {
+                if (Array.isArray(row)) {
+                    const rowString = row.map(tileString => {
+                        if (typeof tileString === 'string') {
+                            const parts = tileString.split(':');
+                            return parts.length > 1 ? parts[1] : '?'; // Get the emoji part
+                        }
+                        return '?';
+                    }).join(' ');
+                    humanReadableString += rowString + '\n';
+                }
+            }
+            humanReadableString += "\n";
+        } else {
+            humanReadableString += "Map data not available or in unexpected format for grid view.\n";
+            if (typeof mapDataForGrid === 'string') {
+                 humanReadableString += `(Reason: ${mapDataForGrid})\n`;
+            }
+            humanReadableString += "\n";
+        }
+
+        humanReadableString += "== Twitch Chat Messages (Current Turn) ==\n";
+        humanReadableString += twitchChatContent + "\n\n";
+
+        await fs.writeFile(filePath, humanReadableString, 'utf8');
+        // console.log(`Human-readable prompt saved to ${filePath}`);
+    } catch (error) {
+        console.error(`Error saving human-readable prompt to ${filePath}:`, error);
+    }
 }

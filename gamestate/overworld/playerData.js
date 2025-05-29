@@ -79,7 +79,7 @@ export async function isPlayerSurfing() {
     return (playerAvatarFlags & CONSTANTS.PLAYER_AVATAR_FLAG_SURFING) !== 0;
 }
 
-/*
+/** 
  * Checks if the player is currently biking (Mach or Acro).
  * @returns {Promise<boolean>} True if the player is biking, false otherwise.
  */
@@ -87,6 +87,16 @@ export async function isPlayerBiking() {
     const playerAvatarFlags = await readUint8(CONSTANTS.PLAYER_AVATAR_ADDR + CONSTANTS.PLAYER_AVATAR_FLAGS_OFFSET);
     return (playerAvatarFlags & CONSTANTS.PLAYER_AVATAR_FLAG_BIKING) !== 0;
 }
+
+/**
+ * Checks if the player is currently diving.
+ * @returns {Promise<boolean>} True if the player is diving, false otherwise.
+ */
+export async function isPlayerDiving() {
+    const playerAvatarFlags = await readUint8(CONSTANTS.PLAYER_AVATAR_ADDR + CONSTANTS.PLAYER_AVATAR_FLAGS_OFFSET);
+    return (playerAvatarFlags & CONSTANTS.PLAYER_AVATAR_FLAG_DIVING) !== 0;
+}
+
 
 
 /**
