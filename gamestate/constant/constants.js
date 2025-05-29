@@ -35,6 +35,7 @@ export const SAVESTATE_FLAGS_OFFSET = selectedConstants.SAVESTATE_FLAGS_OFFSET; 
 // --- Player Avatar ---
 export const PLAYER_AVATAR_ADDR = selectedConstants.PLAYER_AVATAR_ADDR; // Address of gPlayerAvatar struct
 export const PLAYER_AVATAR_FLAGS_OFFSET = 0x00; // Offset to player avatar flags (u8)
+export const PLAYER_AVATAR_FLAG_BIKING = 1 << 1 | 1 << 2; // Mask on player flags to determine if player is biking (mach or acro)
 export const PLAYER_AVATAR_FLAG_SURFING = 1 << 3; // Mask on player flags to determine if player is surfing
 
 // --- Bag ---
