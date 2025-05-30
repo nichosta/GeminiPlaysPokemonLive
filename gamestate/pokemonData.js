@@ -166,11 +166,11 @@ async function getPokemonSpDefense(slot) {
  * Gets the status condition bitmask of a Pokémon in the specified party slot.
  * Bits 0-2: Sleep turns | Bit 3: Poison | Bit 4: Burn | Bit 5: Freeze | Bit 6: Paralysis | Bit 7: Bad Poison (Toxic) [1]
  * @param {number} slot - The party slot index (0-5).
- * @returns {Promise<number>} The status condition bitmask (u8).
+ * @returns {Promise<number>} The status condition bitmask (u32).
  */
 async function getPokemonStatusCondition(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
-    return await readUint8(baseAddr + CONSTANTS.STATUS_OFFSET);
+    return await readUint32(baseAddr + CONSTANTS.STATUS_OFFSET);
 }
 
 /**
@@ -180,7 +180,7 @@ async function getPokemonStatusCondition(slot) {
  */
 function getPokemonStatusConditionName(statusBitmask) {
     for (const [mask, name] of STATUS_CONDITION_MASKS.entries()) {
-        if (statusBitmask & mask !== 0) {
+        if ((statusBitmask & mask) !== 0) {
             return name;
         }
     }
