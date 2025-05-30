@@ -197,10 +197,9 @@ export async function validatePath(path, mapState) {
         } else if (targetTileType === CONSTANTS.TILE_WATER) { // Moving TO Water (not from multilevel)
             if (isPlayerCurrentlySurfing) {
                 playerCurrentLogicalElevation = 1;
-            } else { // Not surfing, try to mount
+            } else { // Not surfing, fails
                 if (playerCurrentLogicalElevation === 3 || playerCurrentLogicalElevation === 0) {
-                    isPlayerCurrentlySurfing = true;
-                    playerCurrentLogicalElevation = 1;
+                    return { isValid: false, failurePoint: [pX, pY], reason: `Tried to move onto a water tile while not surfing.`}
                 } else {
                     return { isValid: false, failurePoint: [pX, pY], reason: `Cannot mount surf from elevation ${playerCurrentLogicalElevation} to water.` };
                 }
