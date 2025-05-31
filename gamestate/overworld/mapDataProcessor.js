@@ -123,8 +123,11 @@ export async function processMemoryDataToCollisionMap(tileGridData, mapWidthTile
             } else if (isTransition) {
                 tileType = CONSTANTS.TILE_WALKABLE;
             }
+            // Rule: Every elevation is marked walkable if player is at 0
+            else if (playerElevation === 0) {
+                tileType = CONSTANTS.TILE_WALKABLE;
             // Rule: Tiles at the same elevation as the player are walkable (original rule 1)
-            else if (originalElevation === playerElevation) {
+            } else if (originalElevation === playerElevation) {
                 tileType = CONSTANTS.TILE_WALKABLE;
             }
             // Rule: Tiles at elevation 3 are walkable if the player is surfing
