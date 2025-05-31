@@ -264,3 +264,10 @@ export const PARTY_MENU_ADDR = selectedConstants.PARTY_MENU_ADDR;
 export const PARTY_MENU_SLOTID_OFFSET = 0x09; // Offset to slot ID (u8)
 export const PARTY_MENU_INTERNAL_ADDR =
   selectedConstants.PARTY_MENU_INTERNAL_ADDR;
+
+// --- Tasks ---
+export const TASK_ARRAY_ADDR = selectedConstants.TASK_ARRAY_ADDR; // Address of the gTasks array which holds all current tasks
+export const TASK_HEAD_SENTINEL = 0xfe; // Indicator that this is the highest-priority task at the moment if it is in the prev field
+export const TASK_SIZE = 0x28; // Size of one task struct in bytes
+export const TASK_FUNC_PTR_OFFSET = 0x00; // Offset to function pointer
+export const TASK_PREV_OFFSET = 0x05; // Offset to prev field (= HEAD_SENTINEL if top priority task)

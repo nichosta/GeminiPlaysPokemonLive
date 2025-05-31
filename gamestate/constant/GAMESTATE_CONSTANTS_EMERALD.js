@@ -74,3 +74,6 @@ export const FACING_DIRECTION_ADDR = 0x02037368; // Address containing player fa
 // --- Party Menu ---
 export const PARTY_MENU_ADDR = 0x0203cec8; // Address of the global party menu handler object
 export const PARTY_MENU_INTERNAL_ADDR = 0x0203cec4; // Address of global party internal object pointer (check here for contents)
+
+// --- Tasks ---
+export const TASK_ARRAY_ADDR = 0x03005e00; // Address of the gTasks array which holds all current tasks
