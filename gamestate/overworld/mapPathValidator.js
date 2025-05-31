@@ -98,7 +98,7 @@ export async function validatePath(path, mapState) {
                         reason: `Invalid step distance (${stepManhattanDistance}) for dismount attempt from ${previousPointDisplay} to (${pX},${pY}). Expected 1 or 2.`
                     };
                 }
-            } else if (targetTileType === CONSTANTS.TILE_WATER) { // Continuing surf
+            } else if (targetTileType === CONSTANTS.TILE_WATER || targetTileType === CONSTANTS.TILE_DIVE) { // Continuing surf
                 expectedStepDistance = 2;
             } else { 
                 // Attempting to surf onto other unexpected tile types (e.g. TILE_BLOCKED that wasn't caught yet)
@@ -164,7 +164,7 @@ export async function validatePath(path, mapState) {
 
         if (isSpecialMovementTile(targetTileType) || isSpecialMovementTile(previousTileType)) {
             // Player surf state doesn't inherently change by moving onto these.
-        } else if (targetTileType === CONSTANTS.TILE_WATER) {
+        } else if (targetTileType === CONSTANTS.TILE_WATER || targetTileType === CONSTANTS.TILE_DIVE) {
             if (!isPlayerCurrentlySurfing) {
                 return { isValid: false, failurePoint: [pX, pY], reason: `Cannot move onto water tile (${pX},${pY}) without being in surf state.` };
             }
@@ -188,6 +188,11 @@ export async function validatePath(path, mapState) {
         }
         if (targetTileType === CONSTANTS.TILE_LEDGE_SOUTH && actualDeltaY !== 1) { 
             return { isValid: false, failurePoint: [pX, pY], reason: `Cannot traverse South-ledge (${pX},${pY}) not moving South.` };
+        }
+
+        // Player is attempting to move upwards onto a waterfall tile
+        if (targetTileType === CONSTANTS.TILE_WATERFALL && isPlayerCurrentlySurfing && actualDeltaY == -1) {
+            return { isValid: false, failurePoint: [pX, pY], reason: `Ascending this Waterfall tile requires the use of the Waterfall HM.`};
         }
 
         prevX = pX;
