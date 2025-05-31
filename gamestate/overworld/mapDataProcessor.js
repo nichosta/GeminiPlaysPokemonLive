@@ -1,5 +1,5 @@
 import * as CONSTANTS from "../constant/constants.js";
-import { getMetatileBehaviorName, LEDGE_DIRECTIONS } from "../../constant/metatile_behaviors_map.js";
+import { getMetatileBehaviorName, LEDGE_DIRECTIONS, WATERFALL_TILE, DIVE_TILES } from "../../constant/metatile_behaviors_map.js";
 import { getPlayerElevation, isPlayerSurfing } from "./playerData.js";
 
 /**
@@ -113,9 +113,14 @@ export async function processMemoryDataToCollisionMap(tileGridData, mapWidthTile
             // Rule: Water tiles
             } else if (isWater) {
                 tileType = CONSTANTS.TILE_WATER;
-            }
+            // Rule: Waterfall tiles
+            } else if (behaviorName === WATERFALL_TILE) {
+                tileType = CONSTANTS.TILE_WATERFALL;
+            // Rule: Dive tiles
+            } else if (DIVE_TILES.has(behaviorName)) {
+                tileType = CONSTANTS.TILE_DIVE;
             // Rule: Transition tiles are walkable (original rule 3)
-            else if (isTransition) {
+            } else if (isTransition) {
                 tileType = CONSTANTS.TILE_WALKABLE;
             }
             // Rule: Tiles at the same elevation as the player are walkable (original rule 1)

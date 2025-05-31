@@ -269,6 +269,15 @@ export const WATER_TILES = new Set([
     "BRIDGE_OVER_POND_HIGH",
 ]);
 
+export const WATERFALL_TILE = "WATERFALL";
+
+export const DIVE_TILES = new Set([
+    "DEEP_WATER",
+    "SOOTOPOLIS_DEEP_WATER",
+    "INTERIOR_DEEP_WATER",
+]);
+
+
 export const WARP_METATILES = new Set([
     "EAST_ARROW_WARP",
     "WEST_ARROW_WARP",

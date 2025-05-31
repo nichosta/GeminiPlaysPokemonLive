@@ -138,7 +138,7 @@ export const BASE_TILE_PASSABILITY = Object.freeze({
   [TILE_ELEVATION_TRANSITION]: "walkable, transition elevation (any to any)",
   [TILE_ELEVATION_MULTILEVEL]: "walkable/surfable from any elevation, but cannot change elevation",
   [TILE_WATERFALL]: "waterfall, requires Waterfall HM to ascend",
-  [TILE_DIVE]: "dive spot, requires Dive HM to descend/ascend",
+  [TILE_DIVE]: "dive spot, can be surfed over, but requires Dive HM to descend/ascend",
   [TILE_CONNECTION]: "connection to adjacent map area",
 });
 
