@@ -2,6 +2,7 @@ import { readUint8, readUint32 } from '../emulatorInteraction/httpMemoryReader.j
 import * as CONSTANTS from '../constant/constants.js';
 
 /**
+ * @deprecated This function doesn't actually work; the internal pointer isn't cleared when the party menu is closed.
  * Checks if the party menu is currently open.
  * @returns {Promise<boolean>} True if the party menu is open, false otherwise.
  */
