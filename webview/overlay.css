@@ -5,8 +5,8 @@
 }
 
 body {
-    width: 1707px;
-    height: 1067px;
+    width: 1920px;
+    height: 1080px;
     font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 50%, #2a2f3e 100%);
     overflow: hidden;
@@ -21,91 +21,41 @@ body {
     width: 100%;
     height: 100%;
     display: grid;
-    grid-template-columns: 820px 1fr;
-    grid-template-rows: 1fr 220px;
-    gap: 14px;
-    padding: 14px;
+    grid-template-columns: 920px 1fr;
+    grid-template-rows: 1fr 280px;
+    gap: 16px;
+    padding: 16px;
 }
 
 /* Left Panel - Minimap and Emulator */
 .left-panel {
     display: flex;
     flex-direction: column;
-    gap: 12px;
     align-items: center;
+    justify-content: center; /* Center emulator vertically */
 }
 
 /* Emulator Section - Chromakey ready with 3:2 aspect ratio */
 .emulator-placeholder {
-    width: 820px;
-    height: 547px; /* 820 * (2/3) = ~547px for 3:2 ratio */
+    width: 885px;
+    height: 590px;
     background: #00FF00; /* Pure green for chromakey - not used elsewhere */
-    border: 2px solid #1e293b;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #000000;
-    font-size: 20px;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 4px solid #475569; /* Enhanced frame border */
+    border-radius: 12px; /* Smoother corners for the frame */
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25), /* Inner shadow for depth */
+                0 5px 15px rgba(0, 0, 0, 0.3);  /* Refined outer shadow */
     position: relative;
-}
-
-.emulator-placeholder small {
-    font-size: 14px;
-    color: #333333;
-    margin-top: 8px;
-    font-weight: 400;
 }
 
 /* Minimap */
-.minimap-container {
-    width: 820px;
-    height: 240px;
-    position: relative;
-    background: linear-gradient(145deg, #1e293b, #2d3748);
-    border: 1px solid #374151;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
-
-.minimap-header {
-    position: absolute;
-    top: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-    color: white;
-    padding: 8px 20px;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 13px;
-    z-index: 10;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.minimap-grid {
-    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-    font-size: 9px;
-    line-height: 1;
-    color: #22d3ee;
-    background: #0f172a;
-    padding: 32px 16px 12px;
-    border-radius: 12px;
-    height: 100%;
-    overflow: auto;
-    white-space: pre;
-}
+/* Styles for .emulator-placeholder small and minimap (.minimap-*) are removed as minimap is gone 
+   and emulator placeholder div is empty in the HTML. */
 
 /* Right Panel */
 .right-panel {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
     grid-row: 1;
     padding-right: 4px;
 }
@@ -114,8 +64,8 @@ body {
 .top-row {
     display: grid;
     grid-template-columns: 55% 45%;
-    gap: 12px;
-    height: 110px;
+    gap: 14px;
+    height: 120px;
 }
 
 /* Panel Card Base Style */
@@ -268,8 +218,8 @@ body {
 .goals-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    height: 85px;
+    gap: 14px;
+    height: 95px;
 }
 
 .goal-card {
@@ -335,7 +285,7 @@ body {
     border: 1px solid #374151;
     border-radius: 12px;
     flex: 1;
-    min-height: 140px;
+    min-height: 160px;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -405,16 +355,16 @@ body {
 .bottom-section {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 920px 1fr;
     gap: 16px;
-    height: 220px;
+    height: 260px; /* Increased height for bottom section */
 }
 
 /* Info Headers */
 .info-header {
     color: white;
     padding: 10px 16px;
-    border-radius: 12px 12px 0 0;
+    border-radius: 12px 12px 0 0; /* Original: 12px 12px 0 0; - this is fine */
     font-weight: 600;
     font-size: 14px;
     margin: -14px -14px 12px -14px;
@@ -427,7 +377,7 @@ body {
 /* Party Section */
 .party-section {
     position: relative;
-    max-height: 220px;
+    max-height: 260px; /* Adjusted max-height */
 }
 
 .party-section .info-header {
@@ -446,7 +396,7 @@ body {
 .party-pokemon {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    gap: 10px;
     height: calc(100% - 48px);
     padding-right: 4px;
 }
@@ -458,8 +408,8 @@ body {
     padding: 8px;
     transition: all 0.2s ease;
     position: relative;
-    min-height: 70px;
-    max-height: 80px;
+    min-height: 80px;
+    max-height: 90px;
     overflow: hidden;
 }
 
@@ -544,119 +494,87 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Inventory Section */
-.inventory-section {
-   position: relative;
-   max-height: 220px;
+/* Inventory Sections Container */
+.inventory-sections {
+    position: relative;
+    max-height: 260px; /* Adjusted max-height */
+    background: linear-gradient(145deg, #1e293b, #2d3748);
+    border-radius: 12px;
+    border: 1px solid #374151;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    padding: 14px;
+    overflow: hidden;
 }
 
-.inventory-section .info-header {
-   background: linear-gradient(135deg, #f59e0b, #d97706);
+.inventory-sections .info-header {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
 }
 
-.inventory-section .info-header::before {
-   content: '🎒';
-   position: absolute;
-   left: 12px;
-   top: 50%;
-   transform: translateY(-50%);
-   font-size: 18px;
+.inventory-sections .info-header::before {
+    content: '🎒';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
 }
 
 .money-display {
-   position: absolute;
-   top: 10px;
-   right: 12px;
-   background: linear-gradient(135deg, #f59e0b, #d97706);
-   color: white;
-   padding: 6px 12px;
-   border-radius: 16px;
-   font-size: 12px;
-   font-weight: 600;
-   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
-   z-index: 10; /* Ensure money display is above category headers if overlap occurs at top of section */
-   border: 1px solid rgba(255, 255, 255, 0.2);
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+    z-index: 10;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .inventory-container {
-   height: calc(100% - 48px); /* Height for inventory area below the general info-header */
-   overflow-y: auto; /* Allows scrolling for the entire inventory container if columns collectively overflow */
-   padding-right: 4px;
-   display: grid;
-   grid-template-columns: repeat(5, 1fr);
-   gap: 8px;
+    height: calc(100% - 48px);
+    overflow-y: auto;
+    padding-right: 4px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    grid-template-rows: 1fr;
 }
 
-/* Ensure you have the styles for .inventory-column, .inventory-category, etc. 
-  from the previous fix. The changes below are specific to the animation
-  of .inventory-items-wrapper.
-*/
-
-@keyframes scrollAllInventory {
-   0% {
-      transform: translateY(0); /* Start at the top */
-   }
-   50% {
-      /* Scroll content up by 1.5 times the wrapper's height.
-         This assumes item content is roughly 2.5 times the visible wrapper height
-         to make it appear to reach the "bottom". 
-         - Adjust -150% if your content is typically much longer or shorter.
-         - Example: -100% for content 2x wrapper height.
-         - Example: -200% for content 3x wrapper height.
-      */
-      transform: translateY(-150%); 
-   }
-   100% {
-      transform: translateY(0); /* Return to the top */
-   }
-}
-
-.inventory-items-wrapper {
-   /* Updated animation name and duration. 
-      Increased duration for a smoother scroll over a longer distance.
-   */
-   animation: scrollAllInventory 30s linear infinite; 
-   padding-bottom: 10px; /* Original padding, contributes to scrollable height */
-   flex-grow: 1; /* Takes available space in the column */
-   /* overflow: hidden; /* Not strictly needed as parent .inventory-column clips */
-}
-
-/* Ensure the hover effect to pause animation is still applied to the correct class if desired */
-.inventory-column:hover .inventory-items-wrapper {
-   animation-play-state: paused;
-}
-
-/* Other inventory styles (like .inventory-item, .inventory-category) remain as before */
-
-/* Reminder of .inventory-column for context of overflow */
-.inventory-column {
+.inventory-section {
     display: flex;
     flex-direction: column;
     position: relative;
     height: 100%;
-    overflow: hidden; /* This is what clips the translating .inventory-items-wrapper */
+    min-height: 120px;
+    background: rgba(15, 23, 42, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    overflow: hidden;
 }
 
-/* Styles for ::before, ::after fades, and .inventory-category z-index from previous fix should be maintained */
-.inventory-column::before,
-.inventory-column::after {
+.inventory-section::before,
+.inventory-section::after {
     content: '';
     position: absolute;
     left: 0;
     right: 0;
     height: 20px;
     pointer-events: none;
-    z-index: 2; 
+    z-index: 2;
 }
 
-.inventory-column::before {
-    top: 28px; 
-    background: linear-gradient(to bottom, #1e293b, transparent);
+.inventory-section::before {
+    top: 28px;
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.9), transparent);
 }
 
-.inventory-column::after {
+.inventory-section::after {
     bottom: 0;
-    background: linear-gradient(to top, #1e293b, transparent);
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.9), transparent);
     z-index: 2;
 }
 
@@ -668,29 +586,69 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.3px;
     border-bottom: 2px solid #22d3ee;
-    padding-bottom: 3px;
-    position: sticky; 
+    padding: 8px 8px 3px 8px;
+    position: sticky;
     top: 0;
-    background: linear-gradient(145deg, #1e293b, #2d3748); 
-    z-index: 3; /* Corrected z-index from previous fix */
+    background: rgba(15, 23, 42, 0.95);
+    z-index: 3;
+    text-align: center;
+}
+
+.inventory-items-wrapper {
+    animation: scrollAllInventory 30s linear infinite;
+    padding: 0 8px 10px 8px;
+    flex-grow: 1;
+}
+
+.inventory-section:hover .inventory-items-wrapper {
+    animation-play-state: paused;
 }
 
 .inventory-item {
-   display: flex;
-   justify-content: space-between;
-   padding: 3px 0; /* Reduced vertical padding to fit more items if necessary */
-   border-bottom: 1px solid rgba(148, 163, 184, 0.15);
-   color: #e2e8f0;
-   font-size: 9px;
-   font-weight: 500;
-   line-height: 1.2;
-   white-space: nowrap;
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    color: #e2e8f0;
+    font-size: 9px;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 .item-name {
-   overflow: hidden;
-   text-overflow: ellipsis;
-   max-width: calc(100% - 25px); /* Ensure space for item count if present */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 25px);
+}
+
+.empty-inventory {
+    color: #94a3b8;
+    font-size: 9px;
+    text-align: center;
+    padding: 20px 8px;
+    font-style: italic;
+}
+
+@keyframes scrollAllInventory {
+    0% {
+        transform: translateY(0); /* Start at top */
+    }
+    10% { /* Pause at top */
+        transform: translateY(0);
+    }
+    45% { /* Scrolled to bottom (scroll down duration: 10% to 45% = 35%) */
+        transform: translateY(-100%); /* Existing scroll depth, assumes duplicated content */
+    }
+    55% { /* Pause at bottom (pause duration: 45% to 55% = 10%) */
+        transform: translateY(-100%);
+    }
+    90% { /* Scrolled back to top (scroll up duration: 55% to 90% = 35%) */
+        transform: translateY(0);
+    }
+    100% { /* End at top, effectively a pause before repeating (duration 90% to 100% = 10%) */
+        transform: translateY(0);
+    }
 }
 
 /* Scrollbar Styling */

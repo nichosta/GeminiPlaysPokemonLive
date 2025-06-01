@@ -11,15 +11,8 @@
         <!-- Left Panel with Minimap and Emulator -->
         <div class="left-panel">
             <!-- Emulator Area (Chromakey Ready) -->
+            <!-- This will now be centered in the left-panel -->
             <div class="emulator-placeholder">
-            </div>
-
-            <!-- Minimap below emulator -->
-            <div class="panel-card minimap-container">
-                <div class="minimap-header" id="location-display">Loading Location...</div>
-                <div class="minimap-grid" id="minimap-display">
-                    Loading minimap...
-                </div>
             </div>
         </div>
 
@@ -107,12 +100,50 @@
                 </div>
             </div>
 
-            <!-- Inventory -->
-            <div class="panel-card inventory-section">
+            <!-- Inventory Sections -->
+            <div class="inventory-sections">
                 <div class="info-header">Inventory</div>
                 <div class="money-display" id="money-display">💰 $0</div>
                 <div class="inventory-container" id="inventory-display">
-                    Loading inventory...
+                    <!-- Items Section -->
+                    <div class="inventory-section" id="items-section">
+                        <div class="inventory-category">Items</div>
+                        <div class="inventory-items-wrapper" id="items-wrapper">
+                            <div class="empty-inventory">No items</div>
+                        </div>
+                    </div>
+
+                    <!-- Pokeballs Section -->
+                    <div class="inventory-section" id="pokeballs-section">
+                        <div class="inventory-category">Pokeballs</div>
+                        <div class="inventory-items-wrapper" id="pokeballs-wrapper">
+                            <div class="empty-inventory">No pokeballs</div>
+                        </div>
+                    </div>
+
+                    <!-- TMs & HMs Section -->
+                    <div class="inventory-section" id="tms-section">
+                        <div class="inventory-category">TMs & HMs</div>
+                        <div class="inventory-items-wrapper" id="tms-wrapper">
+                            <div class="empty-inventory">No TMs/HMs</div>
+                        </div>
+                    </div>
+
+                    <!-- Berries Section -->
+                    <div class="inventory-section" id="berries-section">
+                        <div class="inventory-category">Berries</div>
+                        <div class="inventory-items-wrapper" id="berries-wrapper">
+                            <div class="empty-inventory">No berries</div>
+                        </div>
+                    </div>
+
+                    <!-- Key Items Section -->
+                    <div class="inventory-section" id="keyitems-section">
+                        <div class="inventory-category">Key Items</div>
+                        <div class="inventory-items-wrapper" id="keyitems-wrapper">
+                            <div class="empty-inventory">No key items</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

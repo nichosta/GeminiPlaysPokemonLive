@@ -72,11 +72,11 @@ class StreamOverlay {
 
     // Update location and minimap
     if (data.mapData && data.mapData.map_name) {
-      document.getElementById("location-display").textContent =
-        data.mapData.map_name;
-      this.updateMinimap(data.mapData);
+      // Location display was part of minimap header, can be repurposed or removed
+      // For now, let's assume we might want a general location display elsewhere or none.
+      // document.getElementById("location-display").textContent = data.mapData.map_name;
+      // this.updateMinimap(data.mapData); // Minimap update logic no longer needed
     }
-
     // Update commentary (truncate if too long)
     if (data.commentary) {
       let commentary = data.commentary;
@@ -138,49 +138,7 @@ class StreamOverlay {
     }
   }
 
-  updateMinimap(mapData) {
-    const minimapDisplay = document.getElementById("minimap-display");
-    if (mapData.map_data && Array.isArray(mapData.map_data)) {
-      let mapText = "";
-      mapData.map_data.forEach((row) => {
-        if (Array.isArray(row)) {
-          const rowText = row
-            .map((cell) => {
-              const tileType = cell.split(":")[1];
-              switch (tileType) {
-                case "O":
-                  return ".";
-                case "X":
-                  return "█";
-                case "W":
-                  return "◊";
-                case "!":
-                  return "!";
-                case "~":
-                  return "~";
-                case "→":
-                  return "→";
-                case "←":
-                  return "←";
-                case "↑":
-                  return "↑";
-                case "↓":
-                  return "↓";
-                case "C":
-                  return "+";
-                default:
-                  return "?";
-              }
-            })
-            .join("");
-          mapText += rowText + "\n";
-        }
-      });
-      minimapDisplay.textContent = mapText;
-    } else {
-      minimapDisplay.textContent = "Map data unavailable";
-    }
-  }
+  // updateMinimap(mapData) { ... } // This method can be removed
 
   updateParty(pokemon) {
     const partyDisplay = document.getElementById("party-display");
@@ -231,32 +189,28 @@ class StreamOverlay {
   }
 
   updateInventory(bag) {
-    const inventoryDisplay = document.getElementById("inventory-display");
-    inventoryDisplay.innerHTML = "";
-
     const categories = [
-      "Items",
-      "Pokeballs",
-      "TMs & HMs",
-      "Berries",
-      "Key Items",
+      { name: "Items", id: "items" },
+      { name: "Pokeballs", id: "pokeballs" },
+      { name: "TMs & HMs", id: "tms" },
+      { name: "Berries", id: "berries" },
+      { name: "Key Items", id: "keyitems" }
     ];
 
-    categories.forEach((categoryName) => {
-      const items = bag[categoryName];
-      if (items && items.length > 0) {
-        const column = document.createElement("div");
-        column.className = "inventory-column";
+    categories.forEach((category) => {
+      const items = bag[category.name] || [];
+      const wrapper = document.getElementById(`${category.id}-wrapper`);
+      
+      wrapper.innerHTML = "";
 
-        const categoryHeader = document.createElement("div");
-        categoryHeader.className = "inventory-category";
-        categoryHeader.textContent = categoryName;
-        column.appendChild(categoryHeader);
-
-        const itemsWrapper = document.createElement("div");
-        itemsWrapper.className = "inventory-items-wrapper";
-
-        // Show all items, no limit
+      if (items.length === 0) {
+        const emptyDiv = document.createElement("div");
+        emptyDiv.className = "empty-inventory";
+        emptyDiv.textContent = `No ${category.name.toLowerCase()}`;
+        wrapper.appendChild(emptyDiv);
+        wrapper.style.animation = "none";
+      } else {
+        // Add items
         items.forEach((item) => {
           const itemElement = document.createElement("div");
           itemElement.className = "inventory-item";
@@ -271,7 +225,7 @@ class StreamOverlay {
 
           itemElement.appendChild(itemName);
           itemElement.appendChild(itemQuantity);
-          itemsWrapper.appendChild(itemElement);
+          wrapper.appendChild(itemElement);
         });
 
         // Only apply scrolling animation if there are many items
@@ -291,26 +245,19 @@ class StreamOverlay {
 
             itemElement.appendChild(itemName);
             itemElement.appendChild(itemQuantity);
-            itemsWrapper.appendChild(itemElement);
+            wrapper.appendChild(itemElement);
           });
 
           // Adjust animation duration based on item count
           const duration = Math.max(20, items.length * 2);
-          itemsWrapper.style.animationDuration = `${duration}s`;
+          wrapper.style.animationDuration = `${duration}s`;
+          wrapper.style.animation = "scrollAllInventory " + duration + "s linear infinite";
         } else {
           // No animation for short lists
-          itemsWrapper.style.animation = "none";
+          wrapper.style.animation = "none";
         }
-
-        column.appendChild(itemsWrapper);
-        inventoryDisplay.appendChild(column);
       }
     });
-
-    if (inventoryDisplay.innerHTML === "") {
-      inventoryDisplay.innerHTML =
-        '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8;">No items</div>';
-    }
   }
 
   updateBadges(badges) {
@@ -352,7 +299,7 @@ document.addEventListener("DOMContentLoaded", () => {
 setTimeout(() => {
   const mockData = {
     mapData: {
-      map_name: "ROUTE110",
+      map_name: "ROUTE 110 (Test Location)", // Example: if you still want to use map_name
       width: 40,
       height: 100,
       tile_passability: {
