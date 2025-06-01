@@ -117,7 +117,7 @@ export const TILE_DIVE = "⚓"; // Represents a spot where Dive can be used
 export const TILE_LEDGE_EAST = "➡️";
 export const TILE_LEDGE_WEST = "⬅️";
 export const TILE_LEDGE_NORTH = "⬆️";
-export const TILE_LEDGE_SOUTH = "⬅️";
+export const TILE_LEDGE_SOUTH = "⬇️";
 export const TILE_CONNECTION = "🔗";
 
 // --- Passability Definitions ---
