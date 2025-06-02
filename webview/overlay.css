@@ -271,6 +271,7 @@ body {
     position: relative;
     overflow: hidden; /* Keep this on the main card */
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    scrollbar-width: none;
 }
 
 .commentary-header {
@@ -332,8 +333,17 @@ body {
 .commentary-item {
     padding: 4px 0; /* Add some spacing between commentary items */
     border-bottom: 1px dashed rgba(255, 255, 255, 0.1); /* Optional separator */
-    white-space: pre-wrap; /* Respect newlines within a single commentary entry */
+    white-space: pre-wrap; /* Respect newlines within a single commentary entry */    
     word-break: break-word; /* Wrap long words */
+    color: #a0aec0; /* Slightly grayer for older items */
+    opacity: 0.8; /* Slightly less opaque for older items */
+    transition: color 0.3s ease, opacity 0.3s ease; /* Smooth transition */
+}
+
+.commentary-item.latest-commentary {
+    color: #e2e8f0; /* Brighter color for the latest item, matching .commentary-text */
+    opacity: 1; /* Full opacity */
+    font-weight: 500; /* Slightly bolder to make it stand out */
 }
 
 .bottom-section {

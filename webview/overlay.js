@@ -73,9 +73,13 @@ class StreamOverlay {
 
       // Re-render all commentary items
       commentaryDisplay.innerHTML = ''; // Clear previous items
-      this.commentaryHistory.forEach(text => {
+      this.commentaryHistory.forEach((text, index) => {
         const commentaryItem = document.createElement('div');
         commentaryItem.className = 'commentary-item';
+        // Add a special class if this is the most recent item
+        if (index === this.commentaryHistory.length - 1) {
+          commentaryItem.classList.add('latest-commentary');
+        }
         commentaryItem.textContent = text;
         commentaryDisplay.appendChild(commentaryItem); // New items added to the end (bottom due to CSS)
       });
