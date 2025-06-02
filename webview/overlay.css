@@ -16,7 +16,6 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Main container using CSS Grid */
 .overlay-container {
     width: 100%;
     height: 100%;
@@ -27,40 +26,33 @@ body {
     padding: 16px;
 }
 
-/* Left Panel - Minimap and Emulator */
 .left-panel {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center; /* Center emulator vertically */
+    justify-content: center;
 }
 
-/* Emulator Section - Chromakey ready with 3:2 aspect ratio */
 .emulator-placeholder {
     width: 885px;
     height: 590px;
-    background: #00FF00; /* Pure green for chromakey - not used elsewhere */
-    border: 4px solid #475569; /* Enhanced frame border */
-    border-radius: 12px; /* Smoother corners for the frame */
-    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25), /* Inner shadow for depth */
-                0 5px 15px rgba(0, 0, 0, 0.3);  /* Refined outer shadow */
+    background: #00FF00;
+    border: 4px solid #475569;
+    border-radius: 12px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25),
+                0 5px 15px rgba(0, 0, 0, 0.3);
     position: relative;
 }
 
-/* Minimap */
-/* Styles for .emulator-placeholder small and minimap (.minimap-*) are removed as minimap is gone 
-   and emulator placeholder div is empty in the HTML. */
-
-/* Right Panel */
 .right-panel {
     display: flex;
     flex-direction: column;
     gap: 14px;
     grid-row: 1;
     padding-right: 4px;
+    overflow: hidden; 
 }
 
-/* Top Row - Badges and Navigation */
 .top-row {
     display: grid;
     grid-template-columns: 55% 45%;
@@ -68,7 +60,6 @@ body {
     height: 120px;
 }
 
-/* Panel Card Base Style */
 .panel-card {
     background: linear-gradient(145deg, #1e293b, #2d3748);
     border-radius: 12px;
@@ -76,7 +67,7 @@ body {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     padding: 14px;
     position: relative;
-    overflow: hidden;
+    overflow: hidden; /* Keep this for overall card shape */
 }
 
 .panel-card::before {
@@ -88,7 +79,6 @@ body {
     border-radius: 12px;
 }
 
-/* Badges Area */
 .badges-area {
     background: linear-gradient(145deg, #1e293b, #2d3748);
     border-radius: 12px;
@@ -166,7 +156,6 @@ body {
     transform: scale(1.1);
 }
 
-/* Navigation Area */
 .navigation-area {
     background: linear-gradient(145deg, #1e293b, #2d3748);
     border-radius: 12px;
@@ -176,7 +165,7 @@ body {
     display: flex;
     flex-direction: column;
     position: relative;
-    overflow: hidden;
+    /* overflow: hidden; */
 }
 
 .navigation-header {
@@ -214,12 +203,11 @@ body {
     font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
 }
 
-/* Goals Grid */
 .goals-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 14px;
-    height: 95px;
+    height: 95px; /* This height might be restrictive if goal text wraps a lot */
 }
 
 .goal-card {
@@ -228,11 +216,11 @@ body {
     border: 1px solid #374151;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     padding: 12px;
-    display: flex;
-    flex-direction: column;
+    display: flex; /* Keep flex for vertical alignment of header and content */
+    flex-direction: column; /* Stack header and content */
     transition: all 0.2s ease;
     position: relative;
-    overflow: hidden;
+    /* overflow: hidden; Let .goal-content handle its own overflow */
 }
 
 .goal-card:hover {
@@ -251,45 +239,37 @@ body {
     margin-bottom: 6px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0; /* Prevent header from shrinking */
 }
 
-/* Specific goal colors */
-.goal-card:nth-child(1) .goal-header {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-}
-
-.goal-card:nth-child(2) .goal-header {
-    background: linear-gradient(135deg, #22d3ee, #0891b2);
-}
-
-.goal-card:nth-child(3) .goal-header {
-    background: linear-gradient(135deg, #10b981, #047857);
-}
+.goal-card:nth-child(1) .goal-header { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.goal-card:nth-child(2) .goal-header { background: linear-gradient(135deg, #22d3ee, #0891b2); }
+.goal-card:nth-child(3) .goal-header { background: linear-gradient(135deg, #10b981, #047857); }
 
 .goal-content {
     color: #e2e8f0;
-    font-size: 10px;
-    line-height: 1.3;
-    text-align: center;
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
+    font-size: 10px; /* Consider if this needs to be smaller if text is very long */
+    line-height: 1.4; /* Adjusted for better readability with wrapping */
+    text-align: left; /* Changed from center for better readability of wrapped text */
+    flex: 1; /* Allow content to take available space */
+    overflow-y: auto; /* Allow vertical scrolling if content exceeds card height */
+    padding: 2px 4px; /* Add some padding inside the content area */
     font-weight: 400;
+    /* Removed flex alignment as text should flow naturally */
 }
 
-/* Commentary Section */
 .commentary-section {
     background: linear-gradient(145deg, #1e293b, #2d3748);
     border: 1px solid #374151;
     border-radius: 12px;
-    flex: 1;
-    min-height: 160px;
+    flex: 1; /* Allow it to take available vertical space in .right-panel */
+    /* min-height: 160px; /* Ensure a minimum height */
+    /* max-height: 300px; /* Example: Set a max-height if needed, or let flexbox handle it */
+    height: 0; /* This with flex:1 allows it to take remaining space */
     display: flex;
     flex-direction: column;
     position: relative;
-    overflow: hidden;
+    overflow: hidden; /* Keep this on the main card */
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
@@ -305,6 +285,7 @@ body {
     box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
+    flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 .commentary-header::before {
@@ -331,40 +312,42 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { 
-        opacity: 1;
-        transform: translateY(-50%) scale(1);
-    }
-    50% { 
-        opacity: 0.6;
-        transform: translateY(-50%) scale(1.2);
-    }
+    0%, 100% { opacity: 1; transform: translateY(-50%) scale(1); }
+    50% { opacity: 0.6; transform: translateY(-50%) scale(1.2); }
 }
 
 .commentary-text {
     color: #e2e8f0;
     line-height: 1.5;
-    font-size: 13px;
+    font-size: 15px; 
     padding: 0 4px;
-    flex: 1;
-    overflow-y: auto;
+    flex: 1; /* Allow it to grow and fill space */
+    display: flex;
+    flex-direction: column; /* Stack items normally, newest at bottom due to JS append */
+    overflow-y: auto; /* Allow scrolling if content exceeds the fixed height of .commentary-section */
     font-weight: 400;
+    /* white-space: pre-wrap; Removed, as each item is a div */
 }
 
-/* Bottom Section */
+.commentary-item {
+    padding: 4px 0; /* Add some spacing between commentary items */
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1); /* Optional separator */
+    white-space: pre-wrap; /* Respect newlines within a single commentary entry */
+    word-break: break-word; /* Wrap long words */
+}
+
 .bottom-section {
     grid-column: 1 / -1;
     display: grid;
     grid-template-columns: 920px 1fr;
     gap: 16px;
-    height: 260px; /* Increased height for bottom section */
+    height: 260px;
 }
 
-/* Info Headers */
 .info-header {
     color: white;
     padding: 10px 16px;
-    border-radius: 12px 12px 0 0; /* Original: 12px 12px 0 0; - this is fine */
+    border-radius: 12px 12px 0 0;
     font-weight: 600;
     font-size: 14px;
     margin: -14px -14px 12px -14px;
@@ -372,18 +355,17 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
 }
 
-/* Party Section */
 .party-section {
     position: relative;
-    max-height: 260px; /* Adjusted max-height */
+    max-height: 260px;
+    display: flex; /* Added for flex structure */
+    flex-direction: column; /* Stack header and content */
 }
 
-.party-section .info-header {
-    background: linear-gradient(135deg, #10b981, #047857);
-}
-
+.party-section .info-header { background: linear-gradient(135deg, #10b981, #047857); }
 .party-section .info-header::before {
     content: '👥';
     position: absolute;
@@ -397,8 +379,10 @@ body {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
-    height: calc(100% - 48px);
+    /* height: calc(100% - 48px); Removed fixed height to allow cards to grow if needed */
+    flex-grow: 1; /* Allow party-pokemon area to grow */
     padding-right: 4px;
+    overflow-y: auto; /* If cards become too tall collectively */
 }
 
 .pokemon-card {
@@ -408,9 +392,11 @@ body {
     padding: 8px;
     transition: all 0.2s ease;
     position: relative;
-    min-height: 80px;
-    max-height: 90px;
-    overflow: hidden;
+    min-height: 80px; /* Keep min-height */
+    /* max-height: 90px; Removed max-height to allow wrapping */
+    overflow: hidden; /* Card itself can hide overflow if content is too big after wrapping */
+    display: flex; /* For internal alignment */
+    flex-direction: column; /* Stack name, level, hp */
 }
 
 .pokemon-card:hover {
@@ -430,23 +416,21 @@ body {
     color: #10b981;
     margin-bottom: 2px;
     font-size: 12px;
+    white-space: normal; /* Allow wrapping */
+    word-break: break-word; /* Break long words */
+    line-height: 1.2; /* Adjust line height for wrapped names */
 }
 
-.pokemon-card.fainted .pokemon-name {
-    color: #ef4444;
-}
-
+.pokemon-card.fainted .pokemon-name { color: #ef4444; }
 .pokemon-level {
     font-size: 10px;
     color: #94a3b8;
     margin-bottom: 6px;
     font-weight: 500;
+    flex-shrink: 0;
 }
 
-.pokemon-hp-container {
-    margin-bottom: 2px;
-}
-
+.pokemon-hp-container { margin-bottom: 2px; flex-shrink: 0; }
 .pokemon-hp-text {
     font-size: 9px;
     color: #94a3b8;
@@ -469,14 +453,8 @@ body {
     transition: width 0.3s ease;
     border-radius: 2px;
 }
-
-.pokemon-hp-fill.hp-yellow {
-    background: linear-gradient(90deg, #f59e0b, #d97706);
-}
-
-.pokemon-hp-fill.hp-red {
-    background: linear-gradient(90deg, #ef4444, #dc2626);
-}
+.pokemon-hp-fill.hp-yellow { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.pokemon-hp-fill.hp-red { background: linear-gradient(90deg, #ef4444, #dc2626); }
 
 .fainted-indicator {
     position: absolute;
@@ -494,22 +472,20 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Inventory Sections Container */
 .inventory-sections {
     position: relative;
-    max-height: 260px; /* Adjusted max-height */
+    max-height: 260px;
     background: linear-gradient(145deg, #1e293b, #2d3748);
     border-radius: 12px;
     border: 1px solid #374151;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     padding: 14px;
-    overflow: hidden;
+    overflow: hidden; /* Keep for main container */
+    display: flex; /* Added */
+    flex-direction: column; /* Added */
 }
 
-.inventory-sections .info-header {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-
+.inventory-sections .info-header { background: linear-gradient(135deg, #f59e0b, #d97706); }
 .inventory-sections .info-header::before {
     content: '🎒';
     position: absolute;
@@ -535,13 +511,14 @@ body {
 }
 
 .inventory-container {
-    height: calc(100% - 48px);
-    overflow-y: auto;
-    padding-right: 4px;
+    /* height: calc(100% - 48px); Removed fixed height */
+    flex-grow: 1; /* Allow container to grow */
+    overflow: hidden; /* Changed from auto to hidden due to custom scrolling items */
+    padding-right: 0; /* Animation handles content movement */
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 10px;
-    grid-template-rows: 1fr;
+    grid-template-rows: 1fr; /* Ensure sections fill height */
 }
 
 .inventory-section {
@@ -553,11 +530,10 @@ body {
     background: rgba(15, 23, 42, 0.3);
     border-radius: 8px;
     border: 1px solid rgba(148, 163, 184, 0.2);
-    overflow: hidden;
+    overflow: hidden; /* Each section hides its own overflow */
 }
 
-.inventory-section::before,
-.inventory-section::after {
+.inventory-section::before, .inventory-section::after {
     content: '';
     position: absolute;
     left: 0;
@@ -566,38 +542,37 @@ body {
     pointer-events: none;
     z-index: 2;
 }
-
 .inventory-section::before {
-    top: 28px;
+    top: 28px; /* Adjusted for category header */
     background: linear-gradient(to bottom, rgba(15, 23, 42, 0.9), transparent);
 }
-
 .inventory-section::after {
     bottom: 0;
     background: linear-gradient(to top, rgba(15, 23, 42, 0.9), transparent);
-    z-index: 2;
 }
 
 .inventory-category {
     color: #22d3ee;
     font-weight: 700;
-    margin: 0 0 6px 0;
+    margin: 0;
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     border-bottom: 2px solid #22d3ee;
     padding: 8px 8px 3px 8px;
-    position: sticky;
+    position: sticky; /* Keeps category header visible during item scroll within its wrapper */
     top: 0;
     background: rgba(15, 23, 42, 0.95);
     z-index: 3;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .inventory-items-wrapper {
-    animation: scrollAllInventory 30s linear infinite;
     padding: 0 8px 10px 8px;
     flex-grow: 1;
+    /* The animation is applied here by JS */
+    /* overflow: hidden; Let the animation handle showing/hiding items */
 }
 
 .inventory-section:hover .inventory-items-wrapper {
@@ -613,13 +588,14 @@ body {
     font-size: 9px;
     font-weight: 500;
     line-height: 1.2;
-    white-space: nowrap;
+    /* white-space: nowrap; Removed to allow item names to wrap */
 }
 
 .item-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: calc(100% - 25px);
+    /* overflow: hidden; text-overflow: ellipsis; Removed for wrapping */
+    max-width: calc(100% - 30px); /* Ensure space for quantity, adjust as needed */
+    white-space: normal; /* Allow wrapping */
+    word-break: break-word; /* Break long words */
 }
 
 .empty-inventory {
@@ -631,49 +607,20 @@ body {
 }
 
 @keyframes scrollAllInventory {
-    0% {
-        transform: translateY(0); /* Start at top */
-    }
-    10% { /* Pause at top */
-        transform: translateY(0);
-    }
-    45% { /* Scrolled to bottom (scroll down duration: 10% to 45% = 35%) */
-        transform: translateY(-100%); /* Existing scroll depth, assumes duplicated content */
-    }
-    55% { /* Pause at bottom (pause duration: 45% to 55% = 10%) */
-        transform: translateY(-100%);
-    }
-    90% { /* Scrolled back to top (scroll up duration: 55% to 90% = 35%) */
-        transform: translateY(0);
-    }
-    100% { /* End at top, effectively a pause before repeating (duration 90% to 100% = 10%) */
-        transform: translateY(0);
-    }
+    0% { transform: translateY(0); }
+    10% { transform: translateY(0); }
+    45% { transform: translateY(-100%); }
+    55% { transform: translateY(-100%); }
+    90% { transform: translateY(0); }
+    100% { transform: translateY(0); }
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 6px;
-}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(148, 163, 184, 0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
-::-webkit-scrollbar-track {
-    background: rgba(148, 163, 184, 0.1);
-    border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
-}
-
-/* Improved focus states for accessibility */
-.badge:focus,
-.goal-card:focus,
-.pokemon-card:focus {
+.badge:focus, .goal-card:focus, .pokemon-card:focus {
     outline: 2px solid #22d3ee;
     outline-offset: 2px;
 }
