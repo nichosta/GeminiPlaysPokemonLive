@@ -9,15 +9,21 @@
 <body>
     <div class="overlay-container">
         <!-- Left Panel with Minimap and Emulator -->
-        <div class="left-panel">
+        <div class="right-panel"> <!-- Swapped class name - This is the panel for Emulator (visually left) -->
+            <!-- Main Header: Title and Summary Countdown (MOVED HERE) -->
+            <div class="main-header-area">
+                <h1 class="main-title">Gemini Plays Emerald!</h1>
+                <div class="summary-countdown">
+                    Turns until summary: <span id="turns-left-display">--</span>
+                </div>
+            </div>
             <!-- Emulator Area (Chromakey Ready) -->
-            <!-- This will now be centered in the left-panel -->
             <div class="emulator-placeholder">
             </div>
         </div>
 
-        <!-- Right Panel -->
-        <div class="right-panel">
+        <!-- Right Panel (Now named Left Panel in code - This is the panel for Info (visually right)) -->
+        <div class="left-panel"> <!-- Swapped class name -->
             <!-- Top Row: Badges and Navigation -->
             <div class="top-row">
                 <!-- Badges -->

@@ -335,6 +335,7 @@ async function runGameLoop() {
             }
 
             // --- Construct and broadcast data for overlay --- Modified ---
+            const turnsUntilSummaryValue = Math.max(0, CONFIGS.HISTORY_LENGTH - turnCounter);
             const overlayData = {
                 // visibleMapState already contains player_state, map_name, width, height, connections, etc.
                 mapData: visibleMapState,
@@ -348,6 +349,7 @@ async function runGameLoop() {
                 bag: currentGameInfoObject.bag || {},
                 badges: currentGameInfoObject.badges || [],
                 money: typeof currentGameInfoObject.money === 'number' ? currentGameInfoObject.money : 0,
+                turnsUntilSummary: turnsUntilSummaryValue,
                 // You can add other fields if your overlay needs them, e.g.:
                 // mistakes: parsedResponse.mistakes || "N/A"
             };

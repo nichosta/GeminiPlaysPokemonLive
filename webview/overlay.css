@@ -26,11 +26,13 @@ body {
     padding: 16px;
 }
 
-.left-panel {
+/* Was .left-panel, styles for the emulator container */
+.right-panel {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: center; /* Vertically centers the group (header + emulator) */
+    gap: 20px;               /* Adds space between header and emulator */
 }
 
 .emulator-placeholder {
@@ -44,14 +46,44 @@ body {
     position: relative;
 }
 
-.right-panel {
+/* Was .right-panel, styles for the info container */
+.left-panel {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    grid-row: 1;
+    grid-row: 1; /* This ensures this panel (info content) stays in the first row of the grid */
     padding-right: 4px;
     overflow: hidden; 
 }
+
+.main-header-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0; /* No horizontal padding, relies on width and internal spacing */
+    /* border-bottom: 1px solid #374151; */ /* Optional: if you want a separator */
+    width: 885px; /* Match emulator width for alignment and consistent look */
+}
+
+.main-title {
+    font-size: 26px; /* Slightly reduced for balance */
+    font-weight: 700;
+    color: #e2e8f0;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+}
+
+.summary-countdown {
+    font-size: 12px;
+    color: #cbd5e1;
+    background-color: rgba(45, 55, 72, 0.6); /* Slightly more transparent */
+    padding: 5px 10px;
+    border-radius: 14px;
+    border: 1px solid #374151;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    font-weight: 500;
+    white-space: nowrap; /* Prevent wrapping */
+}
+.summary-countdown #turns-left-display { font-weight: 600; color: #f59e0b; }
 
 .top-row {
     display: grid;

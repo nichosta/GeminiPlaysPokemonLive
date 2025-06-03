@@ -133,6 +133,14 @@ class StreamOverlay {
         "money-display"
       ).textContent = `💰 $${data.money.toLocaleString()}`;
     }
+
+    // Update turns until summary
+    if (data.turnsUntilSummary !== undefined) {
+      const turnsLeftElement = document.getElementById("turns-left-display");
+      if (turnsLeftElement) {
+        turnsLeftElement.textContent = data.turnsUntilSummary;
+      }
+    }
   }
 
   updateParty(pokemon) {
