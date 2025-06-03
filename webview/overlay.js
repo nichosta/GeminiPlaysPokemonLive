@@ -3,6 +3,7 @@ class StreamOverlay {
     this.ws = null;
     this.reconnectInterval = 5000;
     this.lastData = null;
+    this.lastInventoryCategories = {}; // Store previous inventory state per category
     this.commentaryHistory = []; // Stores commentary entries
     this.maxCommentaryItems = 10; // Max number of commentary items to display
     this.init();
@@ -41,7 +42,7 @@ class StreamOverlay {
         console.error("WebSocket error:", error);
         this.setStatus("Error", "error");
         // Attempt to reconnect on error as well
-        // this.ws.close(); // Ensure it's closed before trying to reconnect
+        if (this.ws) this.ws.close(); // Ensure it's closed before trying to reconnect
       };
     } catch (error) {
       console.error("Failed to create WebSocket:", error);
@@ -52,8 +53,8 @@ class StreamOverlay {
   async startPolling() {
     setInterval(async () => {
       if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-          console.error("Polling failed:", error);
-          this.setStatus("Polling Connection Failed", "error");
+          console.warn("Polling: WebSocket not open or not available. Waiting for reconnect.");
+          // this.setStatus("Polling Connection Failed", "error"); // Status is likely already handled by onclose/onerror
       }
     }, 2000);
   }
@@ -175,6 +176,24 @@ class StreamOverlay {
     });
   }
 
+  _createInventoryItemElement(item) {
+    const itemElement = document.createElement("div");
+    itemElement.className = "inventory-item";
+
+    const itemName = document.createElement("span");
+    itemName.className = "item-name";
+    itemName.textContent = item.name;
+    itemName.title = item.name; // Tooltip for full name
+
+    const itemQuantity = document.createElement("span");
+    itemQuantity.textContent = `x${item.quantity}`;
+
+    itemElement.appendChild(itemName);
+    itemElement.appendChild(itemQuantity);
+    return itemElement;
+  }
+
+
   updateInventory(bag) {
     const categories = [
       { name: "Items", id: "items" },
@@ -185,52 +204,55 @@ class StreamOverlay {
     ];
 
     categories.forEach((category) => {
-      const items = bag[category.name] || [];
+      const currentItems = bag[category.name] || [];
+      const previousItems = this.lastInventoryCategories[category.name] || [];
       const wrapper = document.getElementById(`${category.id}-wrapper`);
-      
-      wrapper.innerHTML = ""; // Clear previous items
 
-      if (items.length === 0) {
-        const emptyDiv = document.createElement("div");
-        emptyDiv.className = "empty-inventory";
-        emptyDiv.textContent = `No ${category.name.toLowerCase()}`;
-        wrapper.appendChild(emptyDiv);
-        wrapper.style.animation = "none"; // Stop animation if empty
-      } else {
-        const createItemElement = (item) => {
-            const itemElement = document.createElement("div");
-            itemElement.className = "inventory-item";
+      if (!wrapper) {
+        console.warn(`Inventory wrapper for ${category.id}-wrapper not found.`);
+        return;
+      }
 
-            const itemName = document.createElement("span");
-            itemName.className = "item-name";
-            itemName.textContent = item.name;
-            itemName.title = item.name; // Tooltip for full name
+      // Only update DOM if items have actually changed for this category
+      if (JSON.stringify(currentItems) !== JSON.stringify(previousItems)) {
+        // console.log(`Inventory category '${category.name}' changed. Updating.`);
+        wrapper.innerHTML = ""; // Clear previous items for this specific category
 
-            const itemQuantity = document.createElement("span");
-            itemQuantity.textContent = `x${item.quantity}`;
-
-            itemElement.appendChild(itemName);
-            itemElement.appendChild(itemQuantity);
-            return itemElement;
-        };
-        
-        items.forEach((item) => {
-          wrapper.appendChild(createItemElement(item));
-        });
-
-        // Handle scrolling animation
-        if (items.length > 8) { // Threshold for scrolling
-          // Duplicate items for seamless scrolling
-          items.forEach((item) => {
-            wrapper.appendChild(createItemElement(item));
-          });
-          const duration = Math.max(20, items.length * 2); // Adjust animation duration
-          wrapper.style.animationDuration = `${duration}s`;
-          wrapper.style.animationName = "scrollAllInventory"; // Ensure animation name is set
-          wrapper.style.animationPlayState = 'running';
+        if (currentItems.length === 0) {
+          const emptyDiv = document.createElement("div");
+          emptyDiv.className = "empty-inventory";
+          emptyDiv.textContent = `No ${category.name.toLowerCase()}`;
+          wrapper.appendChild(emptyDiv);
+          wrapper.style.animation = "none"; // Stop animation if empty
         } else {
-          wrapper.style.animation = "none"; // No animation for short lists
+          currentItems.forEach((item) => {
+            wrapper.appendChild(this._createInventoryItemElement(item));
+          });
+
+          // Handle scrolling animation
+          if (currentItems.length > 8) { // Threshold for scrolling
+            // Duplicate items for seamless scrolling
+            currentItems.forEach((item) => {
+              wrapper.appendChild(this._createInventoryItemElement(item));
+            });
+
+            const duration = Math.max(20, currentItems.length * 4); // Adjust animation duration
+            
+            // Reset animation properties to ensure they are correctly applied
+            wrapper.style.animation = 'none'; // Clear all animation properties
+            void wrapper.offsetWidth; // Force reflow/repaint
+
+            wrapper.style.animationName = "scrollAllInventory";
+            wrapper.style.animationDuration = `${duration}s`;
+            wrapper.style.animationIterationCount = 'infinite'; // Ensure it loops
+            wrapper.style.animationTimingFunction = 'linear';   // For smooth, constant speed
+            wrapper.style.animationPlayState = 'running';     // Ensure it's running
+          } else {
+            wrapper.style.animation = "none"; // No animation for short lists
+          }
         }
+        // Update the stored state for this category
+        this.lastInventoryCategories[category.name] = JSON.parse(JSON.stringify(currentItems));
       }
     });
   }

@@ -271,7 +271,6 @@ body {
     position: relative;
     overflow: hidden; /* Keep this on the main card */
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    scrollbar-width: none;
 }
 
 .commentary-header {
@@ -326,7 +325,9 @@ body {
     display: flex;
     flex-direction: column; /* Stack items normally, newest at bottom due to JS append */
     overflow-y: auto; /* Allow scrolling if content exceeds the fixed height of .commentary-section */
-    font-weight: 400;
+    font-weight: 400;    
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
     /* white-space: pre-wrap; Removed, as each item is a div */
 }
 
@@ -345,6 +346,10 @@ body {
     opacity: 1; /* Full opacity */
     font-weight: 500; /* Slightly bolder to make it stand out */
 }
+.commentary-text::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+}
+
 
 .bottom-section {
     grid-column: 1 / -1;
