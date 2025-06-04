@@ -280,7 +280,7 @@ body {
 
 .goal-content {
     color: #e2e8f0;
-    font-size: 10px; /* Consider if this needs to be smaller if text is very long */
+    font-size: 12px; /* Consider if this needs to be smaller if text is very long */
     line-height: 1.4; /* Adjusted for better readability with wrapping */
     text-align: left; /* Changed from center for better readability of wrapped text */
     flex: 1; /* Allow content to take available space */
@@ -351,7 +351,7 @@ body {
 .commentary-text {
     color: #e2e8f0;
     line-height: 1.5;
-    font-size: 15px; 
+    font-size: 18px; 
     padding: 0 4px;
     flex: 1; /* Allow it to grow and fill space */
     display: flex;
@@ -462,7 +462,7 @@ body {
     font-weight: 600;
     color: #10b981;
     margin-bottom: 2px;
-    font-size: 12px;
+    font-size: 14px;
     white-space: normal; /* Allow wrapping */
     word-break: break-word; /* Break long words */
     line-height: 1.2; /* Adjust line height for wrapped names */
