@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Emerald AI Stream Overlay</title>
+    <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+    <div class="overlay-container">
+        <!-- Left Panel with Minimap and Emulator -->
+        <div class="right-panel"> <!-- Swapped class name - This is the panel for Emulator (visually left) -->
+            <!-- Main Header: Title and Summary Countdown (MOVED HERE) -->
+            <div class="main-header-area">
+                <h1 class="main-title">Gemini Plays Emerald!</h1>
+                <div class="summary-countdown">
+                    Turns until summary: <span id="turns-left-display">--</span>
+                </div>
+            </div>
+            <!-- Emulator Area (Chromakey Ready) -->
+            <div class="emulator-placeholder">
+            </div>
+        </div>
+
+        <!-- Right Panel (Now named Left Panel in code - This is the panel for Info (visually right)) -->
+        <div class="left-panel"> <!-- Swapped class name -->
+            <!-- Top Row: Badges and Navigation -->
+            <div class="top-row">
+                <!-- Badges -->
+                <div class="badges-area">
+                    <div class="badges-header">Gym Badges</div>
+                    <div class="badges-container" id="badges-display">
+                        <div class="badge" data-badge="stone">
+                            <img src="Stone_Badge.png" alt="Stone Badge">
+                        </div>
+                        <div class="badge" data-badge="knuckle">
+                            <img src="Knuckle_Badge.png" alt="Knuckle Badge">
+                        </div>
+                        <div class="badge" data-badge="dynamo">
+                            <img src="Dynamo_Badge.png" alt="Dynamo Badge">
+                        </div>
+                        <div class="badge" data-badge="heat">
+                            <img src="Heat_Badge.png" alt="Heat Badge">
+                        </div>
+                        <div class="badge" data-badge="balance">
+                            <img src="Balance_Badge.png" alt="Balance Badge">
+                        </div>
+                        <div class="badge" data-badge="feather">
+                            <img src="Feather_Badge.png" alt="Feather Badge">
+                        </div>
+                        <div class="badge" data-badge="mind">
+                            <img src="Mind_Badge.png" alt="Mind Badge">
+                        </div>
+                        <div class="badge" data-badge="rain">
+                            <img src="Rain_Badge.png" alt="Rain Badge">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="navigation-area">
+                    <div class="navigation-header">Next Moves</div>
+                    <div class="navigation-content" id="navigation-display">
+                        No path planned
+                    </div>
+                </div>
+            </div>
+
+            <!-- Goals Row -->
+            <div class="goals-grid">
+                <!-- Long Term Goal -->
+                <div class="goal-card">
+                    <div class="goal-header">🎯 Long Term</div>
+                    <div class="goal-content" id="goal-long">Loading...</div>
+                </div>
+
+                <!-- Mid Term Goal -->
+                <div class="goal-card">
+                    <div class="goal-header">📍 Mid Term</div>
+                    <div class="goal-content" id="goal-mid">Loading...</div>
+                </div>
+
+                <!-- Short Term Goal -->
+                <div class="goal-card">
+                    <div class="goal-header">⚡ Short Term</div>
+                    <div class="goal-content" id="goal-short">Loading...</div>
+                </div>
+            </div>
+
+            <!-- AI Commentary -->
+            <div class="panel-card commentary-section">
+                <div class="commentary-header">AI Thoughts</div>
+                <div class="commentary-text" id="commentary-display">
+                    Waiting for AI response...
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Full Width Section -->
+        <div class="bottom-section">
+            <!-- Pokemon Party -->
+            <div class="panel-card party-section">
+                <div class="info-header">Party Pokemon</div>
+                <div class="party-pokemon" id="party-display">
+                    Loading party...
+                </div>
+            </div>
+
+            <!-- Inventory Sections -->
+            <div class="inventory-sections">
+                <div class="info-header">Inventory</div>
+                <div class="money-display" id="money-display">💰 $0</div>
+                <div class="inventory-container" id="inventory-display">
+                    <!-- Items Section -->
+                    <div class="inventory-section" id="items-section">
+                        <div class="inventory-category">Items</div>
+                        <div class="inventory-items-wrapper" id="items-wrapper">
+                            <div class="empty-inventory">No items</div>
+                        </div>
+                    </div>
+
+                    <!-- Pokeballs Section -->
+                    <div class="inventory-section" id="pokeballs-section">
+                        <div class="inventory-category">Pokeballs</div>
+                        <div class="inventory-items-wrapper" id="pokeballs-wrapper">
+                            <div class="empty-inventory">No pokeballs</div>
+                        </div>
+                    </div>
+
+                    <!-- TMs & HMs Section -->
+                    <div class="inventory-section" id="tms-section">
+                        <div class="inventory-category">TMs & HMs</div>
+                        <div class="inventory-items-wrapper" id="tms-wrapper">
+                            <div class="empty-inventory">No TMs/HMs</div>
+                        </div>
+                    </div>
+
+                    <!-- Berries Section -->
+                    <div class="inventory-section" id="berries-section">
+                        <div class="inventory-category">Berries</div>
+                        <div class="inventory-items-wrapper" id="berries-wrapper">
+                            <div class="empty-inventory">No berries</div>
+                        </div>
+                    </div>
+
+                    <!-- Key Items Section -->
+                    <div class="inventory-section" id="keyitems-section">
+                        <div class="inventory-category">Key Items</div>
+                        <div class="inventory-items-wrapper" id="keyitems-wrapper">
+                            <div class="empty-inventory">No key items</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="overlay.js"></script>
+</body>
+</html>

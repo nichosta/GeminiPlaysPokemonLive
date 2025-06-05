@@ -1,0 +1,673 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    width: 1920px;
+    height: 1080px;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 50%, #2a2f3e 100%);
+    overflow: hidden;
+    position: relative;
+    color: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.overlay-container {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 920px 1fr;
+    grid-template-rows: 1fr 280px;
+    gap: 16px;
+    padding: 16px;
+}
+
+/* Was .left-panel, styles for the emulator container */
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Vertically centers the group (header + emulator) */
+    gap: 20px;               /* Adds space between header and emulator */
+}
+
+.emulator-placeholder {
+    width: 885px;
+    height: 590px;
+    background: #00FF00;
+    border: 4px solid #475569;
+    border-radius: 12px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25),
+                0 5px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+/* Was .right-panel, styles for the info container */
+.left-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    grid-row: 1; /* This ensures this panel (info content) stays in the first row of the grid */
+    padding-right: 4px;
+    overflow: hidden; 
+}
+
+.main-header-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0; /* No horizontal padding, relies on width and internal spacing */
+    /* border-bottom: 1px solid #374151; */ /* Optional: if you want a separator */
+    width: 885px; /* Match emulator width for alignment and consistent look */
+}
+
+.main-title {
+    font-size: 26px; /* Slightly reduced for balance */
+    font-weight: 700;
+    color: #e2e8f0;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+}
+
+.summary-countdown {
+    font-size: 12px;
+    color: #cbd5e1;
+    background-color: rgba(45, 55, 72, 0.6); /* Slightly more transparent */
+    padding: 5px 10px;
+    border-radius: 14px;
+    border: 1px solid #374151;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    font-weight: 500;
+    white-space: nowrap; /* Prevent wrapping */
+}
+.summary-countdown #turns-left-display { font-weight: 600; color: #f59e0b; }
+
+.top-row {
+    display: grid;
+    grid-template-columns: 55% 45%;
+    gap: 14px;
+    height: 120px;
+}
+
+.panel-card {
+    background: linear-gradient(145deg, #1e293b, #2d3748);
+    border-radius: 12px;
+    border: 1px solid #374151;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    padding: 14px;
+    position: relative;
+    overflow: hidden; /* Keep this for overall card shape */
+}
+
+.panel-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    pointer-events: none;
+    border-radius: 12px;
+}
+
+.badges-area {
+    background: linear-gradient(145deg, #1e293b, #2d3748);
+    border-radius: 12px;
+    border: 1px solid #374151;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.badges-header {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    text-align: center;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+}
+
+.badges-header::before {
+    content: '🏆';
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+}
+
+.badges-container {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+    flex: 1;
+    align-items: center;
+}
+
+.badge {
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    aspect-ratio: 1;
+    filter: grayscale(100%) brightness(0.4);
+    opacity: 0.5;
+    overflow: hidden;
+    width: 100%;
+    max-width: 50px;
+    max-height: 50px;
+}
+
+.badge img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.badge.obtained {
+    filter: grayscale(0%) brightness(1);
+    opacity: 1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.badge:hover {
+    transform: scale(1.1);
+}
+
+.navigation-area {
+    background: linear-gradient(145deg, #1e293b, #2d3748);
+    border-radius: 12px;
+    border: 1px solid #374151;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    /* overflow: hidden; */
+}
+
+.navigation-header {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    text-align: center;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+}
+
+.navigation-header::before {
+    content: '🧭';
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+}
+
+.navigation-content {
+    color: #e2e8f0;
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.goals-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    height: 95px; /* This height might be restrictive if goal text wraps a lot */
+}
+
+.goal-card {
+    background: linear-gradient(145deg, #1e293b, #2d3748);
+    border-radius: 12px;
+    border: 1px solid #374151;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    display: flex; /* Keep flex for vertical alignment of header and content */
+    flex-direction: column; /* Stack header and content */
+    transition: all 0.2s ease;
+    position: relative;
+    /* overflow: hidden; Let .goal-content handle its own overflow */
+}
+
+.goal-card:hover {
+    transform: translateY(-2px);
+    border-color: #22d3ee;
+    box-shadow: 0 6px 20px rgba(34, 211, 238, 0.2);
+}
+
+.goal-header {
+    color: white;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 10px;
+    text-align: center;
+    margin-bottom: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+.goal-card:nth-child(1) .goal-header { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.goal-card:nth-child(2) .goal-header { background: linear-gradient(135deg, #22d3ee, #0891b2); }
+.goal-card:nth-child(3) .goal-header { background: linear-gradient(135deg, #10b981, #047857); }
+
+.goal-content {
+    color: #e2e8f0;
+    font-size: 12px; /* Consider if this needs to be smaller if text is very long */
+    line-height: 1.4; /* Adjusted for better readability with wrapping */
+    text-align: left; /* Changed from center for better readability of wrapped text */
+    flex: 1; /* Allow content to take available space */
+    overflow-y: auto; /* Allow vertical scrolling if content exceeds card height */
+    padding: 2px 4px; /* Add some padding inside the content area */
+    font-weight: 400;
+    /* Removed flex alignment as text should flow naturally */
+}
+
+.commentary-section {
+    background: linear-gradient(145deg, #1e293b, #2d3748);
+    border: 1px solid #374151;
+    border-radius: 12px;
+    flex: 1; /* Allow it to take available vertical space in .right-panel */
+    /* min-height: 160px; /* Ensure a minimum height */
+    /* max-height: 300px; /* Example: Set a max-height if needed, or let flexbox handle it */
+    height: 0; /* This with flex:1 allows it to take remaining space */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden; /* Keep this on the main card */
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.commentary-header {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    padding: 10px 16px;
+    border-radius: 12px 12px 0 0;
+    font-weight: 600;
+    font-size: 14px;
+    margin: -14px -14px 12px -14px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+.commentary-header::before {
+    content: '🤖';
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+}
+
+.commentary-header::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: #22d3ee;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #22d3ee;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: translateY(-50%) scale(1); }
+    50% { opacity: 0.6; transform: translateY(-50%) scale(1.2); }
+}
+
+.commentary-text {
+    color: #e2e8f0;
+    line-height: 1.5;
+    font-size: 18px; 
+    padding: 0 4px;
+    flex: 1; /* Allow it to grow and fill space */
+    display: flex;
+    flex-direction: column; /* Stack items normally, newest at bottom due to JS append */
+    overflow-y: auto; /* Allow scrolling if content exceeds the fixed height of .commentary-section */
+    font-weight: 400;    
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    /* white-space: pre-wrap; Removed, as each item is a div */
+}
+
+.commentary-item {
+    padding: 4px 0; /* Add some spacing between commentary items */
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1); /* Optional separator */
+    white-space: pre-wrap; /* Respect newlines within a single commentary entry */    
+    word-break: break-word; /* Wrap long words */
+    color: #a0aec0; /* Slightly grayer for older items */
+    opacity: 0.8; /* Slightly less opaque for older items */
+    transition: color 0.3s ease, opacity 0.3s ease; /* Smooth transition */
+}
+
+.commentary-item.latest-commentary {
+    color: #e2e8f0; /* Brighter color for the latest item, matching .commentary-text */
+    opacity: 1; /* Full opacity */
+    font-weight: 500; /* Slightly bolder to make it stand out */
+}
+.commentary-text::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+}
+
+
+.bottom-section {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 920px 1fr;
+    gap: 16px;
+    height: 260px;
+}
+
+.info-header {
+    color: white;
+    padding: 10px 16px;
+    border-radius: 12px 12px 0 0;
+    font-weight: 600;
+    font-size: 14px;
+    margin: -14px -14px 12px -14px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+.party-section {
+    position: relative;
+    max-height: 260px;
+    display: flex; /* Added for flex structure */
+    flex-direction: column; /* Stack header and content */
+}
+
+.party-section .info-header { background: linear-gradient(135deg, #10b981, #047857); }
+.party-section .info-header::before {
+    content: '👥';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+}
+
+.party-pokemon {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    /* height: calc(100% - 48px); Removed fixed height to allow cards to grow if needed */
+    flex-grow: 1; /* Allow party-pokemon area to grow */
+    padding-right: 4px;
+    overflow-y: auto; /* If cards become too tall collectively */
+}
+
+.pokemon-card {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 8px;
+    padding: 8px;
+    transition: all 0.2s ease;
+    position: relative;
+    min-height: 80px; /* Keep min-height */
+    /* max-height: 90px; Removed max-height to allow wrapping */
+    overflow: hidden; /* Card itself can hide overflow if content is too big after wrapping */
+    display: flex; /* For internal alignment */
+    flex-direction: column; /* Stack name, level, hp */
+}
+
+.pokemon-card:hover {
+    transform: translateY(-1px);
+    border-color: #10b981;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.pokemon-card.fainted {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(185, 28, 28, 0.1));
+    border-color: rgba(239, 68, 68, 0.4);
+    opacity: 0.8;
+}
+
+.pokemon-name {
+    font-weight: 600;
+    color: #10b981;
+    margin-bottom: 2px;
+    font-size: 14px;
+    white-space: normal; /* Allow wrapping */
+    word-break: break-word; /* Break long words */
+    line-height: 1.2; /* Adjust line height for wrapped names */
+}
+
+.pokemon-card.fainted .pokemon-name { color: #ef4444; }
+.pokemon-level {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.pokemon-hp-container { margin-bottom: 2px; flex-shrink: 0; }
+.pokemon-hp-text {
+    font-size: 9px;
+    color: #94a3b8;
+    margin-bottom: 2px;
+    font-weight: 500;
+}
+
+.pokemon-hp-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+}
+
+.pokemon-hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    transition: width 0.3s ease;
+    border-radius: 2px;
+}
+.pokemon-hp-fill.hp-yellow { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.pokemon-hp-fill.hp-red { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+.fainted-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(239, 68, 68, 0.95);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.inventory-sections {
+    position: relative;
+    max-height: 260px;
+    background: linear-gradient(145deg, #1e293b, #2d3748);
+    border-radius: 12px;
+    border: 1px solid #374151;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    padding: 14px;
+    overflow: hidden; /* Keep for main container */
+    display: flex; /* Added */
+    flex-direction: column; /* Added */
+}
+
+.inventory-sections .info-header { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.inventory-sections .info-header::before {
+    content: '🎒';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+}
+
+.money-display {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+    z-index: 10;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.inventory-container {
+    /* height: calc(100% - 48px); Removed fixed height */
+    flex-grow: 1; /* Allow container to grow */
+    overflow: hidden; /* Changed from auto to hidden due to custom scrolling items */
+    padding-right: 0; /* Animation handles content movement */
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    grid-template-rows: 1fr; /* Ensure sections fill height */
+}
+
+.inventory-section {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: 100%;
+    min-height: 120px;
+    background: rgba(15, 23, 42, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    overflow: hidden; /* Each section hides its own overflow */
+}
+
+.inventory-section::before, .inventory-section::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 20px;
+    pointer-events: none;
+    z-index: 2;
+}
+.inventory-section::before {
+    top: 28px; /* Adjusted for category header */
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.9), transparent);
+}
+.inventory-section::after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.9), transparent);
+}
+
+.inventory-category {
+    color: #22d3ee;
+    font-weight: 700;
+    margin: 0;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid #22d3ee;
+    padding: 8px 8px 3px 8px;
+    position: sticky; /* Keeps category header visible during item scroll within its wrapper */
+    top: 0;
+    background: rgba(15, 23, 42, 0.95);
+    z-index: 3;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.inventory-items-wrapper {
+    padding: 0 8px 10px 8px;
+    flex-grow: 1;
+    /* The animation is applied here by JS */
+    /* overflow: hidden; Let the animation handle showing/hiding items */
+}
+
+.inventory-section:hover .inventory-items-wrapper {
+    animation-play-state: paused;
+}
+
+.inventory-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    color: #e2e8f0;
+    font-size: 9px;
+    font-weight: 500;
+    line-height: 1.2;
+    /* white-space: nowrap; Removed to allow item names to wrap */
+}
+
+.item-name {
+    /* overflow: hidden; text-overflow: ellipsis; Removed for wrapping */
+    max-width: calc(100% - 30px); /* Ensure space for quantity, adjust as needed */
+    white-space: normal; /* Allow wrapping */
+    word-break: break-word; /* Break long words */
+}
+
+.empty-inventory {
+    color: #94a3b8;
+    font-size: 9px;
+    text-align: center;
+    padding: 20px 8px;
+    font-style: italic;
+}
+
+@keyframes scrollAllInventory {
+    0% { transform: translateY(0); }
+    10% { transform: translateY(0); }
+    45% { transform: translateY(-100%); }
+    55% { transform: translateY(-100%); }
+    90% { transform: translateY(0); }
+    100% { transform: translateY(0); }
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(148, 163, 184, 0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+.badge:focus, .goal-card:focus, .pokemon-card:focus {
+    outline: 2px solid #22d3ee;
+    outline-offset: 2px;
+}
