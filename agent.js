@@ -4,10 +4,7 @@ import { isInBattle } from "./gamestate/pokemonData.js"; // isInBattle is used
 import * as CONFIGS from "./CONFIGS.js";
 import { readAndClearFile } from "./readInputFile.js";
 import { getVisibleBackupMapStateJson } from "./gamestate/overworld/mapApi.js";
-import { areFieldControlsLocked } from "./gamestate/overworld/playerData.js"; // areFieldControlsLocked is used
-
-// Imports for refactored functions
-// getGameInfoText is used to prepare data for both LLM and overlay
+import { areFieldControlsLocked } from "./gamestate/overworld/playerData.js";
 import { getGameInfoText, saveHumanReadablePromptToFile } from "./llminteract/buildPrompt.js";
 import { processLLMResponse } from "./llminteract/processResponse.js";
 
@@ -140,8 +137,11 @@ async function summarizeHistory(historyToSummarize) {
         console.log("No history provided for summarization.");
         return null;
     }
+
     console.log(`--- Summarizing History (${historyToSummarize.length} messages) and saving gamestate ---`);
+
     await fetch(`http://localhost:5000/core/savestateslot?slot=8`, { method: "POST"});
+  
     try {
         const result = await genAI.models.generateContent({
             model: CONFIGS.GOOGLE_MODEL_NAME,
@@ -229,10 +229,11 @@ async function runGameLoop() {
                 { text: currentTwitchChat },
             ];
 
+            // Save the human-readable version of the prompt data
             await saveHumanReadablePromptToFile(
-                currentGameInfoObject, // Pass the object
+                currentGameInfoObject,
                 imageParts,
-                twitch_chat,
+                twitch_chat, // Pass the raw twitch_chat string for this turn
                 HUMAN_READABLE_PROMPT_FILE_PATH
             );
 
