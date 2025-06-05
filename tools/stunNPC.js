@@ -20,7 +20,7 @@ export async function stunNPC(npcId) {
         const flagsAddr = npcBaseAddr + CONSTANTS.OBJECT_EVENT_FLAGS_OFFSET;
 
         const currentFlags = await readUint32(flagsAddr);
-        const newFlags = currentFlags | (1 << CONSTANTS.OBJECT_EVENT_FROZEN_BIT); // Set the frozen bit
+        const newFlags = currentFlags ^ (1 << CONSTANTS.OBJECT_EVENT_FROZEN_BIT); // Set the frozen bit
 
         await writeUint32(flagsAddr, newFlags);
         // console.log(`NPC ${npcId} flags updated to ${newFlags.toString(16)} (frozen bit set).`);
