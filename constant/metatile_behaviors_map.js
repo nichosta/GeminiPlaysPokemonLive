@@ -301,10 +301,10 @@ export const WARP_METATILES = new Set([
 ])
 
 export const LEDGE_DIRECTIONS = new Map([
-    ["JUMP_EAST", "→"],
-    ["JUMP_WEST", "←"],
-    ["JUMP_NORTH", "↑"],
-    ["JUMP_SOUTH", "↓"]
+    ["JUMP_EAST", "➡️"],
+    ["JUMP_WEST", "⬅️"],
+    ["JUMP_NORTH", "⬆️"],
+    ["JUMP_SOUTH", "⬇️"]
 ]);
 
 export const WARP_DIRECTIONS = new Map([
