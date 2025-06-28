@@ -1,17 +1,16 @@
-// Imports from other files
-import { getGameImagesBase64, parseDataURI } from "./gamestate/emulatorInteraction/screenshot.js";
-import { isInBattle } from "./gamestate/pokemonData.js"; // isInBattle is used
 import * as CONFIGS from "./CONFIGS.js";
 import { readAndClearFile } from "./readInputFile.js";
+
+import { getGameImagesBase64, parseDataURI } from "./gamestate/emulatorInteraction/screenshot.js";
+import { isInBattle } from "./gamestate/pokemonData.js";
 import { getVisibleBackupMapStateJson } from "./gamestate/overworld/mapApi.js";
 import { areFieldControlsLocked } from "./gamestate/overworld/playerData.js";
+
 import { getGameInfoText, saveHumanReadablePromptToFile } from "./llminteract/buildPrompt.js";
 import { processLLMResponse } from "./llminteract/processResponse.js";
 
-// Import Google AI SDK
 import { GoogleGenAI } from "@google/genai";
 
-// Import Node.js file system module
 import { promises as fs } from 'fs';
 import path from 'path';
 import { WebSocketServer } from 'ws';
@@ -30,8 +29,8 @@ if (!GOOGLE_API_KEY) {
 // --- Google AI SDK Initialization ---
 const genAI = new GoogleGenAI({ apiKey: GOOGLE_API_KEY });
 
-// --- WebSocket Server Setup --- Added ---
-const WSS_PORT = 8080; // Port for the WebSocket server
+// --- WebSocket Server Setup ---
+const WSS_PORT = 8080;
 const wss = new WebSocketServer({ port: WSS_PORT });
 const clients = new Set();
 let lastOverlayData = {}; // Stores the most recent data for new connections or polling
@@ -66,23 +65,20 @@ wss.on('connection', (ws) => {
 function broadcastToOverlays(data) {
     const jsonData = JSON.stringify(data);
     clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) { // Check if client is ready
+        if (client.readyState === WebSocket.OPEN) {
             try {
                 client.send(jsonData);
             } catch (e) {
                 console.error("Error sending data to an overlay client:", e);
-                // Optionally remove client if send fails repeatedly
-                // clients.delete(client);
             }
         }
     });
 }
-// --- End WebSocket Server Setup ---
 
 // --- History Management ---
 // History format for Google AI SDK: Array of { role: "user" | "model", parts: [{ text?: string, inlineData?: { mimeType: string, data: string } }] }
 let googleHistory = []; // Holds the current conversation segment
-let summaryHistory = []; // Holds the summaries
+let summaryHistory = [];
 
 /**
  * @description Saves the current chat history to a JSON file.
@@ -177,6 +173,10 @@ function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * @description Main game loop that continuously interacts with the emulator, LLM, and overlay.
+ * @returns {Promise<void>}
+ */
 async function runGameLoop() {
     googleHistory = await loadHistoryFromFile(HISTORY_FILE_PATH, "Main");
     summaryHistory = await loadHistoryFromFile(SUMMARY_HISTORY_FILE_PATH, "Summary");
@@ -197,6 +197,8 @@ async function runGameLoop() {
             const currentGameInfoObject = await getGameInfoText(visibleMapState);
             const currentGameInfoString = JSON.stringify(currentGameInfoObject);
 
+            // Deciding whether to use the overlay with grid or not
+            // I'm honestly not sure if this helped or mattered in the end
             let inBattle = await isInBattle();
             let fieldControlsLocked = await areFieldControlsLocked();
             const { original: currentImageBase64URI, processed: currentImageBase64URIProcessed } = await getGameImagesBase64();
@@ -214,6 +216,7 @@ async function runGameLoop() {
                 continue;
             }
 
+            // Read in twitch chat
             let twitch_chat = await readAndClearFile("./twitch_chat.txt");
             if (twitch_chat === "" || twitch_chat === null) { // Modified to handle null from readAndClearFile
                 console.info("No content in Twitch chat file.");
@@ -233,10 +236,11 @@ async function runGameLoop() {
             await saveHumanReadablePromptToFile(
                 currentGameInfoObject,
                 imageParts,
-                twitch_chat, // Pass the raw twitch_chat string for this turn
+                twitch_chat,
                 HUMAN_READABLE_PROMPT_FILE_PATH
             );
 
+            // Perform summarizing if necessary
             if (turnCounter >= CONFIGS.HISTORY_LENGTH) {
                 console.log(`Turn limit (${CONFIGS.HISTORY_LENGTH}) reached. Attempting summarization...`);
                 if (googleHistory.length > 0) {
@@ -278,13 +282,12 @@ async function runGameLoop() {
             });
 
             let parsedResponse = {};
-            let toolExecutionText = "No tool call processed.";
+            let toolExecutionText = "No tool call processed."; // Defaults
             let pathValidationResult = { isValid: true, reason: "Validation not performed or path was empty." };
-
 
             if (!result) {
                 console.error("API Error: No response received from Google AI.");
-            } else if (result.promptFeedback && result.promptFeedback.blockReason) {
+            } else if (result.promptFeedback && result.promptFeedback.blockReason) { // I never got a safety rejection at any point
                 console.error(
                     `API Error: Prompt blocked. Reason: ${result.promptFeedback.blockReason}`
                 );
@@ -308,7 +311,6 @@ async function runGameLoop() {
                 const toolProcessingResult = await processLLMResponse(parsedResponse, visibleMapState);
                 toolExecutionText = toolProcessingResult.toolExecutionText; // toolExecutionText defined here
                 pathValidationResult = toolProcessingResult.pathValidationResult; // pathValidationResult defined here
-
 
                 googleHistory.push({
                     role: "model",
@@ -335,7 +337,7 @@ async function runGameLoop() {
                 await saveHistoryToFile(googleHistory, HISTORY_FILE_PATH);
             }
 
-            // --- Construct and broadcast data for overlay --- Modified ---
+            // --- Construct and broadcast data for overlay ---
             const turnsUntilSummaryValue = Math.max(0, CONFIGS.HISTORY_LENGTH - turnCounter);
             const overlayData = {
                 // visibleMapState already contains player_state, map_name, width, height, connections, etc.
@@ -351,13 +353,9 @@ async function runGameLoop() {
                 badges: currentGameInfoObject.badges || [],
                 money: typeof currentGameInfoObject.money === 'number' ? currentGameInfoObject.money : 0,
                 turnsUntilSummary: turnsUntilSummaryValue,
-                // You can add other fields if your overlay needs them, e.g.:
-                // mistakes: parsedResponse.mistakes || "N/A"
             };
             lastOverlayData = overlayData; // Update last known data
             broadcastToOverlays(overlayData);
-            // --- End overlay data ---
-
         } catch (error) {
             console.error("Error during game loop iteration:", error);
             await saveHistoryToFile(googleHistory, HISTORY_FILE_PATH);

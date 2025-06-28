@@ -23,6 +23,7 @@ export async function isPartyMenuOpen() {
 /**
  * Reads the current party menu slot ID.
  * 7 indicates either the menu is closed or the Exit button is selected
+ * Yes, it's inconsistent and sucks, I know it's disappointing.
  * @returns {Promise<number|null>} The current slot ID, or null if an error occurs.
  */
 export async function getPartyMenuSlotId() {

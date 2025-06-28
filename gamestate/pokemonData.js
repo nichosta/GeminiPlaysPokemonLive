@@ -69,17 +69,14 @@ function getPartyPokemonBaseAddress(slot) {
 
 /**
  * Gets the nickname of a Pokémon in the specified party slot.
- * NOTE: Requires a function to decode the game's character encoding.
- * This function returns the raw bytes as a Uint8Array.
  * @param {number} slot - The party slot index (0-5).
- * @returns {Promise<Uint8Array>} Raw bytes of the nickname (10 bytes).
+ * @returns {Promise<string>} The Pokémon's nickname.
  */
 async function getPokemonNickname(slot) {
     const baseAddr = getPartyPokemonBaseAddress(slot);
     const nicknameAddr = baseAddr + CONSTANTS.NICKNAME_OFFSET;
     const buffer = await readRange(nicknameAddr, 10);
     return decodeByteArrayToString(buffer);
-    // The string is terminated by 0xFF, remaining bytes padded with 0x00.[1]
 }
 
 /**
@@ -164,7 +161,7 @@ async function getPokemonSpDefense(slot) {
 
 /**
  * Gets the status condition bitmask of a Pokémon in the specified party slot.
- * Bits 0-2: Sleep turns | Bit 3: Poison | Bit 4: Burn | Bit 5: Freeze | Bit 6: Paralysis | Bit 7: Bad Poison (Toxic) [1]
+ * Bits 0-2: Sleep turns | Bit 3: Poison | Bit 4: Burn | Bit 5: Freeze | Bit 6: Paralysis | Bit 7: Bad Poison (Toxic)
  * @param {number} slot - The party slot index (0-5).
  * @returns {Promise<number>} The status condition bitmask (u32).
  */
@@ -175,6 +172,7 @@ async function getPokemonStatusCondition(slot) {
 
 /**
  * Gets the status condition name of a Pokémon based on the bitmask.
+ * Sleep turns are ignored, all sleep is treated the same.
  * @param {number} statusBitmask - The status condition bitmask (u32).
  * @returns {string} The status condition name (e.g., "POISON", "SLEEP"). NONE if no status.
  */
@@ -272,7 +270,6 @@ function unshuffleSubstructures(decryptedBuffer, pid) {
         }
     }
     return unshuffled;
-    // --- End of unshuffleSubstructures implementation ---
 }
 
 /**
@@ -282,7 +279,7 @@ function unshuffleSubstructures(decryptedBuffer, pid) {
  * @throws {Error} If the buffer is invalid.
  */
 function getSpeciesId(growthBuffer) {
-    if (!growthBuffer || growthBuffer.byteLength < 2) { // Need at least 2 bytes for u16
+    if (!growthBuffer || growthBuffer.byteLength < 2) {
         throw new Error("Invalid Growth buffer provided to getSpeciesId.");
     }
     const view = new DataView(growthBuffer);
@@ -307,7 +304,6 @@ export async function getPartyCount() {
             // Optimization: Check PID first. If PID is 0, the slot is usually empty.
             const pid = await readUint32(baseAddr + CONSTANTS.PID_OFFSET);
             if (pid === 0) {
-                // console.debug(`[getPartyCount] Slot ${count} has PID 0. Assuming empty.`);
                 break; // Found an empty slot
             }
 
@@ -334,8 +330,6 @@ export async function getPartyCount() {
             // Get the species ID from the Growth substructure
             const speciesId = getSpeciesId(substructures.G);
 
-            // console.debug(`[getPartyCount] Slot ${count}: PID=${pid}, SpeciesID=${speciesId}`);
-
             // Check if the species ID indicates an empty slot
             if (speciesId === CONSTANTS.SPECIES_NONE) {
                 // console.debug(`[getPartyCount] Slot ${count} has SpeciesID ${SPECIES_NONE}. Found end of party.`);
@@ -351,35 +345,36 @@ export async function getPartyCount() {
             break; // Stop counting if an error occurs reading/processing a slot
         }
     }
-    // console.log(`[getPartyCount] Calculated party count: ${count}`);
     return count; // Return the final count
 }
 
 /**
- * Gets the species name of a Pokémon in the specified party slot.
+ * Gets the held item ID from the Growth substructure ArrayBuffer.
  * @param {ArrayBuffer} growthBuffer - The 12-byte Growth substructure.
- * @returns {string} The Pokémon's species name.
+ * @returns {number} The held item ID.
  */
-function getSpecies(growthBuffer) {
-    const speciesId = getSpeciesId(growthBuffer);
-    return getSpeciesName(speciesId);
-}
-
-
-/** Gets Held Item ID from Growth substructure. */
-function getHeldItem(growthBuffer) { // Offset 2, u16 [2]
+function getHeldItem(growthBuffer) {
     const view = new DataView(growthBuffer);
     return view.getUint16(2, true);
 }
 
-/** Gets Experience Points from Growth substructure. */
-function getExperience(growthBuffer) { // Offset 4, u32 [2]
+/**
+ * Gets the experience points of a Pokémon from the Growth substructure ArrayBuffer.
+ * @param {ArrayBuffer} growthBuffer - The 12-byte Growth substructure.
+ * @returns {number} The experience points.
+ */
+function getExperience(growthBuffer) {
     const view = new DataView(growthBuffer);
     return view.getUint32(4, true);
 }
 
-/** Gets PP Bonuses bitfield from Growth substructure. */
-function getPPBonuses(growthBuffer) { // Offset 8, u8 [2]
+/**
+ * Gets the PP bonuses (PP Ups) for each move from the Growth substructure ArrayBuffer.
+ * Each move has 2 bits representing 0-3 PP Ups.
+ * @param {ArrayBuffer} growthBuffer - The 12-byte Growth substructure.
+ * @returns {number} An 8-bit integer where each pair of bits represents PP Ups for a move.
+ */
+function getPPBonuses(growthBuffer) {
     const view = new DataView(growthBuffer);
     return view.getUint8(8);
     // Each move gets 2 bits (0-3 PP Ups)
@@ -389,27 +384,49 @@ function getPPBonuses(growthBuffer) { // Offset 8, u8 [2]
     // Move 4: bits 6-7
 }
 
-/** Gets Friendship value from Growth substructure. */
-function getFriendship(growthBuffer) { // Offset 9, u8 [2]
+/**
+ * Gets the friendship value of a Pokémon from the Growth substructure ArrayBuffer.
+ * @param {ArrayBuffer} growthBuffer - The 12-byte Growth substructure.
+ * @returns {number} The friendship value.
+ */
+function getFriendship(growthBuffer) {
     const view = new DataView(growthBuffer);
     return view.getUint8(9);
 }
 
-/** Gets Move ID from Attacks substructure. */
+/**
+ * Gets a move ID from the Attacks substructure ArrayBuffer.
+ * @param {ArrayBuffer} attacksBuffer - The 12-byte Attacks substructure.
+ * @param {number} moveIndex - The index of the move (0-3).
+ * @returns {number} The move ID.
+ * @throws {Error} If the move index is invalid.
+ */
 function getMove(attacksBuffer, moveIndex) { // Offsets 0, 2, 4, 6 (u16) [2]
     if (moveIndex < 0 || moveIndex > 3) throw new Error("Invalid move index");
     const view = new DataView(attacksBuffer);
     return view.getUint16(moveIndex * 2, true);
 }
 
-/** Gets Current PP for a move from Attacks substructure. */
+/**
+ * Gets the current PP for a specific move from the Attacks substructure ArrayBuffer.
+ * @param {ArrayBuffer} attacksBuffer - The 12-byte Attacks substructure.
+ * @param {number} moveIndex - The index of the move (0-3).
+ * @returns {number} The current PP for the specified move.
+ * @throws {Error} If the move index is invalid.
+ */
 function getCurrentPP(attacksBuffer, moveIndex) { // Offsets 8, 9, 10, 11 (u8) [2]
     if (moveIndex < 0 || moveIndex > 3) throw new Error("Invalid move index");
     const view = new DataView(attacksBuffer);
     return view.getUint8(8 + moveIndex);
 }
 
-/** Gets an EV value from EVs & Condition substructure. */
+/**
+ * Gets an EV (Effort Value) from the EVs substructure ArrayBuffer.
+ * @param {ArrayBuffer} evsBuffer - The 12-byte EVs substructure.
+ * @param {number} statIndex - The index of the stat (0: HP, 1: Atk, 2: Def, 3: Spe, 4: SpA, 5: SpD).
+ * @returns {number} The EV for the specified stat.
+ * @throws {Error} If the stat index is invalid.
+ */
 function getEV(evsBuffer, statIndex) { // Offsets 0-5 (u8) [2]
     // 0: HP, 1: Atk, 2: Def, 3: Spe, 4: SpA, 5: SpD
     if (statIndex < 0 || statIndex > 5) throw new Error("Invalid EV stat index");
@@ -417,13 +434,24 @@ function getEV(evsBuffer, statIndex) { // Offsets 0-5 (u8) [2]
     return view.getUint8(statIndex);
 }
 
-/** Gets the raw IVs/Egg/Ability bitfield from Miscellaneous substructure. */
+/**
+ * Gets the IVs, Egg status, and Ability slot from the Misc substructure ArrayBuffer.
+ * This is a combined 32-bit field.
+ * @param {ArrayBuffer} miscBuffer - The 12-byte Misc substructure.
+ * @returns {number} The 32-bit integer containing IVs, Egg status, and Ability slot.
+ */
 function getIVsEggAbilityBitfield(miscBuffer) { // Offset 4, u32 [2]
     const view = new DataView(miscBuffer);
     return view.getUint32(4, true);
 }
 
-/** Extracts a specific IV from the IVs/Egg/Ability bitfield. */
+/**
+ * Gets an IV (Individual Value) from the combined IVs/Egg/Ability bitfield.
+ * @param {number} ivBitfield - The 32-bit integer containing IVs, Egg status, and Ability slot.
+ * @param {number} statIndex - The index of the stat (0: HP, 1: Atk, 2: Def, 3: Spe, 4: SpA, 5: SpD).
+ * @returns {number} The IV for the specified stat (0-31).
+ * @throws {Error} If the stat index is invalid.
+ */
 function getIV(ivBitfield, statIndex) { // Bits 0-29 (5 bits each) [2]
     // 0: HP, 1: Atk, 2: Def, 3: Spe, 4: SpA, 5: SpD
     if (statIndex < 0 || statIndex > 5) throw new Error("Invalid IV stat index");
@@ -431,24 +459,40 @@ function getIV(ivBitfield, statIndex) { // Bits 0-29 (5 bits each) [2]
     return (ivBitfield >> shift) & 0x1F; // Mask for 5 bits (0b11111)
 }
 
-/** Checks the Is Egg flag from the IVs/Egg/Ability bitfield. */
+/**
+ * Checks if a Pokémon is an egg.
+ * @param {number} ivBitfield - The 32-bit integer containing IVs, Egg status, and Ability slot.
+ * @returns {boolean} True if the Pokémon is an egg, false otherwise.
+ */
 function isEgg(ivBitfield) { // Bit 30 [2]
     return ((ivBitfield >> 30) & 1) === 1;
 }
 
-/** Gets the Ability slot flag from the IVs/Egg/Ability bitfield. */
+/**
+ * Gets the Ability slot (0 or 1) from the combined IVs/Egg/Ability bitfield.
+ * @param {number} ivBitfield - The 32-bit integer containing IVs, Egg status, and Ability slot.
+ * @returns {number} The Ability slot (0 for first ability, 1 for second ability).
+ */
 function getAbilitySlot(ivBitfield) { // Bit 31 [2]
     // 0 = first ability, 1 = second ability
     return (ivBitfield >> 31) & 1;
 }
 
-/** Gets Met Location from Miscellaneous substructure. */
+/**
+ * Gets the location where the Pokémon was met from the Misc substructure ArrayBuffer.
+ * @param {ArrayBuffer} miscBuffer - The 12-byte Misc substructure.
+ * @returns {number} The location ID where the Pokémon was met.
+ */
 function getMetLocation(miscBuffer) { // Offset 1, u8 [2]
     const view = new DataView(miscBuffer);
     return view.getUint8(1);
 }
 
-/** Gets Pokerus status byte from Miscellaneous substructure. */
+/**
+ * Gets the Pokerus status from the Misc substructure ArrayBuffer.
+ * @param {ArrayBuffer} miscBuffer - The 12-byte Misc substructure.
+ * @returns {number} The Pokerus status byte.
+ */
 function getPokerusStatus(miscBuffer) { // Offset 0, u8 [2]
     const view = new DataView(miscBuffer);
     return view.getUint8(0);
@@ -456,7 +500,12 @@ function getPokerusStatus(miscBuffer) { // Offset 0, u8 [2]
     // Lower 4 bits: Days remaining (1-4)
 }
 
-/** Gets Origins info bitfield from Miscellaneous substructure. */
+/**
+ * Gets the origins information (level met, game of origin, pokeball, OT gender)
+ * from the Misc substructure ArrayBuffer.
+ * @param {ArrayBuffer} miscBuffer - The 12-byte Misc substructure.
+ * @returns {number} The 16-bit integer containing origins information.
+ */
 function getOriginsInfo(miscBuffer) { // Offset 2, u16 [2]
     const view = new DataView(miscBuffer);
     return view.getUint16(2, true);
@@ -466,7 +515,11 @@ function getOriginsInfo(miscBuffer) { // Offset 2, u16 [2]
     // Bit 15: OT Gender (0=M, 1=F)
 }
 
-/** Gets Ribbons/Obedience bitfield from Miscellaneous substructure. */
+/**
+ * Gets the ribbons and obedience flag from the Misc substructure ArrayBuffer.
+ * @param {ArrayBuffer} miscBuffer - The 12-byte Misc substructure.
+ * @returns {number} The 32-bit integer containing ribbon data and obedience flag.
+ */
 function getRibbonsObedience(miscBuffer) { // Offset 8, u32 [2]
     const view = new DataView(miscBuffer);
     return view.getUint32(8, true);
@@ -529,9 +582,6 @@ async function getAbility(abilitySlot, speciesId) {
     }
 }
 
-
-// --- Main Function to Get Pokemon Data ---
-
 /**
  * Fetches, decrypts, unshuffles, and parses the core data for a Pokémon.
  * @param {number} slot - Party slot index (0-5).
@@ -559,7 +609,6 @@ export async function getPokemonData(slot) {
 
         const speciesId = getSpeciesId(substructures.G);
         if (speciesId === CONSTANTS.SPECIES_NONE) {
-            // console.debug(`[getPokemonData] Slot ${slot} confirmed empty (SPECIES_NONE). PID: ${pid}.`);
             return null; // Definitely an empty slot
         }
 
@@ -583,10 +632,10 @@ export async function getPokemonData(slot) {
             pid: pid,
             otid: otid,
             level: level,
-            species: getSpeciesName(speciesId), // Use direct speciesId
-            speciesId: speciesId, // Include speciesId
-            types: types, // Added
-            ability: abilityName, // Added
+            species: getSpeciesName(speciesId),
+            speciesId: speciesId,
+            types: types,
+            ability: abilityName,
             statusCondition: statusConditionName,
             currentHP: currentHP,
             maxHP: maxHP,
@@ -623,7 +672,7 @@ export async function getPokemonData(slot) {
                 spDefense: getIV(ivBitfield, 5)
             },
             isEgg: isEgg(ivBitfield),
-            abilitySlot: getAbilitySlot(ivBitfield), // 0 or 1
+            abilitySlot: getAbilitySlot(ivBitfield),
             metLocation: getMetLocation(substructures.M),
             pokerus: getPokerusStatus(substructures.M),
             originsInfo: getOriginsInfo(substructures.M),

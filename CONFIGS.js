@@ -1,10 +1,8 @@
-import { type } from "os";
-
 // Choose a Gemini model that supports multimodal input (image + text)
 export const GOOGLE_MODEL_NAME = "gemini-2.5-flash-preview-05-20";
 // export const GOOGLE_MODEL_NAME = "gemini-2.5-pro-preview-05-06";
 export const HISTORY_LENGTH = 30; // Keep the last X pairs of user/model messages
-export const LOOP_DELAY_MS = 5000; // Delay between loop iterations (e.g., 5 seconds) - ADJUST AS NEEDED!
+export const LOOP_DELAY_MS = 5000; // Delay between loop iterations (5 seconds)
 export const MAX_SUMMARIES = 30; // Maximum number of summary messages to keep in history
 
 // FRLG-specific gameplay information prompt
@@ -197,6 +195,8 @@ const PRESS_BUTTONS_ARGS_SCHEMA = {
 };
 
 // Schema definition for the arguments of the stunNPC function
+// Using this tool on a frozen NPC will unfreeze them. This is occasionally needed to fix game locks.
+// I am too lazy to fix the underlying issue sorry.
 const STUN_NPC_ARGS_SCHEMA = {
   type: "object",
   properties: {
@@ -231,14 +231,14 @@ const HOLD_BUTTONS_ARGS_SCHEMA = {
           },
           durationFrames: {
             type: "integer",
-            description: "The duration to hold the button in frames (game runs at 60 FPS). Note that values too low in a direction you are not facing may result in only turning around and not moving.",
-            minimum: 15, // Minimum hold time of 1 frame
+            description: "The duration to hold the button in frames (game runs at 60 FPS).",
+            minimum: 15, // Minimum hold time of 15 frames (this is to prevent only turning a direction without moving)
           },
         },
         required: ["buttonName", "durationFrames"],
       },
       minItems: 1,
-      maxItems: 7, // Arbitrary limit, can be adjusted. Consistent with pressButtons.
+      maxItems: 7,
     },
   },
   required: ["buttonsToHold"],
@@ -256,7 +256,12 @@ const STRUCTURED_OUTPUT_SCHEMA = {
     navigation: {
       type: "array",
       description: 
-        "Your navigation plan for the next turn if you are actionable in the overworld. Make use of the collision data to navigate around obstacles and reach your destination. Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid. Put [] here if this does not apply. This is as much for your benefit as for viewers'; having a long plan can help you save time by preventing moving in an unhelpful direction or ending up in a corner. Make use of this tool frequently!",
+        `Your navigation plan for the next turn if you are actionable in the overworld.
+        Make use of the collision data to navigate around obstacles and reach your destination.
+        Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid.
+        Put [] here if this does not apply. This is as much for your benefit as for viewers';
+        having a long plan can help you save time by preventing moving in an unhelpful direction or ending up in a corner.
+        Make use of this tool frequently!`,
       items: {
         type: "object",
           properties: {
@@ -271,28 +276,35 @@ const STRUCTURED_OUTPUT_SCHEMA = {
         minItems: 0,
         maxItems: 7,
       },
-    mistakes: {
+    mistakes: { // Critique replacement (adequate, but not perfect)
       type: "string",
       description:
-        "Errors and potential hallucinations that are leading to looping or impeding progress. Think long and hard about what might be stopping you! If you aren't stuck looping or failing to progress, put N/A here.",
+        `Errors and potential hallucinations that are leading to looping or impeding progress.
+        Think long and hard about what might be stopping you! If you aren't stuck looping or failing to progress, put N/A here.`,
     },
-    goalMidTerm: {
+    goalMidTerm: { // If you call this "long-term goal" it tends to converge to "Beat the Elite Four".
       type: "string",
       description:
-        "Your current mid-term goal. Should be the next major step in game progression, usually a major battle, HM, or Key Item. For example, 'Defeat [GYM LEADER] and obtain the [NEXT BADGE]', or 'Talk to [HM GIVER] to obtain the [NEXT HM].' After accomplishing this goal, output a short walkthrough for the next section of the game to help jog your memory, and use that to select the next goal.",
+        `Your current mid-term goal. Should be the next major step in game progression, usually a major battle, HM, or Key Item.
+        For example, 'Defeat [GYM LEADER] and obtain the [NEXT BADGE]', or 'Talk to [HM GIVER] to obtain the [NEXT HM].'
+        After accomplishing this goal, output a short walkthrough for the next section of the game to help jog your memory,
+        and use that to select the next goal.`,
     },
     goalShortTerm: {
-      type: "string",
+      type: `string`,
       description:
-        "Your current short-term goal. Should be something you expect to take 25-50 turns to complete. For example, 'Explore the west side of [CITY NAME] and make note of any warps', or 'Advance through [ROUTE NAME], defeating the [TRAINER TYPE] at the chokepoint.'",
+        `Your current short-term goal. Should be something you expect to take 25-50 turns to complete.
+        For example, 'Explore the west side of [CITY NAME] and make note of any warps',
+        or 'Advance through [ROUTE NAME], defeating the [TRAINER TYPE] at the chokepoint.'`,
     },
     goalImmediateTerm: {
-      type: "string",
+      type: `string`,
       description:
-        "Your current immediate goal. Should be something you expect to take 5-10 turns to complete. For example, 'Navigate around the blocked tiles to reach the Pokemon Center', or 'Continue moving east to transition to [NEXT MAP].'",
+        `Your current immediate goal. Should be something you expect to take 5-10 turns to complete.
+        For example, 'Navigate around the blocked tiles to reach the Pokemon Center', or 'Continue moving east to transition to [NEXT MAP].'`,
     },
     // Define the structure for the function call itself
-    functionCall: {
+    functionCall: { // Structured output parsing was always more consistent than using the API tool capabilities.
       type: "object",
       description: "Your tool call, to affect the state of the emulator.",
       properties: {
@@ -308,21 +320,26 @@ const STRUCTURED_OUTPUT_SCHEMA = {
       required: ["name", "args"],
     },
   },
-  required: ["commentary", "functionCall"],
+  required: ["commentary", "functionCall"], // Gemini almost never skips other parts, but it is allowed to 
 };
 
 // Generation configuration
 export const GENERATION_CONFIG = {
+  // Raising temperature usually broke tool calls; lowering it led to loops. At most I would slightly raise this.
   temperature: 1,
   topP: 0.9,
+  // I tried to not use the system prompt to convey information to benefit from prompt caching.
+  // If you are willing to spend more tokens adding game info to the system prompt would potentially be more consistent.
   systemInstruction: {
     parts: [{ text: SYSTEM_PROMPT_GAME_INFO }, { text: SYSTEM_PROMPT_MAIN }, { text: SYSTEM_PROMPT_RAM_DATA },  { text: SYSTEM_PROMPT_BATTLE_INSTRUCTIONS }],
   },
   thinkingConfig: {
-    // Doesn't work?
+    // When I was developing, this parameter didn't work.
+    // It now provides a thinking summary. Could still be interesting (and allow removing commentary)
     // includeThoughts: true,
 
     // Up this if the model seems stupid and you don't mind waiting a little longer
+    // It WILL use the tokens you give it (and those tokens are not cheap).
     thinkingBudget: 3000,
   },
   responseMimeType: "application/json",
@@ -336,10 +353,9 @@ export const SUMMARIZATION_CONFIG = {
     parts: [{ text: SYSTEM_PROMPT_SUMMARY}],
   },
   thinkingConfig: {
-    // Doesn't work
     // includeThoughts: true,
 
-    // Big budget for summarization
+    // Big budget for summarization (called rarely)
     thinkingBudget: 20000,
   },
 };

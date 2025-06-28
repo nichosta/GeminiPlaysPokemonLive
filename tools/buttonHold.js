@@ -1,6 +1,3 @@
-// Node.js module to send GBA button hold commands via HTTP POST.
-// Requires Node.js v18+ for the fetch API.
-
 // Target URL for the mGBA HTTP control endpoint for holding buttons.
 const TARGET_URL_HOLD = 'http://localhost:5000/mgba-http/button/hold';
 
@@ -56,15 +53,12 @@ async function sendButtonHoldCommand(buttonName, durationFrames) {
 
   const buttonToSend = API_BUTTON_CASING[lowerCaseButton];
 
-  // console.log(`Sending button hold: ${buttonToSend} for ${durationFrames} frames to ${TARGET_URL_HOLD}`);
-
   try {
     const response = await fetch(`${TARGET_URL_HOLD}?key=${encodeURIComponent(buttonToSend)}&duration=${durationFrames}`, {
       method: 'POST',
     });
 
     if (response.ok) {
-      // console.log(`Successfully sent "${buttonToSend}" hold command for ${durationFrames} frames. Status: ${response.status}`);
       return;
     } else {
       let errorBody = '';

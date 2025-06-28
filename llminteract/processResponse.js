@@ -1,4 +1,3 @@
-// Imports from other files
 import { pressButtons } from "../tools/buttonPress.js";
 import { stunNPC } from "../tools/stunNPC.js";
 import { holdButtons } from "../tools/buttonHold.js";
@@ -16,7 +15,7 @@ export async function processLLMResponse(llmResponse, currentMapState) {
 
     let pathValidationOutcome = { isValid: true, reason: "No navigation path proposed or validation not applicable." };
     const responseText = llmResponse?.commentary;
-    const navigationPath = llmResponse?.navigation; // Array of {x,y}
+    const navigationPath = llmResponse?.navigation;
     const mistakeText = llmResponse?.mistakes;
     const longTermGoal = llmResponse?.goalMidTerm;
     const midTermGoal = llmResponse?.goalShortTerm;

@@ -1,8 +1,6 @@
 // Base URL for the memory writing API
 const API_BASE_URL = "http://localhost:5000/core";
 
-// --- Helper Functions for Memory Writing ---
-
 /**
  * Writes an 8-bit unsigned integer (u8) to a given memory address.
  * @param {number} address - The memory address (hexadecimal).
@@ -16,7 +14,6 @@ export async function writeUint8(address, value) {
     if (!response.ok) {
         throw new Error(`HTTP error writing u8! Status: ${response.status} URL: ${url}`);
     }
-    // No return value needed for write operations, just check for success.
 }
 
 /**

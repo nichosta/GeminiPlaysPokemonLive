@@ -1,6 +1,10 @@
 import * as CONSTANTS from '../constant/constants.js';
 import { readUint8, readUint16, readUint32, readRange } from '../emulatorInteraction/httpMemoryReader.js';
 
+// Was a work in progress at the time I stopped working on this project.
+// Potentially a way to figure out what menu is open at any given time, but appears inconsistent.
+// I did not get to adding maps for tasks; you will have to refer to the linker maps
+
 /**
  * Finds the TaskFunc pointer of the first active task in the task array.
  * This is equivalent to the C function `FindFirstActiveTask`.
@@ -45,12 +49,3 @@ export async function findFirstActiveTask() {
         return 0; // Return 0 indicating not found on error
     }
 }
-
-// Run taskStatus as a test
-// async function testFindFirstActiveTask() {
-//     console.log("Testing findFirstActiveTask...");
-//     const taskPtr = await findFirstActiveTask();
-//     console.log(`Result: ${taskPtr.toString(16)}`);
-// }
-
-// testFindFirstActiveTask();

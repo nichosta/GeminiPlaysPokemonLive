@@ -1,8 +1,7 @@
 import { promises as fs } from 'fs';
-import path from 'path';
-// Imports from other files
+
 import { getPartyCount, getPokemonData, isInBattle } from "../gamestate/pokemonData.js";
-import { getBagContents, prettyPrintBag, getPlayerMoney } from "../gamestate/bagData.js";
+import { getBagContents, getPlayerMoney } from "../gamestate/bagData.js";
 import { getPartyMenuSlotId } from "../gamestate/menustate/partyMenu.js";
 import { areFieldControlsLocked, getPlayerBadges, getPlayerElevation, isPlayerBiking, isPlayerDiving, isPlayerSurfing } from "../gamestate/overworld/playerData.js";
 
@@ -20,12 +19,13 @@ function formatPokemonInfo(pokemon) {
     const pMoves = Array.isArray(pokemon.moves) ? pokemon.moves : [];
     const pPP = Array.isArray(pokemon.currentPP) ? pokemon.currentPP : [];
 
-    for (let i = 0; i < 4; i++) { // Always create 4 move slots
+    for (let i = 0; i < 4; i++) {
         movesData.push({
             name: pMoves[i] || null,
             pp: pPP[i] !== undefined ? pPP[i] : null,
         });
     }
+    // Sadly, getting max PP is a more involved process.
 
     return {
         nickname: pokemon.nickname || null,
@@ -54,7 +54,7 @@ export async function getGameInfoText(visibleMapState) {
     gameInfoObject.inBattle = inBattleStatus;
 
     const partyMenuSlot = await getPartyMenuSlotId();
-    if (partyMenuSlot !== 7) { // Assuming 7 means not in party menu or relevant selection
+    if (partyMenuSlot !== 7) {
         const pokemonInSlotData = await getPokemonData(partyMenuSlot);
         gameInfoObject.partyMenuSlotInfo = {
             slot: partyMenuSlot,
@@ -88,10 +88,10 @@ export async function getGameInfoText(visibleMapState) {
     }
 
     gameInfoObject.money = await getPlayerMoney();
-    gameInfoObject.bag = await getBagContents(); // Using raw bag contents for JSON
+    gameInfoObject.bag = await getBagContents();
 
     const badgesObtained = await getPlayerBadges();
-    gameInfoObject.badges = badgesObtained || []; // Ensure it's an array, empty if no badges
+    gameInfoObject.badges = badgesObtained || [];
 
     return gameInfoObject; // Return the object itself, not the stringified version
 }
@@ -147,7 +147,6 @@ export async function saveHumanReadablePromptToFile(gameInfoObject, imageParts, 
         humanReadableString += twitchChatContent + "\n\n";
 
         await fs.writeFile(filePath, humanReadableString, 'utf8');
-        // console.log(`Human-readable prompt saved to ${filePath}`);
     } catch (error) {
         console.error(`Error saving human-readable prompt to ${filePath}:`, error);
     }

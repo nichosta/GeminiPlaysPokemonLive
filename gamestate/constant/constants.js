@@ -57,26 +57,26 @@ export const IN_BATTLE_BIT_ADDR = selectedConstants.IN_BATTLE_BIT_ADDR;
 export const IN_BATTLE_BITMASK = 0x02; // Bitmask to determine if the player is in battle
 
 export const PARTY_BASE_ADDR = selectedConstants.PARTY_BASE_ADDR;
-export const POKEMON_DATA_SIZE = 100; // Size of each Pokémon structure [1]
+export const POKEMON_DATA_SIZE = 100; // Size of each Pokémon structure
 // Offsets within the 100-byte Pokémon structure (Unencrypted part)
 
 // --- Constants for Pokémon Data Structure ---
-export const PID_OFFSET = 0x00; // u32 [1]
-export const OTID_OFFSET = 0x04; // u32 [1]
+export const PID_OFFSET = 0x00; // u32
+export const OTID_OFFSET = 0x04; // u32
 // Encrypted Block Offset (Contains Species, Item, Moves, EVs, IVs etc.)
-export const ENCRYPTED_BLOCK_OFFSET = 0x20; // 48 bytes [1]
+export const ENCRYPTED_BLOCK_OFFSET = 0x20;
 export const ENCRYPTED_BLOCK_SIZE = 48;
 export const SUBSTRUCTURE_SIZE = 12;
-export const NICKNAME_OFFSET = 0x08; // 10 bytes [1]
-export const STATUS_OFFSET = 0x50; // 4 bytes (u32) [1]
-export const LEVEL_OFFSET = 0x54; // 1 byte (u8) [1]
-export const CURRENT_HP_OFFSET = 0x56; // 2 bytes (u16) [1]
-export const MAX_HP_OFFSET = 0x58; // 2 bytes (u16) [1]
-export const ATTACK_OFFSET = 0x5a; // 2 bytes (u16) [1]
-export const DEFENSE_OFFSET = 0x5c; // 2 bytes (u16) [1]
-export const SPEED_OFFSET = 0x5e; // 2 bytes (u16) [1]
-export const SP_ATTACK_OFFSET = 0x60; // 2 bytes (u16) [1]
-export const SP_DEFENSE_OFFSET = 0x62; // 2 bytes (u16) [1]
+export const NICKNAME_OFFSET = 0x08; // 10 bytes
+export const STATUS_OFFSET = 0x50; // 4 bytes (u32)
+export const LEVEL_OFFSET = 0x54; // 1 byte (u8)
+export const CURRENT_HP_OFFSET = 0x56; // 2 bytes (u16)
+export const MAX_HP_OFFSET = 0x58; // 2 bytes (u16)
+export const ATTACK_OFFSET = 0x5a; // 2 bytes (u16)
+export const DEFENSE_OFFSET = 0x5c; // 2 bytes (u16)
+export const SPEED_OFFSET = 0x5e; // 2 bytes (u16)
+export const SP_ATTACK_OFFSET = 0x60; // 2 bytes (u16)
+export const SP_DEFENSE_OFFSET = 0x62; // 2 bytes (u16)
 export const PARTY_SIZE = 6; // Maximum number of Pokémon in a party
 export const SPECIES_NONE = 0; // The species ID representing an empty slot
 
@@ -241,7 +241,7 @@ export const MAP_NUMBER_ADDR = selectedConstants.MAP_NUMBER_ADDR;
 
 // Player State
 export const FACING_DIRECTION_ADDR = selectedConstants.FACING_DIRECTION_ADDR;
-export const FACING_DIRECTION_MASK = 0x07; // Mask to isolate the 4 lowest bits for direction
+export const FACING_DIRECTION_MASK = 0x07;
 export const FACING_DIRECTION_MAP = new Map([
   [1, "down"],
   [2, "up"],

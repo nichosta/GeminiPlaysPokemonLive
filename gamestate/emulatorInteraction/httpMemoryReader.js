@@ -1,8 +1,6 @@
 // Base URL for the memory reading API
 const API_BASE_URL = "http://localhost:5000/core";
-const READ_RANGE_CHUNK_SIZE = 1024; // Define the chunk size
-
-// --- Helper Functions for Memory Reading ---
+const READ_RANGE_CHUNK_SIZE = 1024; // Max chunk size when reading ranges
 
 /**
  * Reads an 8-bit unsigned integer (u8) from a given memory address.
@@ -59,10 +57,8 @@ export async function readRange(address, length) {
     while (bytesRead < length) {
         const currentAddress = address + bytesRead;
         const bytesToRead = Math.min(READ_RANGE_CHUNK_SIZE, length - bytesRead);
-        // Assuming the endpoint still uses /readrange but now returns a JSON string
         const url = `${API_BASE_URL}/readRange?address=0x${currentAddress.toString(16)}&length=${bytesToRead}`;
 
-        // console.debug(`[readRange] Fetching chunk: ${url}`);
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -84,15 +80,13 @@ export async function readRange(address, length) {
                 throw new Error(`[readRange] Response for chunk URL ${url} was not a valid JSON array.`);
             }
 
-            // console.debug(`[readRange] Received and parsed ${chunkBytes.length} bytes for chunk from ${url}.`);
-
             // Append the received bytes to the main array
             allBytes.push(...chunkBytes);
 
             // Update bytesRead based on the length of the parsed array
             bytesRead += chunkBytes.length;
 
-            // Optional: Check if the server returned the expected number of bytes in the array
+            // Check if the server returned the expected number of bytes in the array
             if (chunkBytes.length !== bytesToRead && bytesRead < length) {
                  console.warn(`[readRange] Received ${chunkBytes.length} bytes in array, expected ${bytesToRead} for chunk at ${currentAddress.toString(16)}. Total read: ${bytesRead}/${length}`);
                  // Decide if you want to stop or continue based on this warning
@@ -105,6 +99,5 @@ export async function readRange(address, length) {
         }
     }
 
-    // console.debug(`[readRange] Total bytes received: ${allBytes.length}.`);
     return allBytes;
 }

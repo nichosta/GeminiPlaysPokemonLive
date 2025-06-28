@@ -1,6 +1,3 @@
-// Node.js module to send a GBA button tap command via HTTP POST.
-// Requires Node.js v18+ for the fetch API.
-
 // Target URL for the mGBA HTTP control endpoint.
 const TARGET_URL = 'http://localhost:5000/mgba-http/button/tap';
 
@@ -46,19 +43,14 @@ async function sendButtonTap(buttonName) {
   // Get the correctly cased button name for the API.
   const buttonToSend = API_BUTTON_CASING[lowerCaseButton];
 
-  // console.log(`Sending button tap: ${buttonToSend} to ${TARGET_URL}`);
-
   try {
     // Send the POST request with the button name as a query parameter.
     const response = await fetch(`${TARGET_URL}?key=${encodeURIComponent(buttonToSend)}`, {
       method: 'POST',
-      // No body or Content-Type needed if sending via query parameter
     });
 
     // Check if the request was successful (HTTP status 2xx).
     if (response.ok) {
-      // console.log(`Successfully sent "${buttonToSend}" tap command. Status: ${response.status}`);
-      // The promise resolves successfully here.
       return; // Indicate success
     } else {
       // Handle HTTP errors (e.g., 404 Not Found, 400 Bad Request, 500 Internal Server Error).
