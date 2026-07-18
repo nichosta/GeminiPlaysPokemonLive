@@ -1,0 +1,348 @@
+{
+  "game": "FRLG",
+  "scope": "pre-Brock (Pallet Town through Pewter City gym)",
+  "source": {
+    "repo": "https://github.com/pret/pokefirered",
+    "commit": "df4449a27cd78dd747ce269e47d3ab4a0149d8f4"
+  },
+  "generatedAt": "2026-07-18T18:14:58.262Z",
+  "behaviorTable": "metatile_behaviors.json",
+  "gridFormat": {
+    "order": "row-major, index = y*width + x",
+    "collision": "0 = passable, non-zero = blocked",
+    "elevation": "0-15; 0 and 15 are special (transition/bridge)",
+    "behaviorIds": "resolve names via metatile_behaviors.json"
+  },
+  "maps": [
+    {
+      "id": "MAP_PALLET_TOWN",
+      "name": "PalletTown",
+      "group": 3,
+      "num": 0,
+      "width": 24,
+      "height": 20,
+      "warps": 3,
+      "connections": 2,
+      "file": "maps/PalletTown.json"
+    },
+    {
+      "id": "MAP_PALLET_TOWN_PLAYERS_HOUSE_1F",
+      "name": "PalletTown_PlayersHouse_1F",
+      "group": 4,
+      "num": 0,
+      "width": 13,
+      "height": 10,
+      "warps": 4,
+      "connections": 0,
+      "file": "maps/PalletTown_PlayersHouse_1F.json"
+    },
+    {
+      "id": "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F",
+      "name": "PalletTown_PlayersHouse_2F",
+      "group": 4,
+      "num": 1,
+      "width": 12,
+      "height": 9,
+      "warps": 1,
+      "connections": 0,
+      "file": "maps/PalletTown_PlayersHouse_2F.json"
+    },
+    {
+      "id": "MAP_PALLET_TOWN_RIVALS_HOUSE",
+      "name": "PalletTown_RivalsHouse",
+      "group": 4,
+      "num": 2,
+      "width": 13,
+      "height": 10,
+      "warps": 3,
+      "connections": 0,
+      "file": "maps/PalletTown_RivalsHouse.json"
+    },
+    {
+      "id": "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB",
+      "name": "PalletTown_ProfessorOaksLab",
+      "group": 4,
+      "num": 3,
+      "width": 13,
+      "height": 14,
+      "warps": 3,
+      "connections": 0,
+      "file": "maps/PalletTown_ProfessorOaksLab.json"
+    },
+    {
+      "id": "MAP_ROUTE1",
+      "name": "Route1",
+      "group": 3,
+      "num": 19,
+      "width": 24,
+      "height": 40,
+      "warps": 0,
+      "connections": 2,
+      "file": "maps/Route1.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY",
+      "name": "ViridianCity",
+      "group": 3,
+      "num": 1,
+      "width": 48,
+      "height": 40,
+      "warps": 5,
+      "connections": 3,
+      "file": "maps/ViridianCity.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_HOUSE",
+      "name": "ViridianCity_House",
+      "group": 5,
+      "num": 0,
+      "width": 11,
+      "height": 9,
+      "warps": 3,
+      "connections": 0,
+      "file": "maps/ViridianCity_House.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_GYM",
+      "name": "ViridianCity_Gym",
+      "group": 5,
+      "num": 1,
+      "width": 20,
+      "height": 24,
+      "warps": 3,
+      "connections": 0,
+      "file": "maps/ViridianCity_Gym.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_SCHOOL",
+      "name": "ViridianCity_School",
+      "group": 5,
+      "num": 2,
+      "width": 10,
+      "height": 9,
+      "warps": 3,
+      "connections": 0,
+      "file": "maps/ViridianCity_School.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_MART",
+      "name": "ViridianCity_Mart",
+      "group": 5,
+      "num": 3,
+      "width": 11,
+      "height": 9,
+      "warps": 3,
+      "connections": 0,
+      "file": "maps/ViridianCity_Mart.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F",
+      "name": "ViridianCity_PokemonCenter_1F",
+      "group": 5,
+      "num": 4,
+      "width": 15,
+      "height": 10,
+      "warps": 4,
+      "connections": 0,
+      "file": "maps/ViridianCity_PokemonCenter_1F.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_2F",
+      "name": "ViridianCity_PokemonCenter_2F",
+      "group": 5,
+      "num": 5,
+      "width": 15,
+      "height": 10,
+      "warps": 3,
+      "connections": 0,
+      "file": "maps/ViridianCity_PokemonCenter_2F.json"
+    },
+    {
+      "id": "MAP_ROUTE22",
+      "name": "Route22",
+      "group": 3,
+      "num": 41,
+      "width": 48,
+      "height": 24,
+      "warps": 2,
+      "connections": 2,
+      "file": "maps/Route22.json"
+    },
+    {
+      "id": "MAP_ROUTE22_NORTH_ENTRANCE",
+      "name": "Route22_NorthEntrance",
+      "group": 28,
+      "num": 0,
+      "width": 15,
+      "height": 12,
+      "warps": 4,
+      "connections": 0,
+      "file": "maps/Route22_NorthEntrance.json"
+    },
+    {
+      "id": "MAP_ROUTE2",
+      "name": "Route2",
+      "group": 3,
+      "num": 20,
+      "width": 24,
+      "height": 80,
+      "warps": 10,
+      "connections": 2,
+      "file": "maps/Route2.json"
+    },
+    {
+      "id": "MAP_ROUTE2_VIRIDIAN_FOREST_SOUTH_ENTRANCE",
+      "name": "Route2_ViridianForest_SouthEntrance",
+      "group": 15,
+      "num": 0,
+      "width": 15,
+      "height": 12,
+      "warps": 4,
+      "connections": 0,
+      "file": "maps/Route2_ViridianForest_SouthEntrance.json"
+    },
+    {
+      "id": "MAP_ROUTE2_VIRIDIAN_FOREST_NORTH_ENTRANCE",
+      "name": "Route2_ViridianForest_NorthEntrance",
+      "group": 15,
+      "num": 3,
+      "width": 15,
+      "height": 12,
+      "warps": 4,
+      "connections": 0,
+      "file": "maps/Route2_ViridianForest_NorthEntrance.json"
+    },
+    {
+      "id": "MAP_ROUTE2_HOUSE",
+      "name": "Route2_House",
+      "group": 15,
+      "num": 1,
+      "width": 11,
+      "height": 9,
+      "warps": 3,
+      "connections": 0,
+      "file": "maps/Route2_House.json"
+    },
+    {
+      "id": "MAP_ROUTE2_EAST_BUILDING",
+      "name": "Route2_EastBuilding",
+      "group": 15,
+      "num": 2,
+      "width": 15,
+      "height": 12,
+      "warps": 4,
+      "connections": 0,
+      "file": "maps/Route2_EastBuilding.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_FOREST",
+      "name": "ViridianForest",
+      "group": 1,
+      "num": 0,
+      "width": 54,
+      "height": 69,
+      "warps": 6,
+      "connections": 0,
+      "file": "maps/ViridianForest.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY",
+      "name": "PewterCity",
+      "group": 3,
+      "num": 2,
+      "width": 48,
+      "height": 40,
+      "warps": 7,
+      "connections": 2,
+      "file": "maps/PewterCity.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_MUSEUM_1F",
+      "name": "PewterCity_Museum_1F",
+      "group": 6,
+      "num": 0,
+      "width": 28,
+      "height": 11,
+      "warps": 6,
+      "connections": 0,
+      "file": "maps/PewterCity_Museum_1F.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_MUSEUM_2F",
+      "name": "PewterCity_Museum_2F",
+      "group": 6,
+      "num": 1,
+      "width": 19,
+      "height": 10,
+      "warps": 1,
+      "connections": 0,
+      "file": "maps/PewterCity_Museum_2F.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_GYM",
+      "name": "PewterCity_Gym",
+      "group": 6,
+      "num": 2,
+      "width": 13,
+      "height": 16,
+      "warps": 3,
+      "connections": 0,
+      "file": "maps/PewterCity_Gym.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_MART",
+      "name": "PewterCity_Mart",
+      "group": 6,
+      "num": 3,
+      "width": 11,
+      "height": 9,
+      "warps": 3,
+      "connections": 0,
+      "file": "maps/PewterCity_Mart.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_HOUSE1",
+      "name": "PewterCity_House1",
+      "group": 6,
+      "num": 4,
+      "width": 11,
+      "height": 9,
+      "warps": 3,
+      "connections": 0,
+      "file": "maps/PewterCity_House1.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_HOUSE2",
+      "name": "PewterCity_House2",
+      "group": 6,
+      "num": 7,
+      "width": 11,
+      "height": 9,
+      "warps": 3,
+      "connections": 0,
+      "file": "maps/PewterCity_House2.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_POKEMON_CENTER_1F",
+      "name": "PewterCity_PokemonCenter_1F",
+      "group": 6,
+      "num": 5,
+      "width": 15,
+      "height": 10,
+      "warps": 4,
+      "connections": 0,
+      "file": "maps/PewterCity_PokemonCenter_1F.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_POKEMON_CENTER_2F",
+      "name": "PewterCity_PokemonCenter_2F",
+      "group": 6,
+      "num": 6,
+      "width": 15,
+      "height": 10,
+      "warps": 3,
+      "connections": 0,
+      "file": "maps/PewterCity_PokemonCenter_2F.json"
+    }
+  ]
+}
