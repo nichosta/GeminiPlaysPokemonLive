@@ -258,9 +258,54 @@ Scope: everything up to and including the Pewter City gym.
   `toOpenAITools()`/`TOOLS_BY_NAME` for D2, `makeOutcome`/`STOP_REASON` for D3);
   prose spec + change policy in [`docs/tool-interface.md`](docs/tool-interface.md).
   Frozen — C implements against it, D3 logs in its shape, E3 traces depend on it.
-- **D2. Rewire the agent loop** — event-driven (model called only on macro
-  completion or interrupt), drop the Cerebras vision call, pure-text state
-  prompt.
+- **D2. Rewire the agent loop** — ✅ **DONE.** [`agent.js`](agent.js) is now
+  event-driven: the model is called only on a macro boundary (after a tool
+  returns its outcome envelope), never on a fixed timer. Each iteration
+  snapshots via B1's `getState()`, renders that snapshot to pure text via the
+  new [`llminteract/buildStatePrompt.js`](llminteract/buildStatePrompt.js),
+  calls OpenRouter with D1's frozen tools (`toOpenAITools()`), parses the native
+  `tool_calls[0]` the SDK returns (the pre-D2 JSON `functionCall` blob is gone),
+  dispatches `{name, args}` via the new
+  [`llminteract/toolDispatcher.js`](llminteract/toolDispatcher.js), and feeds
+  the outcome back as a `tool` message the model reads next turn. The Cerebras
+  vision call is **dropped entirely** — no `describeScreenshot`, no
+  `getGameImagesBase64`/`parseDataURI`, no `CEREBRAS_API_KEY`; the model reads
+  ONLY the text state prompt (RAM location/flags/party/bag + the on-screen
+  collision grid, warps, NPCs). The dispatcher wires the tools whose
+  implementations have landed (per the critical path): `goto` → C2's `gotoLive`,
+  `press` → B3's `executeQueue` polled for interrupts per press,
+  `set_battle_strategy` → records the standing policy in memory (C3 pending —
+  the stored policy is what C3 will consume). `heal`/`use_item` return
+  `precondition_failed` until C4's menu macros land. `press`'s interrupt policy
+  is deliberately narrower than `goto`'s: because the model is manually driving
+  the escape hatch, a dialog/script lock or open menu is *expected*, not an
+  interrupt — it only stops early on battle-start / warp / hp-low (pressing A
+  through dialog is the whole point). `CONFIGS.js` was rewritten to match: the
+  main prompt reframed around the five high-level tools + the event-driven
+  model, the RAM-data prompt dropped all screenshot-description references, the
+  JSON output-format section was replaced with a tool-calling contract (no
+  `response_format` — incompatible with tools on most providers), and the
+  Cerebras vision prompt/model were removed. History save/load was relaxed to
+  accept OpenAI tool-call message shapes (an assistant turn may carry
+  `tool_calls` with null content, followed by a `tool`-role result) and rejects
+  the pre-D2 history on disk as incompatible (starts fresh); tool-call pairs are
+  flattened to text for the summarization call so that request stays
+  provider-portable. Offline tests: [`toolDispatcher.test.js`](llminteract/toolDispatcher.test.js)
+  (25 checks — unknown tool, goto delegation + arg pass-through + missing-args,
+  press execution / button-enum validation / `max_steps` cap, the press
+  interrupt policy across all four stop branches incl. the dialog-lock opt-out,
+  `set_battle_strategy` storage + enum validation, heal/use_item stubs) and
+  [`buildStatePrompt.test.js`](llminteract/buildStatePrompt.test.js) (25 checks —
+  every snapshot section surfaces, read-errors reported inline, and no
+  screenshot/vision wording survives), all green. The dead-on-disk
+  `describeScreenshot.js` / `processResponse.js` are left in place rather than
+  deleted to keep the diff reviewable.
+    - *Note:* live end-to-end play against a running emulator (OpenRouter +
+      mGBA-http) is not exercised here — it needs an emulator and an API key and
+      is deferred to a real run. The loop's dispatch path, prompt shape, and
+      history plumbing are all covered offline. `avoid_trainers` on `goto` is
+      accepted but a no-op until A2's sightline tiles are ray-cast (downstream,
+      per A2's note).
 - **D3. Trace logging** — every model call recorded as
   (state, tool call, outcome) in exactly the format E3 will consume.
 - **D4. Eval harness** — savestate checkpoints at each milestone, timed

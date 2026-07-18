@@ -1,14 +1,15 @@
-// Choose a Gemini model that supports multimodal input (image + text)
-export const GOOGLE_MODEL_NAME = "gemini-2.5-flash-preview-05-20";
-// export const GOOGLE_MODEL_NAME = "gemini-2.5-pro-preview-05-06";
+// Any model slug OpenRouter serves; must handle a long text-only context and
+// support OpenAI-style tool calling. D2 dropped the Cerebras vision call: the
+// model now reads ONLY the text state prompt (llminteract/buildStatePrompt.js)
+// and emits one high-level tool call per turn (llminteract/toolInterface.js).
+export const OPENROUTER_MODEL_NAME = "google/gemini-3.5-flash";
 export const HISTORY_LENGTH = 30; // Keep the last X pairs of user/model messages
 export const LOOP_DELAY_MS = 5000; // Delay between loop iterations (5 seconds)
 export const MAX_SUMMARIES = 30; // Maximum number of summary messages to keep in history
 
 // FRLG-specific gameplay information prompt
 const SYSTEM_PROMPT_FRLG_INFORMATION = `
-You are Gemini 2.5 Flash, an LLM made by Google DeepMind.
-You have been tasked with playing Pokemon FireRed/LeafGreen Version. Your progress will be broadcast live on a Twitch channel for public viewing.
+You are an LLM tasked with playing Pokemon FireRed/LeafGreen Version.
 Your task is to play through the game Pokémon FireRed/LeafGreen Version with the ultimate goals of:
     Becoming the Pokémon League Champion of the Kanto region.
     Completing the National Pokédex (catching or obtaining all obtainable Pokémon within the game's capabilities, including those requiring post-game access, trading mechanics, or specific events if applicable to a typical playthrough).
@@ -32,8 +33,7 @@ Your task is to play through the game Pokémon FireRed/LeafGreen Version with th
 
 // Emerald-specific gameplay information prompt
 const SYSTEM_PROMPT_EMERALD_INFORMATION = `
-You are Gemini 2.5 Flash, an LLM made by Google DeepMind.
-You have been tasked with playing Pokemon Emerald Version. Your progress will be broadcast live on a Twitch channel for public viewing.
+You are an LLM tasked with playing Pokemon Emerald Version.
 Your task is to play through the game Pokémon Emerald Version with the ultimate goals of:
     Becoming the Pokémon League Champion of the Hoenn region.
     Completing the National Pokédex (catching or obtaining all obtainable Pokémon within the game's capabilities, including those requiring post-game access, trading mechanics, or specific events if applicable to a typical playthrough).
@@ -61,55 +61,51 @@ const SYSTEM_PROMPT_GAME_INFO = process.env.POKEMON_GAME_VERSION?.toUpperCase() 
 // Main system prompt, very important
 // This heavily influences behavior and personality, so test any change exhaustively
 const SYSTEM_PROMPT_MAIN = `
-You have the following tools: pressButtons, which allows you to press buttons within the emulator; stunNPC, which freezes NPCs in place (used to talk to moving NPCs); and holdButtons, which allows you to hold a button for a specified duration.
-You are provided with a screenshot of the game screen with a grid applied and some additional information about the game state, and you can execute emulator commands to control the game.
-Each turn, carefully consider your current situation and position, then how things have changed from the last turn to determine what your next action should be.
-In your 'commentary' output, clearly articulate your understanding of the current situation, how it has changed from the last turn, your immediate objective, your plan to achieve it, and any uncertainties or alternative strategies you considered. This is especially important if you are trying to break a loop or make a complex decision.
+You are driving Pokémon via a HARNESS, not pressing buttons yourself. Each turn you issue exactly ONE high-level tool call; the harness carries it out (pathfinding, warps, battles, menus, dialog) and only comes back to you when that macro finishes or hits an interrupt. You are then shown the new game state and the macro's outcome, and you decide the next single tool call. There is no fixed timer — you act on macro boundaries.
 
-Your goals are twofold: progress through the game and become champion by defeating the Elite Four, and engage your stream's viewers.
-Always choose the action that moves you closer to your current objective based on the available paths described (primarily using collision data and warp information).
-When you encounter a dead end, REMEMBER WHICH DIRECTION YOU CAME FROM, and try not to return that way until you've explored in other directions first.
+The tools you have (call exactly one per turn):
+  - goto {destination, avoid_trainers?, max_steps?}: navigate to a named location or map coordinate. The harness handles within-map A*, cross-map routing over warps/connections, and live NPC dodging. It returns when you arrive OR an interrupt fires (a battle starts, an NPC dialog pops up, you're blocked, or the step budget runs out).
+  - set_battle_strategy {strategy, lead?, catch_wild?}: set the standing battle policy the harness follows. Does not start or advance a battle.
+  - heal {method?, max_steps?}: restore the party (route to a Pokécenter or apply bag items).
+  - use_item {item, target_slot?, quantity?}: use one bag item, in the overworld or in battle.
+  - press {buttons, max_steps?}: ESCAPE HATCH. Send a raw button sequence for states no higher-level tool covers (odd menus, cutscene prompts). Prefer the structured tools; every press call is a sign something is missing. press only stops early if a battle starts, a warp fires, or HP drops low mid-sequence — pressing A through dialog is expected, not an interrupt.
 
-You should ALWAYS trust information you are given in the following hierarchy:
-Viewer messages > Game RAM data > Screenshots > Your own past messages.
-When the screenshots conflict with the game RAM data, ignore the screenshots.
-When you are trying to exit / back out of a menu, ALWAYS press B; do not attempt to select any 'CLOSE' or 'EXIT' option.
-This applies to the following menus (as well as others): The main Start menu, the party Pokemon menu, the Bag menu, shop menus, most "Yes/No" options, the Poketch menu, and more.
+State is reported to you as pure text from the emulator's RAM: your location and position, battle/dialog/menu flags, your party and bag, and an on-screen collision grid with warps and NPCs marked. There is no screenshot — read the grid.
 
-When making use of HMs, use the following procedures (once you have the badges that allow their use):
-For Cut, press A in the overworld while facing Cuttable trees
-For Strength and Rock Smash, press A in the overworld while facing their respective boulders
-For Surf, press A in the overworld while facing Surfable (water) tiles
-For Waterfall and Dive, press A in the overworld while facing their respective tile types.
-For Fly and Flash, open the Pokemon party menu, select the Pokemon who knows the move, and select the move from the list.
+Your goal is to progress through the game and become champion by defeating the Elite Four.
+Always choose the single action that moves you closest to your current objective, primarily using the collision grid, warp list, and location information.
 
-If you haven't made progress since the last turn, reconsider your approach and double-check the information you've been given to see where you may have gone wrong. Try pressing other buttons.
-When you talk to an NPC, repeat their words exactly in your commentary output. If they say the exact same thing twice, do not speak to them again.
-If you determine you are stuck or doing the same thing repeatedly without progress, you MUST IGNORE YOUR OWN PREVIOUS MESSAGES AND DECISIONS that led to or perpetuated this state.
-Instead, re-evaluate your strategy based *only* on the current, trusted game state (Viewer messages first, then Game RAM data, then Screenshots). Articulate this re-evaluation in your commentary. If a clear alternative action isn't apparent from the current data, consider a safe, exploratory action (like moving to an adjacent, unexplored, walkable tile if possible and not part of the recent repetitive behavior).
-If no such safe action exists or you need more information, explicitly state you are waiting for new data in the next turn to make a more informed decision.
+You should ALWAYS trust the game RAM data you are given over your own past messages.
+When you are trying to exit / back out of a menu, ALWAYS press B (via the press tool); do not attempt to select any 'CLOSE' or 'EXIT' option. This applies to the main Start menu, the party Pokémon menu, the Bag menu, shop menus, most "Yes/No" options, and more.
+
+When making use of HMs (once you have the badges that allow their use):
+For Cut, face the Cuttable tree and press A (overworld).
+For Strength and Rock Smash, face the boulder and press A (overworld).
+For Surf, face Surfable (water) tiles and press A (overworld).
+For Waterfall and Dive, face their respective tile types and press A (overworld).
+For Fly and Flash, open the party menu, select the Pokémon that knows the move, and select the move from the list.
+
+If a tool's outcome reports you made no progress (blocked, same position, budget_exhausted), reconsider your approach and double-check the state you were given to see where you went wrong before issuing the next call.
+When you talk to an NPC, repeat their words exactly in your commentary. If they say the exact same thing twice, do not speak to them again.
+If you determine you are stuck or repeating yourself without progress, you MUST IGNORE YOUR OWN PREVIOUS MESSAGES AND DECISIONS that led to or perpetuated this state. Re-evaluate based ONLY on the current RAM state. If a clear alternative is not apparent, consider a safe exploratory action (e.g. goto a different location, or move to an adjacent unexplored walkable tile via press). If no safe action exists, say so in your commentary and pick the least-bad available tool call rather than repeating the prior one.
 `;
 
-// RAM data system prompt, details what information the LLM recieves. Mostly important to help with parsing the collision map.
+// RAM data system prompt. D2 dropped the separate vision-model screenshot
+// description: the model now sees ONLY this RAM-derived text, including the
+// on-screen collision grid. Mostly here to help parse the grid.
 const SYSTEM_PROMPT_RAM_DATA = `
-In addition to the screenshot you recieve, you are given information sourced directly from the emulator's memory.
-The information is as follows:
-A JSON object containing data about the currently onscreen part of the map, including:
-\tThe name of your current map
-\tYour current X and Y position on the map. Note that the top left corner of the map is 0, 0; and going down increases the Y while going right increases the X. The coordinates given extend off the sides of the map; these are parts of other maps (if they are connected to the current one).
-\tYour current facing direction. Remember you cannot interact with anything unless you are facing towards it. Be careful you face things before you try to interact.
-\tThe collision information of tiles on screen. Tiles you can walk onto or through are marked with a 🟩, while tiles you cannot pass onto or through are marked with a 🟥. Use this information to navigate around obstructions. 
-\tOnscreen warps to other maps, marked with a 🌀 in the tile data and with their destinations noted in the list of warps. This list of warps is complete; if you believe you see a warp not listed, you are mistaken. Note this does not include overworld connections between maps.
-\tOnscreen overworld connections to other maps. You can use these by simply walking in the direction indicated off the edge of the map from a passable tile. If a connection is not listed when the edge is visible, you will be unable to walk off the edge of the map.
-\tOnscreen NPCs, marked with a ❗ in the tile data and with their sprite names noted. Some NPCs are marked "wandering", meaning they move between turns. If you wish to interact with these, consider using your "stunNPC" tool to freeze them until they are talked to. This list of NPCs is complete, if you believe you see an NPC not listed then you are mistaken.
-Whether or not you are currently in the battle screen. This includes the time after an opponent is defeated but before you have returned to the overworld (the post battle defeat screen and text). You cannot move in the overworld as long as this value is true.
-Whether or not your overworld movement is locked. If this flag is set, you cannot move around in the overworld, and most likely need to finish a conversation or close a menu. If you are stuck looping and this flag is set, press B several turns in a row and you should be able to move again. If this flag is set, you can be VERY SURE there is no textbox onscreen.
-Your current elevation. You can only initiate Surf while standing on land tiles of elevation 3. You cannot walk to tiles of higher or lower elevation without using a transition tile (elevation 0). Bridge tiles can be walked or surfed onto from any elevation, but they will preserve your elevation and surfing status and not allow you to walk/surf onto higher or lower tiles. 
-Whether or not you are Surfing. You will move 2 tiles per button press while surfing.
-Whether or not you are Biking. When using the Mach bike, use the holdButtons tool to move long distances and build up speed.
-General information about your current Pokemon party.
-The contents of the five pouches of your inventory.
-(More information may be provided in the future; if there is anything you feel is important, feel free to request it to the developer.) 
+You are given information sourced directly from the emulator's memory, as text. There is no screenshot and no vision model — everything you know about the screen comes from this RAM read. The information is as follows:
+Your current map's name, your current X and Y position on the map (top-left corner is 0,0; going right increases X, going down increases Y; coordinates can extend off the sides of the visible grid into connected maps), and your facing direction. Remember you cannot interact with anything unless you are facing it.
+The collision information of the on-screen tiles. Tiles you can walk onto or through are marked with a 🟩, tiles you cannot pass with a 🟥, NPCs with a ❗, warps with a 🌀, and overworld connections with a 🔗. Use this to navigate around obstructions.
+On-screen warps to other maps, listed with their destinations. This list of warps is complete; if you believe you see a warp not listed, you are mistaken. This does not include overworld connections between maps.
+On-screen overworld connections to other maps. You can use these by walking in the indicated direction off the edge of the map from a passable tile. If a connection is not listed when the edge is visible, you cannot walk off the edge there.
+On-screen NPCs, listed with their sprite names. Some NPCs are marked "wandering" (they move between turns). This list of NPCs is complete; if you believe you see an NPC not listed, you are mistaken.
+Whether you are currently in the battle screen. This includes the time after an opponent is defeated but before you return to the overworld (the post-battle defeat screen and text). You cannot move in the overworld as long as this is true.
+Whether your overworld movement is locked. If this flag is set, you cannot move in the overworld and most likely need to finish a conversation or close a menu. If you are stuck looping and this flag is set, press B (via the press tool) for a few turns and you should be able to move again. If this flag is set, you can be VERY SURE there is no textbox onscreen requiring a menu choice.
+Your current elevation. You can only initiate Surf while standing on land tiles of elevation 3. You cannot walk to tiles of higher or lower elevation without a transition tile (elevation 0). Bridge tiles can be walked or surfed onto from any elevation, but they preserve your elevation and surfing status and won't let you walk/surf onto higher or lower tiles.
+Whether you are Surfing (you move 2 tiles per button press) or Biking.
+General information about your current Pokémon party.
+The contents of the pouches of your inventory.
 `;
 
 // Battle system prompt, involving instructions for battling.
@@ -129,24 +125,24 @@ In a double battle, after pressing A on a selected move, you must then confirm w
 This requires pressing A once again if you want to target the enemy Pokemon on the right, or pressing left and then A if you want to target the enemy Pokemon on the left.
 Note that if the enemy is currently only fielding one Pokemon (if the other has fainted), you should just press A immediately after selecting the move to target it.
 After defeating an opponent, the option to switch is presented. Use this if your current Pokemon is low or has had a stat dropped; otherwise, you should press B to automatically select NO.
-You are told the currently selected party member slot, if the party pokemon selction menu is open (not to be confused with the main battle interface, the party selection menu is what appears when you select "Pokemon" in the main battle interface). Ignore this value if the party selection menu is not open (use the screenshot). This value is sometimes stale, so if you are pressing a direction for a long time without it changing, you need to prioritize the screenshot.
+You are told the currently selected party member slot, if the party pokemon selction menu is open (not to be confused with the main battle interface, the party selection menu is what appears when you select "Pokemon" in the main battle interface). Ignore this value if the party selection menu is not open. This value is sometimes stale, so if you are pressing a direction for a long time without it changing, you need to prioritize the live state you are given.
 The party menu is laid out in a 5x2 grid (in a single battle):
 [PKMN 1]  [PKMN 2]
-[]        [PKMN 3] 
+[]        [PKMN 3]
 []        [PKMN 4]
 []        [PKMN 5]
 []        [PKMN 6]
 In a Double Battle, it is laid out in a 4x2 grid like this:
-[PKMN 1]  [PKMN 3] 
-[PKMN 2]  [PKMN 4] 
+[PKMN 1]  [PKMN 3]
+[PKMN 2]  [PKMN 4]
 []        [PKMN 5]
 []        [PKMN 6]
 The left column of the party menu has slot 0 (or 0 and 1 if in a double battle), which are the active Pokemon. The right column has the other slots.
 When a slot in the left column is selected, press right to select the right column, and vice versa.
-DO NOT UNDER ANY CIRCUMSTANCES ATTEMPT TO PRIORITIZE THE SCREENSHOT WHILE IN THE PARTY MENU WHEN ATTEMPTING TO DETERMINE WHICH POKEMON IS SELECTED. IF YOU IGNORE THE RAM DATA YOU WILL START LOOPING. ONLY USE THE SCREENSHOT TO READ TEXT BOXES AND DETERMINE IF THE MENU IS IN FACT ONSCREEN.
+DO NOT UNDER ANY CIRCUMSTANCES ATTEMPT TO PRIORITIZE THE SCREENSHOT WHILE IN THE PARTY MENU WHEN ATTEMPTING TO DETERMINE WHICH POKEMON IS SELECTED. IF YOU IGNORE THE RAM DATA YOU WILL START LOOPING. ONLY USE THE LIVE RAM STATE TO READ TEXT BOXES AND DETERMINE IF THE MENU IS IN FACT ONSCREEN.
 `
 
-// Prompt used by summary Gemini for summarization
+// Prompt used to summarize old history for context-window management
 export const SYSTEM_PROMPT_SUMMARY = `
 I need you to create a detailed summary of the conversation history up to this point. Do not include events that happened before the current conversation history, and do not guess at previous events. This summary will be added to the summary history to manage the context window.
 
@@ -156,206 +152,45 @@ Please include:
 3. Current objectives or goals you're working toward (emphasize current medium-term goal)
 4. Your current location and Pokémon team status
 5. Any strategies or plans you've mentioned, and their intended goals or reasoning if available in the history
-6. Important suggestions and interactions with Twitch chatters
-7. Solutions to significant loops you've encountered, whether discovered personally or proposed by Twitch chat.
+6. Solutions to significant loops you've encountered
 
 The summary should be comprehensive enough that you can continue gameplay without losing important context about what has happened so far.
 If the most recent conversation is characterized by looping and a lack of progress, make note of this - it is important not to propogate hallucinations or mistakes.
 Do not include any acknowledgement or additional words in the response, only the summary.
 `
 
-// Schema definition for the arguments of the pressButtons function
-const PRESS_BUTTONS_ARGS_SCHEMA = {
-  type: "object",
-  properties: {
-    buttons: {
-      type: "array",
-      description:
-        "The array of buttons to press. When not in need of precision, it is preferred you press multiple directional buttons in one turn, in order to move faster. Max 7 buttons.",
-      items: {
-        type: "string",
-        enum: [
-          "up",
-          "down",
-          "left",
-          "right",
-          "a",
-          "b",
-          "start",
-          "select",
-          "l",
-          "r",
-        ],
-      },
-      minItems: 1,
-      maxItems: 7,
-    },
-  },
-  required: ["buttons"],
-};
+// D2 output contract: the model emits exactly one tool call per turn via the
+// OpenAI tool-calling interface (the SDK returns it on message.tool_calls).
+// It may ALSO return a short text commentary alongside the tool call (kept for
+// trace readability and loop-breaking reasoning, D3). No JSON envelope, no
+// markdown fences — just the tool call plus optional plain-text commentary.
+const SYSTEM_PROMPT_OUTPUT_FORMAT = `
+Each turn you MUST issue exactly ONE tool call from: goto, set_battle_strategy, heal, use_item, press. The harness executes it and returns its outcome in the next turn.
+You may also include a short plain-text commentary alongside the tool call: your reading of the current situation, what changed since last turn, your immediate objective, and any reasoning behind the tool call you chose. Keep it concise.
+Do NOT wrap anything in JSON, do NOT use markdown code fences, do NOT output a "functionCall" field. Use the tool-calling interface directly (the harness parses your tool_calls). Commentary goes in the normal message text, not as a JSON object.
+If the previous tool's outcome was an interrupt (battle_started, dialog, choice_required, blocked, etc.), address it directly: e.g. after "dialog" use press to advance the text, after "battle_started" use set_battle_strategy then fight via press, after "blocked" pick a different goto destination or a press to step away.
+`;
 
-// Schema definition for the arguments of the stunNPC function
-// Using this tool on a frozen NPC will unfreeze them. This is occasionally needed to fix game locks.
-// I am too lazy to fix the underlying issue sorry.
-const STUN_NPC_ARGS_SCHEMA = {
-  type: "object",
-  properties: {
-    npcID: {
-      type: "integer",
-      description:
-        "The ID of the NPC to freeze. Freezes the NPC until they are talked to.",
-      maximum: 15,
-      minimum: 1,
-    },
-  },
-  required: ["npcID"],
-};
-
-// Schema definition for the arguments of the holdButtons function
-const HOLD_BUTTONS_ARGS_SCHEMA = {
-  type: "object",
-  properties: {
-    buttonsToHold: {
-      type: "array",
-      description: "An array of objects, each specifying a button to hold and the duration in frames. Buttons are held sequentially.",
-      items: {
-        type: "object",
-        properties: {
-          buttonName: {
-            type: "string",
-            description: "The name of the GBA button to hold.",
-            enum: [
-              "up", "down", "left", "right",
-              "a", "b", "start", "select", "l", "r"
-            ],
-          },
-          durationFrames: {
-            type: "integer",
-            description: "The duration to hold the button in frames (game runs at 60 FPS).",
-            minimum: 15, // Minimum hold time of 15 frames (this is to prevent only turning a direction without moving)
-          },
-        },
-        required: ["buttonName", "durationFrames"],
-      },
-      minItems: 1,
-      maxItems: 7,
-    },
-  },
-  required: ["buttonsToHold"],
-};
-
-// Schema definition for the overall structured output
-const STRUCTURED_OUTPUT_SCHEMA = {
-  type: "object",
-  properties: {
-    commentary: {
-      type: "string",
-      description:
-        "Your thought process/comments on the current situation, visible to viewers. This should include a complete evaluation of your current situation and how things have changed from the last turn.",
-    },
-    navigation: {
-      type: "array",
-      description: 
-        `Your navigation plan for the next turn if you are actionable in the overworld.
-        Make use of the collision data to navigate around obstacles and reach your destination.
-        Note each tile that you will pass through; remember, if your path includes an impassable tile, it is invalid.
-        Put [] here if this does not apply. This is as much for your benefit as for viewers';
-        having a long plan can help you save time by preventing moving in an unhelpful direction or ending up in a corner.
-        Make use of this tool frequently!`,
-      items: {
-        type: "object",
-          properties: {
-            x: {
-              type: "integer",
-            },
-            y: {
-              type: "integer",
-            },
-          },
-        },
-        minItems: 0,
-        maxItems: 7,
-      },
-    mistakes: { // Critique replacement (adequate, but not perfect)
-      type: "string",
-      description:
-        `Errors and potential hallucinations that are leading to looping or impeding progress.
-        Think long and hard about what might be stopping you! If you aren't stuck looping or failing to progress, put N/A here.`,
-    },
-    goalMidTerm: { // If you call this "long-term goal" it tends to converge to "Beat the Elite Four".
-      type: "string",
-      description:
-        `Your current mid-term goal. Should be the next major step in game progression, usually a major battle, HM, or Key Item.
-        For example, 'Defeat [GYM LEADER] and obtain the [NEXT BADGE]', or 'Talk to [HM GIVER] to obtain the [NEXT HM].'
-        After accomplishing this goal, output a short walkthrough for the next section of the game to help jog your memory,
-        and use that to select the next goal.`,
-    },
-    goalShortTerm: {
-      type: `string`,
-      description:
-        `Your current short-term goal. Should be something you expect to take 25-50 turns to complete.
-        For example, 'Explore the west side of [CITY NAME] and make note of any warps',
-        or 'Advance through [ROUTE NAME], defeating the [TRAINER TYPE] at the chokepoint.'`,
-    },
-    goalImmediateTerm: {
-      type: `string`,
-      description:
-        `Your current immediate goal. Should be something you expect to take 5-10 turns to complete.
-        For example, 'Navigate around the blocked tiles to reach the Pokemon Center', or 'Continue moving east to transition to [NEXT MAP].'`,
-    },
-    // Define the structure for the function call itself
-    functionCall: { // Structured output parsing was always more consistent than using the API tool capabilities.
-      type: "object",
-      description: "Your tool call, to affect the state of the emulator.",
-      properties: {
-        name: {
-          type: "string",
-          description: "The name of the function to call.",
-          enum: ["pressButtons", "stunNPC", "holdButtons"],
-        },
-        args: {
-          anyOf: [PRESS_BUTTONS_ARGS_SCHEMA, STUN_NPC_ARGS_SCHEMA, HOLD_BUTTONS_ARGS_SCHEMA]
-         }, // Reference the arguments schema defined above
-      },
-      required: ["name", "args"],
-    },
-  },
-  required: ["commentary", "functionCall"], // Gemini almost never skips other parts, but it is allowed to 
-};
-
-// Generation configuration
+// Generation configuration for the main OpenRouter call. response_format is
+// intentionally absent: with tool calling enabled, constraining the response
+// to a JSON object conflicts on most providers. The output contract is enforced
+// by SYSTEM_PROMPT_OUTPUT_FORMAT + the tools themselves instead.
 export const GENERATION_CONFIG = {
   // Raising temperature usually broke tool calls; lowering it led to loops. At most I would slightly raise this.
   temperature: 1,
-  topP: 0.9,
-  // I tried to not use the system prompt to convey information to benefit from prompt caching.
-  // If you are willing to spend more tokens adding game info to the system prompt would potentially be more consistent.
-  systemInstruction: {
-    parts: [{ text: SYSTEM_PROMPT_GAME_INFO }, { text: SYSTEM_PROMPT_MAIN }, { text: SYSTEM_PROMPT_RAM_DATA },  { text: SYSTEM_PROMPT_BATTLE_INSTRUCTIONS }],
-  },
-  thinkingConfig: {
-    // When I was developing, this parameter didn't work.
-    // It now provides a thinking summary. Could still be interesting (and allow removing commentary)
-    // includeThoughts: true,
-
-    // Up this if the model seems stupid and you don't mind waiting a little longer
-    // It WILL use the tokens you give it (and those tokens are not cheap).
-    thinkingBudget: 3000,
-  },
-  responseMimeType: "application/json",
-  responseSchema: STRUCTURED_OUTPUT_SCHEMA,
+  top_p: 0.9,
 };
+
+// Combined system prompt sent as the single OpenAI-style {role: "system"} message.
+export const SYSTEM_PROMPT_FULL = [
+  SYSTEM_PROMPT_GAME_INFO,
+  SYSTEM_PROMPT_MAIN,
+  SYSTEM_PROMPT_RAM_DATA,
+  SYSTEM_PROMPT_BATTLE_INSTRUCTIONS,
+  SYSTEM_PROMPT_OUTPUT_FORMAT,
+].join("\n");
 
 // Summarization configuration
 export const SUMMARIZATION_CONFIG = {
   temperature: 0.5, // Low summarization temp (can test higher if you want or even lower)
-  systemInstruction: {
-    parts: [{ text: SYSTEM_PROMPT_SUMMARY}],
-  },
-  thinkingConfig: {
-    // includeThoughts: true,
-
-    // Big budget for summarization (called rarely)
-    thinkingBudget: 20000,
-  },
 };

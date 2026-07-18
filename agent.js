@@ -1,33 +1,71 @@
+// =============================================================================
+// AGENT LOOP (D2 — rewired, event-driven)
+// =============================================================================
+//
+// The loop is now EVENT-DRIVEN: the model is called only on a macro boundary
+// (after a tool returns its outcome envelope), never on a fixed timer. Each
+// iteration:
+//   1. Snapshot the game via B1's getState() (one full read per macro boundary,
+//      not the old 5s poll).
+//   2. Render that snapshot to pure text via buildStatePrompt() — NO screenshot,
+//      NO Cerebras vision call (dropped in D2). The model reads only RAM text.
+//   3. Call OpenRouter with the frozen D1 tools (toOpenAITools()) and parse the
+//      native tool_calls[0] the SDK returns (no more JSON "functionCall" blob).
+//   4. Dispatch {name, args} via toolDispatcher → an outcome envelope.
+//   5. Feed the outcome back as a `tool` message; the next iteration's user
+//      message carries the fresh snapshot. Loop.
+//
+// What changed vs. the pre-D2 loop:
+//   - Cerebras client + describeScreenshot + getGameImagesBase64/parseDataURI:
+//     GONE. No second model, no image over the wire. (CEREBRAS_API_KEY no longer
+//     required; describeScreenshot.js / processResponse.js are now dead code on
+//     disk — left in place rather than deleted to keep the diff reviewable.)
+//   - getGameInfoText/saveHumanReadablePromptToFile: replaced by getState() +
+//     buildStatePrompt().
+//   - The model's action is now ONE high-level tool (goto/press/...) that runs
+//     to completion/interrupt, not a 1-7 button press batch. The harness owns
+//     pathfinding/battles/menus; the model decides intent at macro boundaries.
+//
+// What is preserved:
+//   - History save/load + summarization (adapted to the tool-call message
+//     shape; tool-call pairs are flattened to text for the summarization call
+//     so that request stays plain-text and provider-portable).
+//   - The WebSocket overlay server (broadcast shape updated to carry the tool
+//     call + outcome instead of the old navigation/goal fields).
+// =============================================================================
+
+import "dotenv/config";
 import * as CONFIGS from "./CONFIGS.js";
-import { readAndClearFile } from "./readInputFile.js";
 
-import { getGameImagesBase64, parseDataURI } from "./gamestate/emulatorInteraction/screenshot.js";
-import { isInBattle } from "./gamestate/pokemonData.js";
-import { getVisibleBackupMapStateJson } from "./gamestate/overworld/mapApi.js";
-import { areFieldControlsLocked } from "./gamestate/overworld/playerData.js";
+import { getState } from "./gamestate/getState.js";
+import { toOpenAITools } from "./llminteract/toolInterface.js";
+import { buildStatePrompt, renderOutcomeText } from "./llminteract/buildStatePrompt.js";
+import { dispatchTool } from "./llminteract/toolDispatcher.js";
 
-import { getGameInfoText, saveHumanReadablePromptToFile } from "./llminteract/buildPrompt.js";
-import { processLLMResponse } from "./llminteract/processResponse.js";
-
-import { GoogleGenAI } from "@google/genai";
+import { OpenAI } from "openai";
 
 import { promises as fs } from 'fs';
 import path from 'path';
 import { WebSocketServer } from 'ws';
 
 // --- Configuration ---
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const SUMMARY_HISTORY_FILE_PATH = path.join(process.cwd(), 'summary_history.json');
 const HUMAN_READABLE_PROMPT_FILE_PATH = path.join(process.cwd(), 'human_readable_prompt_details.txt');
 const HISTORY_FILE_PATH = path.join(process.cwd(), 'chat_history.json');
 
-if (!GOOGLE_API_KEY) {
-    console.error("Error: GOOGLE_API_KEY environment variable not set.");
+if (!OPENROUTER_API_KEY) {
+    console.error("Error: OPENROUTER_API_KEY environment variable not set.");
     process.exit(1);
 }
 
-// --- Google AI SDK Initialization ---
-const genAI = new GoogleGenAI({ apiKey: GOOGLE_API_KEY });
+// --- SDK Clients ---
+// D2 dropped the Cerebras vision model: the model now reads only the text state
+// prompt, so only the OpenRouter (OpenAI-compatible) client remains.
+const openrouter = new OpenAI({
+    apiKey: OPENROUTER_API_KEY,
+    baseURL: "https://openrouter.ai/api/v1",
+});
 
 // --- WebSocket Server Setup ---
 const WSS_PORT = 8080;
@@ -65,7 +103,7 @@ wss.on('connection', (ws) => {
 function broadcastToOverlays(data) {
     const jsonData = JSON.stringify(data);
     clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
+        if (client.readyState === client.OPEN) {
             try {
                 client.send(jsonData);
             } catch (e) {
@@ -76,8 +114,12 @@ function broadcastToOverlays(data) {
 }
 
 // --- History Management ---
-// History format for Google AI SDK: Array of { role: "user" | "model", parts: [{ text?: string, inlineData?: { mimeType: string, data: string } }] }
-let googleHistory = []; // Holds the current conversation segment
+// History now carries OpenAI tool-calling messages: an assistant turn can hold
+// `tool_calls` (with content possibly null), followed by a `{role:"tool",
+// tool_call_id, content}` message. The load validator accepts that shape; at
+// summarization time the tool-call pairs are flattened to plain text (see
+// flattenHistoryForSummary) so the summarization request stays text-only.
+let chatHistory = []; // Holds the current conversation segment
 let summaryHistory = [];
 
 /**
@@ -96,6 +138,22 @@ async function saveHistoryToFile(history, filePath) {
 }
 
 /**
+ * A chat-history message is valid if it has a string role and EITHER a string
+ * content OR (for assistant) tool_calls OR (for tool) a tool_call_id+content.
+ * Anything else (e.g. the pre-D2 JSON "functionCall" shape) is rejected so the
+ * loop starts fresh rather than feeding the API a stale, incompatible history.
+ * @param {object} item
+ * @returns {boolean}
+ */
+function isValidHistoryItem(item) {
+    if (!item || typeof item.role !== 'string') return false;
+    if (typeof item.content === 'string') return true;
+    if (item.role === 'assistant' && Array.isArray(item.tool_calls) && item.tool_calls.length) return true;
+    if (item.role === 'tool' && typeof item.tool_call_id === 'string' && typeof item.content === 'string') return true;
+    return false;
+}
+
+/**
  * @description Loads chat history from a JSON file.
  * @param {string} filePath The path to the file from which history should be loaded.
  * @param {string} historyName A descriptive name for logging (e.g., "Main", "Summary").
@@ -107,10 +165,10 @@ async function loadHistoryFromFile(filePath, historyName) {
         const historyJson = await fs.readFile(filePath, 'utf8');
         const loadedHistory = JSON.parse(historyJson);
         console.log(`${historyName} history loaded from ${filePath}`);
-        if (Array.isArray(loadedHistory) && loadedHistory.every(item => item && typeof item.role === 'string' && Array.isArray(item.parts))) {
+        if (Array.isArray(loadedHistory) && loadedHistory.every(isValidHistoryItem)) {
             return loadedHistory;
         } else {
-            console.warn(`Invalid ${historyName} history format found in ${filePath}. Starting fresh.`);
+            console.warn(`Invalid or incompatible ${historyName} history format found in ${filePath} (likely pre-D2 shape). Starting fresh.`);
             return [];
         }
     } catch (error) {
@@ -124,7 +182,39 @@ async function loadHistoryFromFile(filePath, historyName) {
 }
 
 /**
- * @description Summarizes the provided history using the Gemini API.
+ * Flatten a tool-call-bearing history slice into plain-text user/assistant
+ * messages for the summarization call. The summarization request is text-only
+ * (no tools advertised), so assistant tool_calls + tool results are rendered as
+ * readable text instead of carried as tool-role messages some providers reject.
+ * @param {Array} history
+ * @returns {Array}
+ */
+function flattenHistoryForSummary(history) {
+    const out = [];
+    for (const item of history) {
+        if (item.role === 'user') {
+            out.push({ role: 'user', content: typeof item.content === 'string' ? item.content : '' });
+        } else if (item.role === 'assistant') {
+            const parts = [];
+            if (typeof item.content === 'string' && item.content.trim()) parts.push(item.content);
+            for (const tc of item.tool_calls || []) {
+                const fn = tc?.function;
+                let args = fn?.arguments;
+                try { args = JSON.stringify(JSON.parse(args || '{}')); } catch { /* leave raw */ }
+                parts.push(`[tool_call: ${fn?.name}(${args})]`);
+            }
+            out.push({ role: 'assistant', content: parts.join('\n') || '(no content)' });
+        } else if (item.role === 'tool') {
+            out.push({ role: 'user', content: `[tool outcome] ${item.content}` });
+        } else {
+            out.push({ role: 'user', content: JSON.stringify(item) });
+        }
+    }
+    return out;
+}
+
+/**
+ * @description Summarizes the provided history using the OpenRouter model.
  * @param {Array} historyToSummarize The portion of the chat history to summarize.
  * @returns {Promise<string|null>} The summary text, or null if summarization fails.
  */
@@ -136,24 +226,25 @@ async function summarizeHistory(historyToSummarize) {
 
     console.log(`--- Summarizing History (${historyToSummarize.length} messages) and saving gamestate ---`);
 
-    await fetch(`http://localhost:5000/core/savestateslot?slot=8`, { method: "POST"});
-  
     try {
-        const result = await genAI.models.generateContent({
-            model: CONFIGS.GOOGLE_MODEL_NAME,
-            contents: historyToSummarize,
-            config: CONFIGS.SUMMARIZATION_CONFIG,
+        await fetch(`http://localhost:5000/core/savestateslot?slot=8`, { method: "POST" });
+    } catch (error) {
+        console.warn("Could not write savestate slot 8 during summarization:", error?.message ?? error);
+    }
+
+    try {
+        const result = await openrouter.chat.completions.create({
+            model: CONFIGS.OPENROUTER_MODEL_NAME,
+            messages: [
+                { role: "system", content: CONFIGS.SYSTEM_PROMPT_SUMMARY },
+                ...flattenHistoryForSummary(historyToSummarize),
+            ],
+            temperature: CONFIGS.SUMMARIZATION_CONFIG.temperature,
         });
-        if (!result) {
-            console.error("Summarization Error: No response received from Google AI.");
-            return null;
-        }
-        const summaryText = result.text;
-        if (result.promptFeedback && result.promptFeedback.blockReason) {
-            console.error(
-                `Summarization Error: Prompt blocked. Reason: ${result.promptFeedback.blockReason}`
-            );
-            console.error("Block Details:", result.promptFeedback.safetyRatings);
+
+        const summaryText = result?.choices?.[0]?.message?.content;
+        if (!summaryText) {
+            console.error("Summarization Error: No response text received from OpenRouter.");
             return null;
         }
         console.log("--- Summarization Complete ---");
@@ -174,89 +265,87 @@ function delay(ms) {
 }
 
 /**
+ * Extract the model's single intended tool call (if any) from an OpenRouter
+ * chat-completions assistant message. Returns {id, name, args} or null.
+ * @param {object} message
+ * @returns {{id:string,name:string,args:object}|null}
+ */
+function extractToolCall(message) {
+    const toolCalls = Array.isArray(message?.tool_calls) ? message.tool_calls : [];
+    const first = toolCalls[0];
+    if (!first || first.type !== "function") return null;
+    const name = first.function?.name;
+    if (typeof name !== "string") return null;
+    let args = {};
+    try {
+        args = JSON.parse(first.function?.arguments || "{}") || {};
+    } catch (parseError) {
+        console.warn("Could not parse tool-call arguments as JSON:", parseError?.message);
+        args = {};
+    }
+    return { id: first.id ?? `${name}-${Date.now()}`, name, args };
+}
+
+/**
  * @description Main game loop that continuously interacts with the emulator, LLM, and overlay.
  * @returns {Promise<void>}
  */
 async function runGameLoop() {
-    googleHistory = await loadHistoryFromFile(HISTORY_FILE_PATH, "Main");
+    chatHistory = await loadHistoryFromFile(HISTORY_FILE_PATH, "Main");
     summaryHistory = await loadHistoryFromFile(SUMMARY_HISTORY_FILE_PATH, "Summary");
-    let turnCounter = Math.floor(googleHistory.length / 3);
+    // Each turn contributes user+assistant+tool = 3 history messages; a "turn"
+    // here is one user/model exchange, so divide by the messages per turn.
+    let turnCounter = Math.floor(chatHistory.length / 3);
 
     while (true) {
+        let parsedResponseCommentary = "AI is still processing...";
+        let toolCallName = "";
+        let toolCallArgs = {};
+        let outcome = null;
+
         try {
-            console.log("\n--- New Iteration ---");
-            console.log(`Turns Till Summary: ${CONFIGS.HISTORY_LENGTH - turnCounter}`);
+            console.log("\n--- New Iteration (event-driven: model called on macro boundary) ---");
+            console.log(`Turns Till Summary: ${Math.max(0, CONFIGS.HISTORY_LENGTH - turnCounter)}`);
 
-            const visibleMapState = await getVisibleBackupMapStateJson();
-            if (!visibleMapState) {
-                console.error("Critical: Failed to get visible map state. Skipping iteration.");
-                await delay(CONFIGS.LOOP_DELAY_MS);
-                continue;
-            }
-            // Get gameInfoObject once, used for both LLM prompt and overlay data
-            const currentGameInfoObject = await getGameInfoText(visibleMapState);
-            const currentGameInfoString = JSON.stringify(currentGameInfoObject);
-
-            // Deciding whether to use the overlay with grid or not
-            // I'm honestly not sure if this helped or mattered in the end
-            let inBattle = await isInBattle();
-            let fieldControlsLocked = await areFieldControlsLocked();
-            const { original: currentImageBase64URI, processed: currentImageBase64URIProcessed } = await getGameImagesBase64();
-
-            let imageParts;
-            if (inBattle || fieldControlsLocked) {
-                imageParts = parseDataURI(currentImageBase64URI);
-            } else {
-                imageParts = parseDataURI(currentImageBase64URIProcessed);
-            }
-
-            if (!imageParts) {
-                console.error(`Skipping iteration due to invalid image data URI: ${currentImageBase64URI ? currentImageBase64URI.substring(0, 50) + '...' : 'null'}`);
+            // 1. Snapshot (one full read per macro boundary, not a fixed poll).
+            const state = await getState({ includeMap: true, includeBag: true, includeParty: true });
+            if (!state) {
+                console.error("Critical: getState() returned null. Skipping iteration.");
                 await delay(CONFIGS.LOOP_DELAY_MS);
                 continue;
             }
 
-            // Read in twitch chat
-            let twitch_chat = await readAndClearFile("./twitch_chat.txt");
-            if (twitch_chat === "" || twitch_chat === null) { // Modified to handle null from readAndClearFile
-                console.info("No content in Twitch chat file.");
-                twitch_chat = "No Twitch messages since last turn.";
+            // 2. Pure-text prompt from the snapshot — no screenshot, no vision.
+            const currentPromptText = buildStatePrompt(state);
+
+            // Persist a human-readable copy of what the model was shown (debugging).
+            try {
+                await fs.writeFile(
+                    HUMAN_READABLE_PROMPT_FILE_PATH,
+                    `=== STATE PROMPT (D2, pure text, no vision) ===\n${currentPromptText}\n`,
+                    'utf8'
+                );
+            } catch (error) {
+                console.error(`Error saving human-readable prompt to ${HUMAN_READABLE_PROMPT_FILE_PATH}:`, error);
             }
 
-            const currentPromptText = `Current game state:\n${currentGameInfoString}\n`;
-            const currentTwitchChat = `Twitch Messages this turn:\n${twitch_chat}\n`;
-
-            const currentUserPromptParts = [
-                { inlineData: { mimeType: imageParts.mimeType, data: imageParts.data } },
-                { text: currentPromptText },
-                { text: currentTwitchChat },
-            ];
-
-            // Save the human-readable version of the prompt data
-            await saveHumanReadablePromptToFile(
-                currentGameInfoObject,
-                imageParts,
-                twitch_chat,
-                HUMAN_READABLE_PROMPT_FILE_PATH
-            );
-
-            // Perform summarizing if necessary
+            // Perform summarizing if necessary (before adding the new user turn).
             if (turnCounter >= CONFIGS.HISTORY_LENGTH) {
                 console.log(`Turn limit (${CONFIGS.HISTORY_LENGTH}) reached. Attempting summarization...`);
-                if (googleHistory.length > 0) {
-                    const summaryText = await summarizeHistory(googleHistory);
+                if (chatHistory.length > 0) {
+                    const summaryText = await summarizeHistory(chatHistory);
                     if (summaryText) {
                         const newSummaryMessage = {
-                            role: "model",
-                            parts: [{ text: `Summary of last ${turnCounter} turns:\n${summaryText}` }]
+                            role: "assistant",
+                            content: `Summary of last ${turnCounter} turns:\n${summaryText}`
                         };
                         summaryHistory.push(newSummaryMessage);
                         while (summaryHistory.length > CONFIGS.MAX_SUMMARIES) {
                             summaryHistory.shift();
                         }
-                        googleHistory = [];
+                        chatHistory = [];
                         turnCounter = 0;
-                        await saveHistoryToFile(googleHistory, HISTORY_FILE_PATH);
+                        await saveHistoryToFile(chatHistory, HISTORY_FILE_PATH);
                         await saveHistoryToFile(summaryHistory, SUMMARY_HISTORY_FILE_PATH);
                         console.log("History summarized and replaced.");
                     } else {
@@ -268,103 +357,134 @@ async function runGameLoop() {
                 }
             }
 
+            // 3. Add the fresh state as this turn's user message, then build the
+            //    API request from the full conversation.
+            const userMessage = { role: "user", content: currentPromptText };
             const messagesForApi = [
+                { role: "system", content: CONFIGS.SYSTEM_PROMPT_FULL },
                 ...summaryHistory,
-                ...googleHistory,
-                { role: "user", parts: currentUserPromptParts },
+                ...chatHistory,
+                userMessage,
             ];
 
-            console.log(`Sending request to Google AI (${CONFIGS.GOOGLE_MODEL_NAME})...`);
-            const result = await genAI.models.generateContent({
-                model: CONFIGS.GOOGLE_MODEL_NAME,
-                contents: messagesForApi,
-                config: CONFIGS.GENERATION_CONFIG,
+            console.log(`Sending request to OpenRouter (${CONFIGS.OPENROUTER_MODEL_NAME}) with tools...`);
+            const result = await openrouter.chat.completions.create({
+                model: CONFIGS.OPENROUTER_MODEL_NAME,
+                messages: messagesForApi,
+                tools: toOpenAITools(),
+                tool_choice: "auto",
+                temperature: CONFIGS.GENERATION_CONFIG.temperature,
+                top_p: CONFIGS.GENERATION_CONFIG.top_p,
             });
 
-            let parsedResponse = {};
-            let toolExecutionText = "No tool call processed."; // Defaults
-            let pathValidationResult = { isValid: true, reason: "Validation not performed or path was empty." };
-
-            if (!result) {
-                console.error("API Error: No response received from Google AI.");
-            } else if (result.promptFeedback && result.promptFeedback.blockReason) { // I never got a safety rejection at any point
-                console.error(
-                    `API Error: Prompt blocked. Reason: ${result.promptFeedback.blockReason}`
-                );
-                console.error("Block Details:", result.promptFeedback.safetyRatings);
-            } else {
-                try {
-                    parsedResponse = JSON.parse(result.text);
-                } catch (parseError) {
-                    console.error("Error parsing LLM response text:", parseError);
-                    console.error("Raw LLM response text:", result.text);
-                    await delay(CONFIGS.LOOP_DELAY_MS);
-                    continue;
-                }
-
-                console.log(
-                    `Total tokens used: ${result.usageMetadata.totalTokenCount}`
-                );
-
-                // Process LLM response (this calls pressButtons, etc.)
-                // Ensure currentMapState for processLLMResponse is visibleMapState
-                const toolProcessingResult = await processLLMResponse(parsedResponse, visibleMapState);
-                toolExecutionText = toolProcessingResult.toolExecutionText; // toolExecutionText defined here
-                pathValidationResult = toolProcessingResult.pathValidationResult; // pathValidationResult defined here
-
-                googleHistory.push({
-                    role: "model",
-                    parts: [
-                        { text: `Commentary: ${parsedResponse.commentary ?? "No commentary."}` },
-                        { text: (Array.isArray(parsedResponse.navigation) && parsedResponse.navigation.length > 0)
-                            ? `Proposed Navigation: ${JSON.stringify(parsedResponse.navigation)}`
-                            : "No navigation proposed." },
-                        { text: `Mistakes Identified: ${parsedResponse.mistakes ?? "N/A"}` },
-                        { text: `Long Term Goal: ${parsedResponse.goalMidTerm ?? "N/A"}` },
-                        { text: `Mid Term Goal: ${parsedResponse.goalShortTerm ?? "N/A"}` },
-                        { text: `Short Term Goal: ${parsedResponse.goalImmediateTerm ?? "N/A"}` },
-                    ],
-                });
-                googleHistory.push({
-                    role: "user",
-                    parts: [
-                        { text: `Tool Execution Outcome: ${toolExecutionText}` },
-                        { text: `Path Validation Outcome: ${pathValidationResult ? JSON.stringify(pathValidationResult) : 'Validation not performed or path was empty.'}` }
-                    ]
-                });
-                googleHistory.push({ role: "user", parts: [{ text: currentTwitchChat}] });
-                turnCounter++;
-                await saveHistoryToFile(googleHistory, HISTORY_FILE_PATH);
+            const responseMessage = result?.choices?.[0]?.message;
+            if (!responseMessage) {
+                console.error("API Error: No response received from OpenRouter.");
+                await saveHistoryToFile(chatHistory, HISTORY_FILE_PATH);
+                await delay(CONFIGS.LOOP_DELAY_MS);
+                continue;
             }
 
-            // --- Construct and broadcast data for overlay ---
-            const turnsUntilSummaryValue = Math.max(0, CONFIGS.HISTORY_LENGTH - turnCounter);
-            const overlayData = {
-                // visibleMapState already contains player_state, map_name, width, height, connections, etc.
-                mapData: visibleMapState,
-                commentary: parsedResponse.commentary || "AI is still processing...",
-                navigation: parsedResponse.navigation || [],
-                // Mapping goals based on how overlay.js interprets them:
-                goalLongTerm: parsedResponse.goalMidTerm || "To be determined", // Agent's mid-term is overlay's long-term
-                goalMidTerm: parsedResponse.goalShortTerm || "To be determined",  // Agent's short-term is overlay's mid-term
-                goalShortTerm: parsedResponse.goalImmediateTerm || "To be determined", // Agent's immediate is overlay's short-term
-                pokemon: currentGameInfoObject.pokemon || [],
-                bag: currentGameInfoObject.bag || {},
-                badges: currentGameInfoObject.badges || [],
-                money: typeof currentGameInfoObject.money === 'number' ? currentGameInfoObject.money : 0,
-                turnsUntilSummary: turnsUntilSummaryValue,
-            };
-            lastOverlayData = overlayData; // Update last known data
-            broadcastToOverlays(overlayData);
+            console.log(`Total tokens used: ${result.usage?.total_tokens ?? "unknown"}`);
+            parsedResponseCommentary = typeof responseMessage.content === "string" && responseMessage.content.trim()
+                ? responseMessage.content
+                : "(no commentary)";
+
+            const toolCall = extractToolCall(responseMessage);
+
+            if (!toolCall) {
+                // No tool call: nudge the model to issue one rather than spin.
+                console.warn("Warning: No tool call in model response. Nudging.");
+                console.log("Full model response:", JSON.stringify(responseMessage, null, 2));
+                chatHistory.push(userMessage);
+                chatHistory.push({
+                    role: "assistant",
+                    content: parsedResponseCommentary,
+                });
+                chatHistory.push({
+                    role: "user",
+                    content: "You did not issue a tool call. You MUST issue exactly one tool call (goto, set_battle_strategy, heal, use_item, or press) next turn.",
+                });
+                turnCounter++;
+                await saveHistoryToFile(chatHistory, HISTORY_FILE_PATH);
+                broadcastOverlay(state, parsedResponseCommentary, null, null, turnCounter);
+                continue;
+            }
+
+            toolCallName = toolCall.name;
+            toolCallArgs = toolCall.args;
+            console.log(`Model tool call: ${toolCallName} ${JSON.stringify(toolCallArgs)}`);
+
+            // 4. Dispatch the tool call → outcome envelope.
+            outcome = await dispatchTool(toolCall.name, toolCall.args);
+            console.log(`Tool outcome: ${renderOutcomeText(outcome)}`);
+
+            // 5. Record the turn in history: the user state prompt, the assistant
+            //    tool_call, and the tool outcome message the model reads next.
+            chatHistory.push(userMessage);
+            chatHistory.push({
+                role: "assistant",
+                content: parsedResponseCommentary,
+                tool_calls: [{
+                    id: toolCall.id,
+                    type: "function",
+                    function: {
+                        name: toolCall.name,
+                        arguments: JSON.stringify(toolCall.args),
+                    },
+                }],
+            });
+            chatHistory.push({
+                role: "tool",
+                tool_call_id: toolCall.id,
+                content: renderOutcomeText(outcome),
+            });
+            turnCounter++;
+            await saveHistoryToFile(chatHistory, HISTORY_FILE_PATH);
         } catch (error) {
             console.error("Error during game loop iteration:", error);
-            await saveHistoryToFile(googleHistory, HISTORY_FILE_PATH);
+            await saveHistoryToFile(chatHistory, HISTORY_FILE_PATH);
             await saveHistoryToFile(summaryHistory, SUMMARY_HISTORY_FILE_PATH);
+            broadcastOverlay(null, parsedResponseCommentary, toolCallName, outcome, turnCounter);
+            console.log(`--- Waiting for ${CONFIGS.LOOP_DELAY_MS}ms after error ---`);
+            await delay(CONFIGS.LOOP_DELAY_MS);
+            continue;
         }
 
-        console.log(`--- Waiting for ${CONFIGS.LOOP_DELAY_MS}ms ---`);
-        await delay(CONFIGS.LOOP_DELAY_MS);
+        broadcastOverlay(null, parsedResponseCommentary, toolCallName, outcome, turnCounter);
     }
+}
+
+/**
+ * Broadcast the latest state + last tool call + outcome to overlay clients.
+ * Shape updated for D2: the old navigation/goal fields are gone (the model no
+ * longer emits them); we now send the tool call + outcome + snapshot sections.
+ * @param {object|null} state
+ * @param {string} commentary
+ * @param {string} toolName
+ * @param {object|null} outcome
+ * @param {number} turnCounter
+ */
+function broadcastOverlay(state, commentary, toolName, outcome, turnCounter) {
+    const turnsUntilSummaryValue = Math.max(0, CONFIGS.HISTORY_LENGTH - turnCounter);
+    const overlayData = {
+        mapData: state?.map ?? lastOverlayData?.mapData ?? null,
+        commentary: commentary || "AI is still processing...",
+        toolCall: toolName ? { name: toolName } : (lastOverlayData?.toolCall ?? null),
+        outcome: outcome ?? (lastOverlayData?.outcome ?? null),
+        // Backward-compat fields the overlay may still reference:
+        navigation: [],
+        goalLongTerm: "n/a",
+        goalMidTerm: "n/a",
+        goalShortTerm: "n/a",
+        pokemon: state?.party?.pokemon ?? (lastOverlayData?.pokemon ?? []),
+        bag: state?.bag ?? (lastOverlayData?.bag ?? {}),
+        badges: state?.player?.badges ?? (lastOverlayData?.badges ?? []),
+        money: typeof state?.player?.money === 'number' ? state.player.money : (lastOverlayData?.money ?? 0),
+        turnsUntilSummary: turnsUntilSummaryValue,
+    };
+    lastOverlayData = overlayData; // Update last known data
+    broadcastToOverlays(overlayData);
 }
 
 runGameLoop();
