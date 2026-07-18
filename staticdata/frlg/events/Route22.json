@@ -1,0 +1,1865 @@
+{
+  "id": "MAP_ROUTE22",
+  "name": "Route22",
+  "group": 3,
+  "num": 41,
+  "trainers": [],
+  "items": [],
+  "hidden_items": [],
+  "scripted_encounters": [
+    {
+      "trigger": {
+        "x": 33,
+        "y": 4,
+        "elevation": 3,
+        "var": "VAR_MAP_SCENE_ROUTE22",
+        "var_value": "1"
+      },
+      "script": "Route22_EventScript_EarlyRivalTriggerTop",
+      "battles": [
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_EARLY_SQUIRTLE",
+          "trainer_num": 329,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEY",
+              "species_num": 16,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_SAND_ATTACK",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                28,
+                0,
+                0
+              ]
+            },
+            {
+              "species": "SPECIES_SQUIRTLE",
+              "species_num": 7,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_TAIL_WHIP",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                39,
+                0,
+                0
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_EARLY_BULBASAUR",
+          "trainer_num": 330,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEY",
+              "species_num": 16,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_SAND_ATTACK",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                28,
+                0,
+                0
+              ]
+            },
+            {
+              "species": "SPECIES_BULBASAUR",
+              "species_num": 1,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_GROWL",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                45,
+                0,
+                0
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_EARLY_CHARMANDER",
+          "trainer_num": 331,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEY",
+              "species_num": 16,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_SAND_ATTACK",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                28,
+                0,
+                0
+              ]
+            },
+            {
+              "species": "SPECIES_CHARMANDER",
+              "species_num": 4,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_SCRATCH",
+                "MOVE_GROWL",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                10,
+                45,
+                0,
+                0
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "trigger": {
+        "x": 33,
+        "y": 5,
+        "elevation": 3,
+        "var": "VAR_MAP_SCENE_ROUTE22",
+        "var_value": "1"
+      },
+      "script": "Route22_EventScript_EarlyRivalTriggerMid",
+      "battles": [
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_EARLY_SQUIRTLE",
+          "trainer_num": 329,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEY",
+              "species_num": 16,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_SAND_ATTACK",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                28,
+                0,
+                0
+              ]
+            },
+            {
+              "species": "SPECIES_SQUIRTLE",
+              "species_num": 7,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_TAIL_WHIP",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                39,
+                0,
+                0
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_EARLY_BULBASAUR",
+          "trainer_num": 330,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEY",
+              "species_num": 16,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_SAND_ATTACK",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                28,
+                0,
+                0
+              ]
+            },
+            {
+              "species": "SPECIES_BULBASAUR",
+              "species_num": 1,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_GROWL",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                45,
+                0,
+                0
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_EARLY_CHARMANDER",
+          "trainer_num": 331,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEY",
+              "species_num": 16,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_SAND_ATTACK",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                28,
+                0,
+                0
+              ]
+            },
+            {
+              "species": "SPECIES_CHARMANDER",
+              "species_num": 4,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_SCRATCH",
+                "MOVE_GROWL",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                10,
+                45,
+                0,
+                0
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "trigger": {
+        "x": 33,
+        "y": 6,
+        "elevation": 0,
+        "var": "VAR_MAP_SCENE_ROUTE22",
+        "var_value": "1"
+      },
+      "script": "Route22_EventScript_EarlyRivalTriggerBottom",
+      "battles": [
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_EARLY_SQUIRTLE",
+          "trainer_num": 329,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEY",
+              "species_num": 16,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_SAND_ATTACK",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                28,
+                0,
+                0
+              ]
+            },
+            {
+              "species": "SPECIES_SQUIRTLE",
+              "species_num": 7,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_TAIL_WHIP",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                39,
+                0,
+                0
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_EARLY_BULBASAUR",
+          "trainer_num": 330,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEY",
+              "species_num": 16,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_SAND_ATTACK",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                28,
+                0,
+                0
+              ]
+            },
+            {
+              "species": "SPECIES_BULBASAUR",
+              "species_num": 1,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_GROWL",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                45,
+                0,
+                0
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_EARLY_CHARMANDER",
+          "trainer_num": 331,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEY",
+              "species_num": 16,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TACKLE",
+                "MOVE_SAND_ATTACK",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                33,
+                28,
+                0,
+                0
+              ]
+            },
+            {
+              "species": "SPECIES_CHARMANDER",
+              "species_num": 4,
+              "level": 9,
+              "iv": 50,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_SCRATCH",
+                "MOVE_GROWL",
+                "MOVE_NONE",
+                "MOVE_NONE"
+              ],
+              "moves_num": [
+                10,
+                45,
+                0,
+                0
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "trigger": {
+        "x": 33,
+        "y": 4,
+        "elevation": 3,
+        "var": "VAR_MAP_SCENE_ROUTE22",
+        "var_value": "3"
+      },
+      "script": "Route22_EventScript_LateRivalTriggerTop",
+      "battles": [
+        {
+          "trainerbattle_type": "no_intro",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_LATE_SQUIRTLE",
+          "trainer_num": 435,
+          "trainer_class": "TRAINER_CLASS_RIVAL_LATE",
+          "trainer_class_num": 89,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEOT",
+              "species_num": 18,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FEATHER_DANCE",
+                "MOVE_WING_ATTACK",
+                "MOVE_GUST",
+                "MOVE_QUICK_ATTACK"
+              ],
+              "moves_num": [
+                297,
+                17,
+                16,
+                98
+              ]
+            },
+            {
+              "species": "SPECIES_RHYHORN",
+              "species_num": 111,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TAKE_DOWN",
+                "MOVE_HORN_DRILL",
+                "MOVE_ROCK_BLAST",
+                "MOVE_FURY_ATTACK"
+              ],
+              "moves_num": [
+                36,
+                32,
+                350,
+                31
+              ]
+            },
+            {
+              "species": "SPECIES_GROWLITHE",
+              "species_num": 58,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FLAME_WHEEL",
+                "MOVE_TAKE_DOWN",
+                "MOVE_LEER",
+                "MOVE_AGILITY"
+              ],
+              "moves_num": [
+                172,
+                36,
+                43,
+                97
+              ]
+            },
+            {
+              "species": "SPECIES_EXEGGCUTE",
+              "species_num": 102,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_SOLAR_BEAM",
+                "MOVE_SLEEP_POWDER",
+                "MOVE_POISON_POWDER",
+                "MOVE_STUN_SPORE"
+              ],
+              "moves_num": [
+                76,
+                79,
+                77,
+                78
+              ]
+            },
+            {
+              "species": "SPECIES_ALAKAZAM",
+              "species_num": 65,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_PSYCHIC",
+                "MOVE_CALM_MIND",
+                "MOVE_FUTURE_SIGHT",
+                "MOVE_DISABLE"
+              ],
+              "moves_num": [
+                94,
+                347,
+                248,
+                50
+              ]
+            },
+            {
+              "species": "SPECIES_BLASTOISE",
+              "species_num": 9,
+              "level": 53,
+              "iv": 250,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_WATER_GUN",
+                "MOVE_RAIN_DANCE",
+                "MOVE_BITE",
+                "MOVE_RAPID_SPIN"
+              ],
+              "moves_num": [
+                55,
+                240,
+                44,
+                229
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "no_intro",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_LATE_BULBASAUR",
+          "trainer_num": 436,
+          "trainer_class": "TRAINER_CLASS_RIVAL_LATE",
+          "trainer_class_num": 89,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEOT",
+              "species_num": 18,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FEATHER_DANCE",
+                "MOVE_WING_ATTACK",
+                "MOVE_GUST",
+                "MOVE_QUICK_ATTACK"
+              ],
+              "moves_num": [
+                297,
+                17,
+                16,
+                98
+              ]
+            },
+            {
+              "species": "SPECIES_RHYHORN",
+              "species_num": 111,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TAKE_DOWN",
+                "MOVE_HORN_DRILL",
+                "MOVE_ROCK_BLAST",
+                "MOVE_FURY_ATTACK"
+              ],
+              "moves_num": [
+                36,
+                32,
+                350,
+                31
+              ]
+            },
+            {
+              "species": "SPECIES_GYARADOS",
+              "species_num": 130,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_HYDRO_PUMP",
+                "MOVE_TWISTER",
+                "MOVE_LEER",
+                "MOVE_RAIN_DANCE"
+              ],
+              "moves_num": [
+                56,
+                239,
+                43,
+                240
+              ]
+            },
+            {
+              "species": "SPECIES_GROWLITHE",
+              "species_num": 58,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FLAME_WHEEL",
+                "MOVE_TAKE_DOWN",
+                "MOVE_LEER",
+                "MOVE_AGILITY"
+              ],
+              "moves_num": [
+                172,
+                36,
+                43,
+                97
+              ]
+            },
+            {
+              "species": "SPECIES_ALAKAZAM",
+              "species_num": 65,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_PSYCHIC",
+                "MOVE_CALM_MIND",
+                "MOVE_FUTURE_SIGHT",
+                "MOVE_DISABLE"
+              ],
+              "moves_num": [
+                94,
+                347,
+                248,
+                50
+              ]
+            },
+            {
+              "species": "SPECIES_VENUSAUR",
+              "species_num": 3,
+              "level": 53,
+              "iv": 250,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_RAZOR_LEAF",
+                "MOVE_SWEET_SCENT",
+                "MOVE_GROWTH",
+                "MOVE_SYNTHESIS"
+              ],
+              "moves_num": [
+                75,
+                230,
+                74,
+                235
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "no_intro",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_LATE_CHARMANDER",
+          "trainer_num": 437,
+          "trainer_class": "TRAINER_CLASS_RIVAL_LATE",
+          "trainer_class_num": 89,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEOT",
+              "species_num": 18,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FEATHER_DANCE",
+                "MOVE_WING_ATTACK",
+                "MOVE_GUST",
+                "MOVE_QUICK_ATTACK"
+              ],
+              "moves_num": [
+                297,
+                17,
+                16,
+                98
+              ]
+            },
+            {
+              "species": "SPECIES_RHYHORN",
+              "species_num": 111,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TAKE_DOWN",
+                "MOVE_HORN_DRILL",
+                "MOVE_ROCK_BLAST",
+                "MOVE_FURY_ATTACK"
+              ],
+              "moves_num": [
+                36,
+                32,
+                350,
+                31
+              ]
+            },
+            {
+              "species": "SPECIES_EXEGGCUTE",
+              "species_num": 102,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_SOLAR_BEAM",
+                "MOVE_SLEEP_POWDER",
+                "MOVE_POISON_POWDER",
+                "MOVE_STUN_SPORE"
+              ],
+              "moves_num": [
+                76,
+                79,
+                77,
+                78
+              ]
+            },
+            {
+              "species": "SPECIES_GYARADOS",
+              "species_num": 130,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_HYDRO_PUMP",
+                "MOVE_TWISTER",
+                "MOVE_LEER",
+                "MOVE_RAIN_DANCE"
+              ],
+              "moves_num": [
+                56,
+                239,
+                43,
+                240
+              ]
+            },
+            {
+              "species": "SPECIES_ALAKAZAM",
+              "species_num": 65,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_PSYCHIC",
+                "MOVE_CALM_MIND",
+                "MOVE_FUTURE_SIGHT",
+                "MOVE_DISABLE"
+              ],
+              "moves_num": [
+                94,
+                347,
+                248,
+                50
+              ]
+            },
+            {
+              "species": "SPECIES_CHARIZARD",
+              "species_num": 6,
+              "level": 53,
+              "iv": 250,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FLAMETHROWER",
+                "MOVE_WING_ATTACK",
+                "MOVE_SLASH",
+                "MOVE_SCARY_FACE"
+              ],
+              "moves_num": [
+                53,
+                17,
+                163,
+                184
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "trigger": {
+        "x": 33,
+        "y": 5,
+        "elevation": 3,
+        "var": "VAR_MAP_SCENE_ROUTE22",
+        "var_value": "3"
+      },
+      "script": "Route22_EventScript_LateRivalTriggerMid",
+      "battles": [
+        {
+          "trainerbattle_type": "no_intro",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_LATE_SQUIRTLE",
+          "trainer_num": 435,
+          "trainer_class": "TRAINER_CLASS_RIVAL_LATE",
+          "trainer_class_num": 89,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEOT",
+              "species_num": 18,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FEATHER_DANCE",
+                "MOVE_WING_ATTACK",
+                "MOVE_GUST",
+                "MOVE_QUICK_ATTACK"
+              ],
+              "moves_num": [
+                297,
+                17,
+                16,
+                98
+              ]
+            },
+            {
+              "species": "SPECIES_RHYHORN",
+              "species_num": 111,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TAKE_DOWN",
+                "MOVE_HORN_DRILL",
+                "MOVE_ROCK_BLAST",
+                "MOVE_FURY_ATTACK"
+              ],
+              "moves_num": [
+                36,
+                32,
+                350,
+                31
+              ]
+            },
+            {
+              "species": "SPECIES_GROWLITHE",
+              "species_num": 58,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FLAME_WHEEL",
+                "MOVE_TAKE_DOWN",
+                "MOVE_LEER",
+                "MOVE_AGILITY"
+              ],
+              "moves_num": [
+                172,
+                36,
+                43,
+                97
+              ]
+            },
+            {
+              "species": "SPECIES_EXEGGCUTE",
+              "species_num": 102,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_SOLAR_BEAM",
+                "MOVE_SLEEP_POWDER",
+                "MOVE_POISON_POWDER",
+                "MOVE_STUN_SPORE"
+              ],
+              "moves_num": [
+                76,
+                79,
+                77,
+                78
+              ]
+            },
+            {
+              "species": "SPECIES_ALAKAZAM",
+              "species_num": 65,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_PSYCHIC",
+                "MOVE_CALM_MIND",
+                "MOVE_FUTURE_SIGHT",
+                "MOVE_DISABLE"
+              ],
+              "moves_num": [
+                94,
+                347,
+                248,
+                50
+              ]
+            },
+            {
+              "species": "SPECIES_BLASTOISE",
+              "species_num": 9,
+              "level": 53,
+              "iv": 250,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_WATER_GUN",
+                "MOVE_RAIN_DANCE",
+                "MOVE_BITE",
+                "MOVE_RAPID_SPIN"
+              ],
+              "moves_num": [
+                55,
+                240,
+                44,
+                229
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "no_intro",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_LATE_BULBASAUR",
+          "trainer_num": 436,
+          "trainer_class": "TRAINER_CLASS_RIVAL_LATE",
+          "trainer_class_num": 89,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEOT",
+              "species_num": 18,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FEATHER_DANCE",
+                "MOVE_WING_ATTACK",
+                "MOVE_GUST",
+                "MOVE_QUICK_ATTACK"
+              ],
+              "moves_num": [
+                297,
+                17,
+                16,
+                98
+              ]
+            },
+            {
+              "species": "SPECIES_RHYHORN",
+              "species_num": 111,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TAKE_DOWN",
+                "MOVE_HORN_DRILL",
+                "MOVE_ROCK_BLAST",
+                "MOVE_FURY_ATTACK"
+              ],
+              "moves_num": [
+                36,
+                32,
+                350,
+                31
+              ]
+            },
+            {
+              "species": "SPECIES_GYARADOS",
+              "species_num": 130,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_HYDRO_PUMP",
+                "MOVE_TWISTER",
+                "MOVE_LEER",
+                "MOVE_RAIN_DANCE"
+              ],
+              "moves_num": [
+                56,
+                239,
+                43,
+                240
+              ]
+            },
+            {
+              "species": "SPECIES_GROWLITHE",
+              "species_num": 58,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FLAME_WHEEL",
+                "MOVE_TAKE_DOWN",
+                "MOVE_LEER",
+                "MOVE_AGILITY"
+              ],
+              "moves_num": [
+                172,
+                36,
+                43,
+                97
+              ]
+            },
+            {
+              "species": "SPECIES_ALAKAZAM",
+              "species_num": 65,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_PSYCHIC",
+                "MOVE_CALM_MIND",
+                "MOVE_FUTURE_SIGHT",
+                "MOVE_DISABLE"
+              ],
+              "moves_num": [
+                94,
+                347,
+                248,
+                50
+              ]
+            },
+            {
+              "species": "SPECIES_VENUSAUR",
+              "species_num": 3,
+              "level": 53,
+              "iv": 250,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_RAZOR_LEAF",
+                "MOVE_SWEET_SCENT",
+                "MOVE_GROWTH",
+                "MOVE_SYNTHESIS"
+              ],
+              "moves_num": [
+                75,
+                230,
+                74,
+                235
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "no_intro",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_LATE_CHARMANDER",
+          "trainer_num": 437,
+          "trainer_class": "TRAINER_CLASS_RIVAL_LATE",
+          "trainer_class_num": 89,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEOT",
+              "species_num": 18,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FEATHER_DANCE",
+                "MOVE_WING_ATTACK",
+                "MOVE_GUST",
+                "MOVE_QUICK_ATTACK"
+              ],
+              "moves_num": [
+                297,
+                17,
+                16,
+                98
+              ]
+            },
+            {
+              "species": "SPECIES_RHYHORN",
+              "species_num": 111,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TAKE_DOWN",
+                "MOVE_HORN_DRILL",
+                "MOVE_ROCK_BLAST",
+                "MOVE_FURY_ATTACK"
+              ],
+              "moves_num": [
+                36,
+                32,
+                350,
+                31
+              ]
+            },
+            {
+              "species": "SPECIES_EXEGGCUTE",
+              "species_num": 102,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_SOLAR_BEAM",
+                "MOVE_SLEEP_POWDER",
+                "MOVE_POISON_POWDER",
+                "MOVE_STUN_SPORE"
+              ],
+              "moves_num": [
+                76,
+                79,
+                77,
+                78
+              ]
+            },
+            {
+              "species": "SPECIES_GYARADOS",
+              "species_num": 130,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_HYDRO_PUMP",
+                "MOVE_TWISTER",
+                "MOVE_LEER",
+                "MOVE_RAIN_DANCE"
+              ],
+              "moves_num": [
+                56,
+                239,
+                43,
+                240
+              ]
+            },
+            {
+              "species": "SPECIES_ALAKAZAM",
+              "species_num": 65,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_PSYCHIC",
+                "MOVE_CALM_MIND",
+                "MOVE_FUTURE_SIGHT",
+                "MOVE_DISABLE"
+              ],
+              "moves_num": [
+                94,
+                347,
+                248,
+                50
+              ]
+            },
+            {
+              "species": "SPECIES_CHARIZARD",
+              "species_num": 6,
+              "level": 53,
+              "iv": 250,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FLAMETHROWER",
+                "MOVE_WING_ATTACK",
+                "MOVE_SLASH",
+                "MOVE_SCARY_FACE"
+              ],
+              "moves_num": [
+                53,
+                17,
+                163,
+                184
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "trigger": {
+        "x": 33,
+        "y": 6,
+        "elevation": 0,
+        "var": "VAR_MAP_SCENE_ROUTE22",
+        "var_value": "3"
+      },
+      "script": "Route22_EventScript_LateRivalTriggerBottom",
+      "battles": [
+        {
+          "trainerbattle_type": "no_intro",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_LATE_SQUIRTLE",
+          "trainer_num": 435,
+          "trainer_class": "TRAINER_CLASS_RIVAL_LATE",
+          "trainer_class_num": 89,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEOT",
+              "species_num": 18,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FEATHER_DANCE",
+                "MOVE_WING_ATTACK",
+                "MOVE_GUST",
+                "MOVE_QUICK_ATTACK"
+              ],
+              "moves_num": [
+                297,
+                17,
+                16,
+                98
+              ]
+            },
+            {
+              "species": "SPECIES_RHYHORN",
+              "species_num": 111,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TAKE_DOWN",
+                "MOVE_HORN_DRILL",
+                "MOVE_ROCK_BLAST",
+                "MOVE_FURY_ATTACK"
+              ],
+              "moves_num": [
+                36,
+                32,
+                350,
+                31
+              ]
+            },
+            {
+              "species": "SPECIES_GROWLITHE",
+              "species_num": 58,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FLAME_WHEEL",
+                "MOVE_TAKE_DOWN",
+                "MOVE_LEER",
+                "MOVE_AGILITY"
+              ],
+              "moves_num": [
+                172,
+                36,
+                43,
+                97
+              ]
+            },
+            {
+              "species": "SPECIES_EXEGGCUTE",
+              "species_num": 102,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_SOLAR_BEAM",
+                "MOVE_SLEEP_POWDER",
+                "MOVE_POISON_POWDER",
+                "MOVE_STUN_SPORE"
+              ],
+              "moves_num": [
+                76,
+                79,
+                77,
+                78
+              ]
+            },
+            {
+              "species": "SPECIES_ALAKAZAM",
+              "species_num": 65,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_PSYCHIC",
+                "MOVE_CALM_MIND",
+                "MOVE_FUTURE_SIGHT",
+                "MOVE_DISABLE"
+              ],
+              "moves_num": [
+                94,
+                347,
+                248,
+                50
+              ]
+            },
+            {
+              "species": "SPECIES_BLASTOISE",
+              "species_num": 9,
+              "level": 53,
+              "iv": 250,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_WATER_GUN",
+                "MOVE_RAIN_DANCE",
+                "MOVE_BITE",
+                "MOVE_RAPID_SPIN"
+              ],
+              "moves_num": [
+                55,
+                240,
+                44,
+                229
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "no_intro",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_LATE_BULBASAUR",
+          "trainer_num": 436,
+          "trainer_class": "TRAINER_CLASS_RIVAL_LATE",
+          "trainer_class_num": 89,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEOT",
+              "species_num": 18,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FEATHER_DANCE",
+                "MOVE_WING_ATTACK",
+                "MOVE_GUST",
+                "MOVE_QUICK_ATTACK"
+              ],
+              "moves_num": [
+                297,
+                17,
+                16,
+                98
+              ]
+            },
+            {
+              "species": "SPECIES_RHYHORN",
+              "species_num": 111,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TAKE_DOWN",
+                "MOVE_HORN_DRILL",
+                "MOVE_ROCK_BLAST",
+                "MOVE_FURY_ATTACK"
+              ],
+              "moves_num": [
+                36,
+                32,
+                350,
+                31
+              ]
+            },
+            {
+              "species": "SPECIES_GYARADOS",
+              "species_num": 130,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_HYDRO_PUMP",
+                "MOVE_TWISTER",
+                "MOVE_LEER",
+                "MOVE_RAIN_DANCE"
+              ],
+              "moves_num": [
+                56,
+                239,
+                43,
+                240
+              ]
+            },
+            {
+              "species": "SPECIES_GROWLITHE",
+              "species_num": 58,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FLAME_WHEEL",
+                "MOVE_TAKE_DOWN",
+                "MOVE_LEER",
+                "MOVE_AGILITY"
+              ],
+              "moves_num": [
+                172,
+                36,
+                43,
+                97
+              ]
+            },
+            {
+              "species": "SPECIES_ALAKAZAM",
+              "species_num": 65,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_PSYCHIC",
+                "MOVE_CALM_MIND",
+                "MOVE_FUTURE_SIGHT",
+                "MOVE_DISABLE"
+              ],
+              "moves_num": [
+                94,
+                347,
+                248,
+                50
+              ]
+            },
+            {
+              "species": "SPECIES_VENUSAUR",
+              "species_num": 3,
+              "level": 53,
+              "iv": 250,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_RAZOR_LEAF",
+                "MOVE_SWEET_SCENT",
+                "MOVE_GROWTH",
+                "MOVE_SYNTHESIS"
+              ],
+              "moves_num": [
+                75,
+                230,
+                74,
+                235
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "no_intro",
+          "trainer_id": "TRAINER_RIVAL_ROUTE22_LATE_CHARMANDER",
+          "trainer_num": 437,
+          "trainer_class": "TRAINER_CLASS_RIVAL_LATE",
+          "trainer_class_num": 89,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_PIDGEOT",
+              "species_num": 18,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FEATHER_DANCE",
+                "MOVE_WING_ATTACK",
+                "MOVE_GUST",
+                "MOVE_QUICK_ATTACK"
+              ],
+              "moves_num": [
+                297,
+                17,
+                16,
+                98
+              ]
+            },
+            {
+              "species": "SPECIES_RHYHORN",
+              "species_num": 111,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_TAKE_DOWN",
+                "MOVE_HORN_DRILL",
+                "MOVE_ROCK_BLAST",
+                "MOVE_FURY_ATTACK"
+              ],
+              "moves_num": [
+                36,
+                32,
+                350,
+                31
+              ]
+            },
+            {
+              "species": "SPECIES_EXEGGCUTE",
+              "species_num": 102,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_SOLAR_BEAM",
+                "MOVE_SLEEP_POWDER",
+                "MOVE_POISON_POWDER",
+                "MOVE_STUN_SPORE"
+              ],
+              "moves_num": [
+                76,
+                79,
+                77,
+                78
+              ]
+            },
+            {
+              "species": "SPECIES_GYARADOS",
+              "species_num": 130,
+              "level": 45,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_HYDRO_PUMP",
+                "MOVE_TWISTER",
+                "MOVE_LEER",
+                "MOVE_RAIN_DANCE"
+              ],
+              "moves_num": [
+                56,
+                239,
+                43,
+                240
+              ]
+            },
+            {
+              "species": "SPECIES_ALAKAZAM",
+              "species_num": 65,
+              "level": 47,
+              "iv": 150,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_PSYCHIC",
+                "MOVE_CALM_MIND",
+                "MOVE_FUTURE_SIGHT",
+                "MOVE_DISABLE"
+              ],
+              "moves_num": [
+                94,
+                347,
+                248,
+                50
+              ]
+            },
+            {
+              "species": "SPECIES_CHARIZARD",
+              "species_num": 6,
+              "level": 53,
+              "iv": 250,
+              "item": null,
+              "item_num": null,
+              "moves": [
+                "MOVE_FLAMETHROWER",
+                "MOVE_WING_ATTACK",
+                "MOVE_SLASH",
+                "MOVE_SCARY_FACE"
+              ],
+              "moves_num": [
+                53,
+                17,
+                163,
+                184
+              ]
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "0"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

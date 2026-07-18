@@ -1,0 +1,409 @@
+{
+  "generatedAt": "2026-07-18T18:51:36.779Z",
+  "source": "derived from staticdata/frlg/index.json + maps/*.json (A1)",
+  "note": "One entry per extracted map. `anchorKind: warp` means (x,y) is the landing tile of the first in-scope warp into this map (deterministic by index.json order); `center` means the nearest passable tile to the map's geometric center (outdoor maps, or indoor maps with no in-scope door).",
+  "locations": [
+    {
+      "name": "Pallet Town",
+      "aliases": [
+        "pallet town"
+      ],
+      "type": "city",
+      "id": "MAP_PALLET_TOWN",
+      "group": 3,
+      "num": 0,
+      "x": 12,
+      "y": 10,
+      "anchorKind": "center"
+    },
+    {
+      "name": "Pallet Town Players House 1F",
+      "aliases": [
+        "pallet town players house 1f"
+      ],
+      "type": "house",
+      "id": "MAP_PALLET_TOWN_PLAYERS_HOUSE_1F",
+      "group": 4,
+      "num": 0,
+      "x": 4,
+      "y": 8,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Pallet Town Players House 2F",
+      "aliases": [
+        "pallet town players house 2f"
+      ],
+      "type": "house",
+      "id": "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F",
+      "group": 4,
+      "num": 1,
+      "x": 10,
+      "y": 2,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Pallet Town Rivals House",
+      "aliases": [
+        "pallet town rivals house"
+      ],
+      "type": "house",
+      "id": "MAP_PALLET_TOWN_RIVALS_HOUSE",
+      "group": 4,
+      "num": 2,
+      "x": 4,
+      "y": 8,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Pallet Town Professor Oaks Lab",
+      "aliases": [
+        "pallet town professor oaks lab"
+      ],
+      "type": "lab",
+      "id": "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB",
+      "group": 4,
+      "num": 3,
+      "x": 6,
+      "y": 12,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Route 1",
+      "aliases": [
+        "route 1"
+      ],
+      "type": "route",
+      "id": "MAP_ROUTE1",
+      "group": 3,
+      "num": 19,
+      "x": 11,
+      "y": 19,
+      "anchorKind": "center"
+    },
+    {
+      "name": "Viridian City",
+      "aliases": [
+        "viridian city"
+      ],
+      "type": "city",
+      "id": "MAP_VIRIDIAN_CITY",
+      "group": 3,
+      "num": 1,
+      "x": 24,
+      "y": 20,
+      "anchorKind": "center"
+    },
+    {
+      "name": "Viridian City House",
+      "aliases": [
+        "viridian city house"
+      ],
+      "type": "house",
+      "id": "MAP_VIRIDIAN_CITY_HOUSE",
+      "group": 5,
+      "num": 0,
+      "x": 4,
+      "y": 7,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Viridian City Gym",
+      "aliases": [
+        "viridian city gym"
+      ],
+      "type": "gym",
+      "id": "MAP_VIRIDIAN_CITY_GYM",
+      "group": 5,
+      "num": 1,
+      "x": 17,
+      "y": 22,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Viridian City School",
+      "aliases": [
+        "viridian city school"
+      ],
+      "type": "school",
+      "id": "MAP_VIRIDIAN_CITY_SCHOOL",
+      "group": 5,
+      "num": 2,
+      "x": 4,
+      "y": 7,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Viridian City Mart",
+      "aliases": [
+        "viridian city mart",
+        "viridian city shop",
+        "viridian city poke mart"
+      ],
+      "type": "mart",
+      "id": "MAP_VIRIDIAN_CITY_MART",
+      "group": 5,
+      "num": 3,
+      "x": 4,
+      "y": 7,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Viridian City Pokemon Center 1F",
+      "aliases": [
+        "viridian city pokemon center 1f",
+        "viridian city pokecenter 1f",
+        "viridian city poke center 1f"
+      ],
+      "type": "pokecenter",
+      "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F",
+      "group": 5,
+      "num": 4,
+      "x": 7,
+      "y": 8,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Viridian City Pokemon Center 2F",
+      "aliases": [
+        "viridian city pokemon center 2f",
+        "viridian city pokecenter 2f",
+        "viridian city poke center 2f"
+      ],
+      "type": "pokecenter_upstairs",
+      "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_2F",
+      "group": 5,
+      "num": 5,
+      "x": 1,
+      "y": 6,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Route 22",
+      "aliases": [
+        "route 22"
+      ],
+      "type": "route",
+      "id": "MAP_ROUTE22",
+      "group": 3,
+      "num": 41,
+      "x": 24,
+      "y": 12,
+      "anchorKind": "center"
+    },
+    {
+      "name": "Route 22 North Entrance",
+      "aliases": [
+        "route 22 north entrance"
+      ],
+      "type": "gate",
+      "id": "MAP_ROUTE22_NORTH_ENTRANCE",
+      "group": 28,
+      "num": 0,
+      "x": 7,
+      "y": 10,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Route 2",
+      "aliases": [
+        "route 2"
+      ],
+      "type": "route",
+      "id": "MAP_ROUTE2",
+      "group": 3,
+      "num": 20,
+      "x": 16,
+      "y": 36,
+      "anchorKind": "center"
+    },
+    {
+      "name": "Route 2 Viridian Forest South Entrance",
+      "aliases": [
+        "route 2 viridian forest south entrance"
+      ],
+      "type": "gate",
+      "id": "MAP_ROUTE2_VIRIDIAN_FOREST_SOUTH_ENTRANCE",
+      "group": 15,
+      "num": 0,
+      "x": 7,
+      "y": 10,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Route 2 Viridian Forest North Entrance",
+      "aliases": [
+        "route 2 viridian forest north entrance"
+      ],
+      "type": "gate",
+      "id": "MAP_ROUTE2_VIRIDIAN_FOREST_NORTH_ENTRANCE",
+      "group": 15,
+      "num": 3,
+      "x": 7,
+      "y": 1,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Route 2 House",
+      "aliases": [
+        "route 2 house"
+      ],
+      "type": "house",
+      "id": "MAP_ROUTE2_HOUSE",
+      "group": 15,
+      "num": 1,
+      "x": 4,
+      "y": 7,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Route 2 East Building",
+      "aliases": [
+        "route 2 east building"
+      ],
+      "type": "building",
+      "id": "MAP_ROUTE2_EAST_BUILDING",
+      "group": 15,
+      "num": 2,
+      "x": 7,
+      "y": 10,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Viridian Forest",
+      "aliases": [
+        "viridian forest"
+      ],
+      "type": "route",
+      "id": "MAP_VIRIDIAN_FOREST",
+      "group": 1,
+      "num": 0,
+      "x": 23,
+      "y": 31,
+      "anchorKind": "center"
+    },
+    {
+      "name": "Pewter City",
+      "aliases": [
+        "pewter city"
+      ],
+      "type": "city",
+      "id": "MAP_PEWTER_CITY",
+      "group": 3,
+      "num": 2,
+      "x": 24,
+      "y": 20,
+      "anchorKind": "center"
+    },
+    {
+      "name": "Pewter City Museum 1F",
+      "aliases": [
+        "pewter city museum 1f"
+      ],
+      "type": "museum",
+      "id": "MAP_PEWTER_CITY_MUSEUM_1F",
+      "group": 6,
+      "num": 0,
+      "x": 14,
+      "y": 9,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Pewter City Museum 2F",
+      "aliases": [
+        "pewter city museum 2f"
+      ],
+      "type": "museum",
+      "id": "MAP_PEWTER_CITY_MUSEUM_2F",
+      "group": 6,
+      "num": 1,
+      "x": 11,
+      "y": 8,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Pewter City Gym",
+      "aliases": [
+        "pewter city gym"
+      ],
+      "type": "gym",
+      "id": "MAP_PEWTER_CITY_GYM",
+      "group": 6,
+      "num": 2,
+      "x": 6,
+      "y": 14,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Pewter City Mart",
+      "aliases": [
+        "pewter city mart",
+        "pewter city shop",
+        "pewter city poke mart"
+      ],
+      "type": "mart",
+      "id": "MAP_PEWTER_CITY_MART",
+      "group": 6,
+      "num": 3,
+      "x": 4,
+      "y": 7,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Pewter City House 1",
+      "aliases": [
+        "pewter city house 1"
+      ],
+      "type": "house",
+      "id": "MAP_PEWTER_CITY_HOUSE1",
+      "group": 6,
+      "num": 4,
+      "x": 4,
+      "y": 7,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Pewter City House 2",
+      "aliases": [
+        "pewter city house 2"
+      ],
+      "type": "house",
+      "id": "MAP_PEWTER_CITY_HOUSE2",
+      "group": 6,
+      "num": 7,
+      "x": 4,
+      "y": 7,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Pewter City Pokemon Center 1F",
+      "aliases": [
+        "pewter city pokemon center 1f",
+        "pewter city pokecenter 1f",
+        "pewter city poke center 1f"
+      ],
+      "type": "pokecenter",
+      "id": "MAP_PEWTER_CITY_POKEMON_CENTER_1F",
+      "group": 6,
+      "num": 5,
+      "x": 7,
+      "y": 8,
+      "anchorKind": "warp"
+    },
+    {
+      "name": "Pewter City Pokemon Center 2F",
+      "aliases": [
+        "pewter city pokemon center 2f",
+        "pewter city pokecenter 2f",
+        "pewter city poke center 2f"
+      ],
+      "type": "pokecenter_upstairs",
+      "id": "MAP_PEWTER_CITY_POKEMON_CENTER_2F",
+      "group": 6,
+      "num": 6,
+      "x": 1,
+      "y": 6,
+      "anchorKind": "warp"
+    }
+  ]
+}

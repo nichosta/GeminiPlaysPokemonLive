@@ -1,0 +1,347 @@
+{
+  "game": "FRLG",
+  "scope": "pre-Brock (Pallet Town through Pewter City gym)",
+  "source": {
+    "repo": "https://github.com/pret/pokefirered",
+    "commit": "df4449a27cd78dd747ce269e47d3ab4a0149d8f4"
+  },
+  "generatedAt": "2026-07-18T18:55:32.734Z",
+  "notes": {
+    "trainers": "object_events resolved through trainerbattle_* commands (BFS over goto/call indirection). facing/sight_range describe the sightline trigger; encounter-tile geometry (line-of-cast over collision) is computed downstream, not here.",
+    "items": "ground OBJ_EVENT_GFX_ITEM_BALL object_events resolved through finditem commands; Pallet Town starter balls carry gives_starter instead of item.",
+    "hidden_items": "bg_events of type hidden_item; item/quantity/flag come straight from map.json, no script resolution needed.",
+    "scripted_encounters": "coord_events (map triggers) that reach a trainerbattle_* through script indirection, e.g. the Route 22 rival fight. conditions[] records _if_eq branches (var, value) walked to reach each battle."
+  },
+  "maps": [
+    {
+      "id": "MAP_PALLET_TOWN",
+      "name": "PalletTown",
+      "group": 3,
+      "num": 0,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/PalletTown.json"
+    },
+    {
+      "id": "MAP_PALLET_TOWN_PLAYERS_HOUSE_1F",
+      "name": "PalletTown_PlayersHouse_1F",
+      "group": 4,
+      "num": 0,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/PalletTown_PlayersHouse_1F.json"
+    },
+    {
+      "id": "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F",
+      "name": "PalletTown_PlayersHouse_2F",
+      "group": 4,
+      "num": 1,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/PalletTown_PlayersHouse_2F.json"
+    },
+    {
+      "id": "MAP_PALLET_TOWN_RIVALS_HOUSE",
+      "name": "PalletTown_RivalsHouse",
+      "group": 4,
+      "num": 2,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/PalletTown_RivalsHouse.json"
+    },
+    {
+      "id": "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB",
+      "name": "PalletTown_ProfessorOaksLab",
+      "group": 4,
+      "num": 3,
+      "trainers": 0,
+      "items": 3,
+      "hidden_items": 0,
+      "scripted_encounters": 3,
+      "file": "events/PalletTown_ProfessorOaksLab.json"
+    },
+    {
+      "id": "MAP_ROUTE1",
+      "name": "Route1",
+      "group": 3,
+      "num": 19,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/Route1.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY",
+      "name": "ViridianCity",
+      "group": 3,
+      "num": 1,
+      "trainers": 0,
+      "items": 1,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/ViridianCity.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_HOUSE",
+      "name": "ViridianCity_House",
+      "group": 5,
+      "num": 0,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/ViridianCity_House.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_GYM",
+      "name": "ViridianCity_Gym",
+      "group": 5,
+      "num": 1,
+      "trainers": 9,
+      "items": 0,
+      "hidden_items": 1,
+      "scripted_encounters": 0,
+      "file": "events/ViridianCity_Gym.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_SCHOOL",
+      "name": "ViridianCity_School",
+      "group": 5,
+      "num": 2,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/ViridianCity_School.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_MART",
+      "name": "ViridianCity_Mart",
+      "group": 5,
+      "num": 3,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/ViridianCity_Mart.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F",
+      "name": "ViridianCity_PokemonCenter_1F",
+      "group": 5,
+      "num": 4,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/ViridianCity_PokemonCenter_1F.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_2F",
+      "name": "ViridianCity_PokemonCenter_2F",
+      "group": 5,
+      "num": 5,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/ViridianCity_PokemonCenter_2F.json"
+    },
+    {
+      "id": "MAP_ROUTE22",
+      "name": "Route22",
+      "group": 3,
+      "num": 41,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 6,
+      "file": "events/Route22.json"
+    },
+    {
+      "id": "MAP_ROUTE22_NORTH_ENTRANCE",
+      "name": "Route22_NorthEntrance",
+      "group": 28,
+      "num": 0,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/Route22_NorthEntrance.json"
+    },
+    {
+      "id": "MAP_ROUTE2",
+      "name": "Route2",
+      "group": 3,
+      "num": 20,
+      "trainers": 0,
+      "items": 2,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/Route2.json"
+    },
+    {
+      "id": "MAP_ROUTE2_VIRIDIAN_FOREST_SOUTH_ENTRANCE",
+      "name": "Route2_ViridianForest_SouthEntrance",
+      "group": 15,
+      "num": 0,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/Route2_ViridianForest_SouthEntrance.json"
+    },
+    {
+      "id": "MAP_ROUTE2_VIRIDIAN_FOREST_NORTH_ENTRANCE",
+      "name": "Route2_ViridianForest_NorthEntrance",
+      "group": 15,
+      "num": 3,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/Route2_ViridianForest_NorthEntrance.json"
+    },
+    {
+      "id": "MAP_ROUTE2_HOUSE",
+      "name": "Route2_House",
+      "group": 15,
+      "num": 1,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/Route2_House.json"
+    },
+    {
+      "id": "MAP_ROUTE2_EAST_BUILDING",
+      "name": "Route2_EastBuilding",
+      "group": 15,
+      "num": 2,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/Route2_EastBuilding.json"
+    },
+    {
+      "id": "MAP_VIRIDIAN_FOREST",
+      "name": "ViridianForest",
+      "group": 1,
+      "num": 0,
+      "trainers": 5,
+      "items": 4,
+      "hidden_items": 2,
+      "scripted_encounters": 0,
+      "file": "events/ViridianForest.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY",
+      "name": "PewterCity",
+      "group": 3,
+      "num": 2,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 1,
+      "scripted_encounters": 0,
+      "file": "events/PewterCity.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_MUSEUM_1F",
+      "name": "PewterCity_Museum_1F",
+      "group": 6,
+      "num": 0,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/PewterCity_Museum_1F.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_MUSEUM_2F",
+      "name": "PewterCity_Museum_2F",
+      "group": 6,
+      "num": 1,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/PewterCity_Museum_2F.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_GYM",
+      "name": "PewterCity_Gym",
+      "group": 6,
+      "num": 2,
+      "trainers": 2,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/PewterCity_Gym.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_MART",
+      "name": "PewterCity_Mart",
+      "group": 6,
+      "num": 3,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/PewterCity_Mart.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_HOUSE1",
+      "name": "PewterCity_House1",
+      "group": 6,
+      "num": 4,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/PewterCity_House1.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_HOUSE2",
+      "name": "PewterCity_House2",
+      "group": 6,
+      "num": 7,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/PewterCity_House2.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_POKEMON_CENTER_1F",
+      "name": "PewterCity_PokemonCenter_1F",
+      "group": 6,
+      "num": 5,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/PewterCity_PokemonCenter_1F.json"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_POKEMON_CENTER_2F",
+      "name": "PewterCity_PokemonCenter_2F",
+      "group": 6,
+      "num": 6,
+      "trainers": 0,
+      "items": 0,
+      "hidden_items": 0,
+      "scripted_encounters": 0,
+      "file": "events/PewterCity_PokemonCenter_2F.json"
+    }
+  ]
+}

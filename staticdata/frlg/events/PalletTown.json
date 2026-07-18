@@ -1,0 +1,10 @@
+{
+  "id": "MAP_PALLET_TOWN",
+  "name": "PalletTown",
+  "group": 3,
+  "num": 0,
+  "trainers": [],
+  "items": [],
+  "hidden_items": [],
+  "scripted_encounters": []
+}

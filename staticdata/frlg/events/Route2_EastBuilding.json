@@ -1,0 +1,10 @@
+{
+  "id": "MAP_ROUTE2_EAST_BUILDING",
+  "name": "Route2_EastBuilding",
+  "group": 15,
+  "num": 2,
+  "trainers": [],
+  "items": [],
+  "hidden_items": [],
+  "scripted_encounters": []
+}

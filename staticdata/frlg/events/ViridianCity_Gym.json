@@ -1,0 +1,729 @@
+{
+  "id": "MAP_VIRIDIAN_CITY_GYM",
+  "name": "ViridianCity_Gym",
+  "group": 5,
+  "num": 1,
+  "trainers": [
+    {
+      "local_id": null,
+      "x": 10,
+      "y": 2,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
+      "facing": "down",
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 3,
+      "script": "ViridianCity_Gym_EventScript_Takashi",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_BLACK_BELT_TAKASHI",
+      "trainer_num": 324,
+      "trainer_class": "TRAINER_CLASS_BLACK_BELT",
+      "trainer_class_num": 80,
+      "trainer_class_name": "BLACK BELT",
+      "trainer_name": "TAKASHI",
+      "double_battle": false,
+      "items": [],
+      "party": [
+        {
+          "species": "SPECIES_MACHOKE",
+          "species_num": 67,
+          "level": 38,
+          "iv": 100,
+          "item": "ITEM_BLACK_BELT",
+          "item_num": 207,
+          "moves": null,
+          "moves_num": null
+        },
+        {
+          "species": "SPECIES_MACHOP",
+          "species_num": 66,
+          "level": 38,
+          "iv": 100,
+          "item": "ITEM_BLACK_BELT",
+          "item_num": 207,
+          "moves": null,
+          "moves_num": null
+        },
+        {
+          "species": "SPECIES_MACHOKE",
+          "species_num": 67,
+          "level": 38,
+          "iv": 100,
+          "item": "ITEM_BLACK_BELT",
+          "item_num": 207,
+          "moves": null,
+          "moves_num": null
+        }
+      ]
+    },
+    {
+      "local_id": null,
+      "x": 12,
+      "y": 10,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
+      "facing": "down",
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 3,
+      "script": "ViridianCity_Gym_EventScript_Yuji",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_COOLTRAINER_YUJI",
+      "trainer_num": 400,
+      "trainer_class": "TRAINER_CLASS_COOLTRAINER",
+      "trainer_class_num": 86,
+      "trainer_class_name": "COOLTRAINER",
+      "trainer_name": "YUJI",
+      "double_battle": false,
+      "items": [
+        "ITEM_HYPER_POTION"
+      ],
+      "party": [
+        {
+          "species": "SPECIES_SANDSLASH",
+          "species_num": 28,
+          "level": 38,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_SLASH",
+            "MOVE_SWIFT",
+            "MOVE_SAND_ATTACK",
+            "MOVE_POISON_STING"
+          ],
+          "moves_num": [
+            163,
+            129,
+            28,
+            40
+          ]
+        },
+        {
+          "species": "SPECIES_GRAVELER",
+          "species_num": 75,
+          "level": 38,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_ROCK_BLAST",
+            "MOVE_MAGNITUDE",
+            "MOVE_MUD_SPORT",
+            "MOVE_DEFENSE_CURL"
+          ],
+          "moves_num": [
+            350,
+            222,
+            300,
+            111
+          ]
+        },
+        {
+          "species": "SPECIES_ONIX",
+          "species_num": 95,
+          "level": 38,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_DRAGON_BREATH",
+            "MOVE_SANDSTORM",
+            "MOVE_ROCK_THROW",
+            "MOVE_BIND"
+          ],
+          "moves_num": [
+            225,
+            201,
+            88,
+            20
+          ]
+        },
+        {
+          "species": "SPECIES_GRAVELER",
+          "species_num": 75,
+          "level": 38,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_ROCK_BLAST",
+            "MOVE_MAGNITUDE",
+            "MOVE_ROLLOUT",
+            "MOVE_DEFENSE_CURL"
+          ],
+          "moves_num": [
+            350,
+            222,
+            205,
+            111
+          ]
+        },
+        {
+          "species": "SPECIES_MAROWAK",
+          "species_num": 105,
+          "level": 38,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_BONEMERANG",
+            "MOVE_HEADBUTT",
+            "MOVE_LEER",
+            "MOVE_GROWL"
+          ],
+          "moves_num": [
+            155,
+            29,
+            43,
+            45
+          ]
+        }
+      ]
+    },
+    {
+      "local_id": null,
+      "x": 11,
+      "y": 14,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_UP",
+      "facing": "up",
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 3,
+      "script": "ViridianCity_Gym_EventScript_Atsushi",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_BLACK_BELT_ATSUSHI",
+      "trainer_num": 322,
+      "trainer_class": "TRAINER_CLASS_BLACK_BELT",
+      "trainer_class_num": 80,
+      "trainer_class_name": "BLACK BELT",
+      "trainer_name": "ATSUSHI",
+      "double_battle": false,
+      "items": [],
+      "party": [
+        {
+          "species": "SPECIES_MACHOP",
+          "species_num": 66,
+          "level": 40,
+          "iv": 100,
+          "item": "ITEM_BLACK_BELT",
+          "item_num": 207,
+          "moves": null,
+          "moves_num": null
+        },
+        {
+          "species": "SPECIES_MACHOKE",
+          "species_num": 67,
+          "level": 40,
+          "iv": 100,
+          "item": "ITEM_BLACK_BELT",
+          "item_num": 207,
+          "moves": null,
+          "moves_num": null
+        }
+      ]
+    },
+    {
+      "local_id": null,
+      "x": 10,
+      "y": 10,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
+      "facing": "down",
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 3,
+      "script": "ViridianCity_Gym_EventScript_Jason",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_TAMER_JASON",
+      "trainer_num": 296,
+      "trainer_class": "TRAINER_CLASS_TAMER",
+      "trainer_class_num": 78,
+      "trainer_class_name": "TAMER",
+      "trainer_name": "JASON",
+      "double_battle": false,
+      "items": [],
+      "party": [
+        {
+          "species": "SPECIES_RHYHORN",
+          "species_num": 111,
+          "level": 43,
+          "iv": 40,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        }
+      ]
+    },
+    {
+      "local_id": null,
+      "x": 2,
+      "y": 21,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_RIGHT",
+      "facing": "right",
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 2,
+      "script": "ViridianCity_Gym_EventScript_Cole",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_TAMER_COLE",
+      "trainer_num": 297,
+      "trainer_class": "TRAINER_CLASS_TAMER",
+      "trainer_class_num": 78,
+      "trainer_class_name": "TAMER",
+      "trainer_name": "COLE",
+      "double_battle": false,
+      "items": [],
+      "party": [
+        {
+          "species": "SPECIES_ARBOK",
+          "species_num": 24,
+          "level": 39,
+          "iv": 40,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        },
+        {
+          "species": "SPECIES_TAUROS",
+          "species_num": 128,
+          "level": 39,
+          "iv": 40,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        }
+      ]
+    },
+    {
+      "local_id": null,
+      "x": 3,
+      "y": 11,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_LEFT",
+      "facing": "left",
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 2,
+      "script": "ViridianCity_Gym_EventScript_Kiyo",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_BLACK_BELT_KIYO",
+      "trainer_num": 323,
+      "trainer_class": "TRAINER_CLASS_BLACK_BELT",
+      "trainer_class_num": 80,
+      "trainer_class_name": "BLACK BELT",
+      "trainer_name": "KIYO",
+      "double_battle": false,
+      "items": [],
+      "party": [
+        {
+          "species": "SPECIES_MACHOKE",
+          "species_num": 67,
+          "level": 43,
+          "iv": 100,
+          "item": "ITEM_BLACK_BELT",
+          "item_num": 207,
+          "moves": null,
+          "moves_num": null
+        }
+      ]
+    },
+    {
+      "local_id": null,
+      "x": 6,
+      "y": 8,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
+      "facing": "down",
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 3,
+      "script": "ViridianCity_Gym_EventScript_Samuel",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_COOLTRAINER_SAMUEL",
+      "trainer_num": 392,
+      "trainer_class": "TRAINER_CLASS_COOLTRAINER",
+      "trainer_class_num": 86,
+      "trainer_class_name": "COOLTRAINER",
+      "trainer_name": "SAMUEL",
+      "double_battle": false,
+      "items": [
+        "ITEM_SUPER_POTION"
+      ],
+      "party": [
+        {
+          "species": "SPECIES_SANDSLASH",
+          "species_num": 28,
+          "level": 37,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_SLASH",
+            "MOVE_SWIFT",
+            "MOVE_SAND_ATTACK",
+            "MOVE_POISON_STING"
+          ],
+          "moves_num": [
+            163,
+            129,
+            28,
+            40
+          ]
+        },
+        {
+          "species": "SPECIES_SANDSLASH",
+          "species_num": 28,
+          "level": 37,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_SLASH",
+            "MOVE_SWIFT",
+            "MOVE_SAND_ATTACK",
+            "MOVE_POISON_STING"
+          ],
+          "moves_num": [
+            163,
+            129,
+            28,
+            40
+          ]
+        },
+        {
+          "species": "SPECIES_RHYHORN",
+          "species_num": 111,
+          "level": 38,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_TAKE_DOWN",
+            "MOVE_ROCK_BLAST",
+            "MOVE_FURY_ATTACK",
+            "MOVE_SCARY_FACE"
+          ],
+          "moves_num": [
+            36,
+            350,
+            31,
+            184
+          ]
+        },
+        {
+          "species": "SPECIES_NIDORINO",
+          "species_num": 33,
+          "level": 39,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_FURY_ATTACK",
+            "MOVE_HORN_ATTACK",
+            "MOVE_POISON_STING",
+            "MOVE_DOUBLE_KICK"
+          ],
+          "moves_num": [
+            31,
+            30,
+            40,
+            24
+          ]
+        },
+        {
+          "species": "SPECIES_NIDOKING",
+          "species_num": 34,
+          "level": 39,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_THRASH",
+            "MOVE_DOUBLE_KICK",
+            "MOVE_POISON_STING",
+            "MOVE_FOCUS_ENERGY"
+          ],
+          "moves_num": [
+            37,
+            24,
+            40,
+            116
+          ]
+        }
+      ]
+    },
+    {
+      "local_id": "LOCALID_VIRIDIAN_GIOVANNI",
+      "x": 2,
+      "y": 2,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
+      "facing": "down",
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "sight_range": null,
+      "script": "ViridianCity_Gym_EventScript_Giovanni",
+      "flag": "FLAG_HIDE_VIRIDIAN_GIOVANNI",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_LEADER_GIOVANNI",
+      "trainer_num": 350,
+      "trainer_class": "TRAINER_CLASS_LEADER",
+      "trainer_class_num": 84,
+      "trainer_class_name": "LEADER",
+      "trainer_name": "GIOVANNI",
+      "double_battle": false,
+      "items": [
+        "ITEM_HYPER_POTION",
+        "ITEM_HYPER_POTION",
+        "ITEM_FULL_HEAL"
+      ],
+      "party": [
+        {
+          "species": "SPECIES_RHYHORN",
+          "species_num": 111,
+          "level": 45,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_TAKE_DOWN",
+            "MOVE_ROCK_BLAST",
+            "MOVE_SCARY_FACE",
+            "MOVE_EARTHQUAKE"
+          ],
+          "moves_num": [
+            36,
+            350,
+            184,
+            89
+          ]
+        },
+        {
+          "species": "SPECIES_DUGTRIO",
+          "species_num": 51,
+          "level": 42,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_SLASH",
+            "MOVE_SAND_TOMB",
+            "MOVE_MUD_SLAP",
+            "MOVE_EARTHQUAKE"
+          ],
+          "moves_num": [
+            163,
+            328,
+            189,
+            89
+          ]
+        },
+        {
+          "species": "SPECIES_NIDOQUEEN",
+          "species_num": 31,
+          "level": 44,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_BODY_SLAM",
+            "MOVE_DOUBLE_KICK",
+            "MOVE_POISON_STING",
+            "MOVE_EARTHQUAKE"
+          ],
+          "moves_num": [
+            34,
+            24,
+            40,
+            89
+          ]
+        },
+        {
+          "species": "SPECIES_NIDOKING",
+          "species_num": 34,
+          "level": 45,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_THRASH",
+            "MOVE_DOUBLE_KICK",
+            "MOVE_POISON_STING",
+            "MOVE_EARTHQUAKE"
+          ],
+          "moves_num": [
+            37,
+            24,
+            40,
+            89
+          ]
+        },
+        {
+          "species": "SPECIES_RHYHORN",
+          "species_num": 111,
+          "level": 50,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_TAKE_DOWN",
+            "MOVE_ROCK_BLAST",
+            "MOVE_SCARY_FACE",
+            "MOVE_EARTHQUAKE"
+          ],
+          "moves_num": [
+            36,
+            350,
+            184,
+            89
+          ]
+        }
+      ]
+    },
+    {
+      "local_id": null,
+      "x": 13,
+      "y": 7,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_RIGHT",
+      "facing": "right",
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 3,
+      "script": "ViridianCity_Gym_EventScript_Warren",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_COOLTRAINER_WARREN",
+      "trainer_num": 401,
+      "trainer_class": "TRAINER_CLASS_COOLTRAINER",
+      "trainer_class_num": 86,
+      "trainer_class_name": "COOLTRAINER",
+      "trainer_name": "WARREN",
+      "double_battle": false,
+      "items": [
+        "ITEM_HYPER_POTION"
+      ],
+      "party": [
+        {
+          "species": "SPECIES_MAROWAK",
+          "species_num": 105,
+          "level": 37,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_BONEMERANG",
+            "MOVE_HEADBUTT",
+            "MOVE_LEER",
+            "MOVE_GROWL"
+          ],
+          "moves_num": [
+            155,
+            29,
+            43,
+            45
+          ]
+        },
+        {
+          "species": "SPECIES_MAROWAK",
+          "species_num": 105,
+          "level": 37,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_BONEMERANG",
+            "MOVE_HEADBUTT",
+            "MOVE_LEER",
+            "MOVE_GROWL"
+          ],
+          "moves_num": [
+            155,
+            29,
+            43,
+            45
+          ]
+        },
+        {
+          "species": "SPECIES_RHYHORN",
+          "species_num": 111,
+          "level": 38,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_TAKE_DOWN",
+            "MOVE_ROCK_BLAST",
+            "MOVE_FURY_ATTACK",
+            "MOVE_SCARY_FACE"
+          ],
+          "moves_num": [
+            36,
+            350,
+            31,
+            184
+          ]
+        },
+        {
+          "species": "SPECIES_NIDORINA",
+          "species_num": 30,
+          "level": 39,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_FURY_SWIPES",
+            "MOVE_BITE",
+            "MOVE_POISON_STING",
+            "MOVE_DOUBLE_KICK"
+          ],
+          "moves_num": [
+            154,
+            44,
+            40,
+            24
+          ]
+        },
+        {
+          "species": "SPECIES_NIDOQUEEN",
+          "species_num": 31,
+          "level": 39,
+          "iv": 100,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_BODY_SLAM",
+            "MOVE_BITE",
+            "MOVE_POISON_STING",
+            "MOVE_DOUBLE_KICK"
+          ],
+          "moves_num": [
+            34,
+            44,
+            40,
+            24
+          ]
+        }
+      ]
+    }
+  ],
+  "items": [],
+  "hidden_items": [
+    {
+      "x": 2,
+      "y": 2,
+      "elevation": 3,
+      "item": "ITEM_MACHO_BRACE",
+      "item_num": 181,
+      "flag": "FLAG_HIDDEN_ITEM_VIRIDIAN_CITY_GYM_MACHO_BRACE",
+      "quantity": 1,
+      "underfoot": true
+    }
+  ],
+  "scripted_encounters": []
+}

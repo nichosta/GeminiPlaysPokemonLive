@@ -1,0 +1,2421 @@
+{
+  "generatedAt": "2026-07-18T18:51:36.779Z",
+  "source": "derived from staticdata/frlg/index.json + maps/*.json (A1)",
+  "note": "Graph of the 30 pre-Brock maps joined by warps (concrete tiles both ends) and overworld connections (direction+offset; C2 resolves exact border tiles at execution time from live map dimensions). `boundaryEdges` are real warps/connections whose destination falls outside the pre-Brock extraction scope (e.g. Route 1 -> Route 21, Pewter City -> Route 3) — kept so consumers see a documented scope wall rather than an edge that silently vanished.",
+  "nodes": [
+    {
+      "id": "MAP_PALLET_TOWN",
+      "name": "PalletTown",
+      "group": 3,
+      "num": 0,
+      "type": "city",
+      "mapType": "MAP_TYPE_TOWN"
+    },
+    {
+      "id": "MAP_PALLET_TOWN_PLAYERS_HOUSE_1F",
+      "name": "PalletTown_PlayersHouse_1F",
+      "group": 4,
+      "num": 0,
+      "type": "house",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F",
+      "name": "PalletTown_PlayersHouse_2F",
+      "group": 4,
+      "num": 1,
+      "type": "house",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_PALLET_TOWN_RIVALS_HOUSE",
+      "name": "PalletTown_RivalsHouse",
+      "group": 4,
+      "num": 2,
+      "type": "house",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB",
+      "name": "PalletTown_ProfessorOaksLab",
+      "group": 4,
+      "num": 3,
+      "type": "lab",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_ROUTE1",
+      "name": "Route1",
+      "group": 3,
+      "num": 19,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY",
+      "name": "ViridianCity",
+      "group": 3,
+      "num": 1,
+      "type": "city",
+      "mapType": "MAP_TYPE_TOWN"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_HOUSE",
+      "name": "ViridianCity_House",
+      "group": 5,
+      "num": 0,
+      "type": "house",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_GYM",
+      "name": "ViridianCity_Gym",
+      "group": 5,
+      "num": 1,
+      "type": "gym",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_SCHOOL",
+      "name": "ViridianCity_School",
+      "group": 5,
+      "num": 2,
+      "type": "school",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_MART",
+      "name": "ViridianCity_Mart",
+      "group": 5,
+      "num": 3,
+      "type": "mart",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F",
+      "name": "ViridianCity_PokemonCenter_1F",
+      "group": 5,
+      "num": 4,
+      "type": "pokecenter",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_2F",
+      "name": "ViridianCity_PokemonCenter_2F",
+      "group": 5,
+      "num": 5,
+      "type": "pokecenter_upstairs",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_ROUTE22",
+      "name": "Route22",
+      "group": 3,
+      "num": 41,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE"
+    },
+    {
+      "id": "MAP_ROUTE22_NORTH_ENTRANCE",
+      "name": "Route22_NorthEntrance",
+      "group": 28,
+      "num": 0,
+      "type": "gate",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_ROUTE2",
+      "name": "Route2",
+      "group": 3,
+      "num": 20,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE"
+    },
+    {
+      "id": "MAP_ROUTE2_VIRIDIAN_FOREST_SOUTH_ENTRANCE",
+      "name": "Route2_ViridianForest_SouthEntrance",
+      "group": 15,
+      "num": 0,
+      "type": "gate",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_ROUTE2_VIRIDIAN_FOREST_NORTH_ENTRANCE",
+      "name": "Route2_ViridianForest_NorthEntrance",
+      "group": 15,
+      "num": 3,
+      "type": "gate",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_ROUTE2_HOUSE",
+      "name": "Route2_House",
+      "group": 15,
+      "num": 1,
+      "type": "house",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_ROUTE2_EAST_BUILDING",
+      "name": "Route2_EastBuilding",
+      "group": 15,
+      "num": 2,
+      "type": "building",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_VIRIDIAN_FOREST",
+      "name": "ViridianForest",
+      "group": 1,
+      "num": 0,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE"
+    },
+    {
+      "id": "MAP_PEWTER_CITY",
+      "name": "PewterCity",
+      "group": 3,
+      "num": 2,
+      "type": "city",
+      "mapType": "MAP_TYPE_TOWN"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_MUSEUM_1F",
+      "name": "PewterCity_Museum_1F",
+      "group": 6,
+      "num": 0,
+      "type": "museum",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_MUSEUM_2F",
+      "name": "PewterCity_Museum_2F",
+      "group": 6,
+      "num": 1,
+      "type": "museum",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_GYM",
+      "name": "PewterCity_Gym",
+      "group": 6,
+      "num": 2,
+      "type": "gym",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_MART",
+      "name": "PewterCity_Mart",
+      "group": 6,
+      "num": 3,
+      "type": "mart",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_HOUSE1",
+      "name": "PewterCity_House1",
+      "group": 6,
+      "num": 4,
+      "type": "house",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_HOUSE2",
+      "name": "PewterCity_House2",
+      "group": 6,
+      "num": 7,
+      "type": "house",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_POKEMON_CENTER_1F",
+      "name": "PewterCity_PokemonCenter_1F",
+      "group": 6,
+      "num": 5,
+      "type": "pokecenter",
+      "mapType": "MAP_TYPE_INDOOR"
+    },
+    {
+      "id": "MAP_PEWTER_CITY_POKEMON_CENTER_2F",
+      "name": "PewterCity_PokemonCenter_2F",
+      "group": 6,
+      "num": 6,
+      "type": "pokecenter_upstairs",
+      "mapType": "MAP_TYPE_INDOOR"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 6,
+        "y": 7
+      },
+      "to": {
+        "group": 4,
+        "num": 0
+      },
+      "toTile": {
+        "x": 4,
+        "y": 8
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 15,
+        "y": 7
+      },
+      "to": {
+        "group": 4,
+        "num": 2
+      },
+      "toTile": {
+        "x": 4,
+        "y": 8
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 16,
+        "y": 13
+      },
+      "to": {
+        "group": 4,
+        "num": 3
+      },
+      "toTile": {
+        "x": 6,
+        "y": 12
+      }
+    },
+    {
+      "kind": "connection",
+      "from": {
+        "group": 3,
+        "num": 0
+      },
+      "direction": "up",
+      "offset": 0,
+      "to": {
+        "group": 3,
+        "num": 19
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 4,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 8
+      },
+      "to": {
+        "group": 3,
+        "num": 0
+      },
+      "toTile": {
+        "x": 6,
+        "y": 7
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 4,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 4,
+        "y": 8
+      },
+      "to": {
+        "group": 3,
+        "num": 0
+      },
+      "toTile": {
+        "x": 6,
+        "y": 7
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 4,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 10,
+        "y": 2
+      },
+      "to": {
+        "group": 4,
+        "num": 1
+      },
+      "toTile": {
+        "x": 10,
+        "y": 2
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 4,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 3,
+        "y": 9
+      },
+      "to": {
+        "group": 3,
+        "num": 0
+      },
+      "toTile": {
+        "x": 6,
+        "y": 7
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 4,
+        "num": 1
+      },
+      "fromTile": {
+        "x": 10,
+        "y": 2
+      },
+      "to": {
+        "group": 4,
+        "num": 0
+      },
+      "toTile": {
+        "x": 10,
+        "y": 2
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 4,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 4,
+        "y": 8
+      },
+      "to": {
+        "group": 3,
+        "num": 0
+      },
+      "toTile": {
+        "x": 15,
+        "y": 7
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 4,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 8
+      },
+      "to": {
+        "group": 3,
+        "num": 0
+      },
+      "toTile": {
+        "x": 15,
+        "y": 7
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 4,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 3,
+        "y": 8
+      },
+      "to": {
+        "group": 3,
+        "num": 0
+      },
+      "toTile": {
+        "x": 15,
+        "y": 7
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 4,
+        "num": 3
+      },
+      "fromTile": {
+        "x": 6,
+        "y": 12
+      },
+      "to": {
+        "group": 3,
+        "num": 0
+      },
+      "toTile": {
+        "x": 16,
+        "y": 13
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 4,
+        "num": 3
+      },
+      "fromTile": {
+        "x": 7,
+        "y": 12
+      },
+      "to": {
+        "group": 3,
+        "num": 0
+      },
+      "toTile": {
+        "x": 16,
+        "y": 13
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 4,
+        "num": 3
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 12
+      },
+      "to": {
+        "group": 3,
+        "num": 0
+      },
+      "toTile": {
+        "x": 16,
+        "y": 13
+      }
+    },
+    {
+      "kind": "connection",
+      "from": {
+        "group": 3,
+        "num": 19
+      },
+      "direction": "up",
+      "offset": -12,
+      "to": {
+        "group": 3,
+        "num": 1
+      }
+    },
+    {
+      "kind": "connection",
+      "from": {
+        "group": 3,
+        "num": 19
+      },
+      "direction": "down",
+      "offset": 0,
+      "to": {
+        "group": 3,
+        "num": 0
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 1
+      },
+      "fromTile": {
+        "x": 26,
+        "y": 26
+      },
+      "to": {
+        "group": 5,
+        "num": 4
+      },
+      "toTile": {
+        "x": 7,
+        "y": 8
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 1
+      },
+      "fromTile": {
+        "x": 25,
+        "y": 11
+      },
+      "to": {
+        "group": 5,
+        "num": 0
+      },
+      "toTile": {
+        "x": 4,
+        "y": 7
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 1
+      },
+      "fromTile": {
+        "x": 36,
+        "y": 10
+      },
+      "to": {
+        "group": 5,
+        "num": 1
+      },
+      "toTile": {
+        "x": 17,
+        "y": 22
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 1
+      },
+      "fromTile": {
+        "x": 25,
+        "y": 18
+      },
+      "to": {
+        "group": 5,
+        "num": 2
+      },
+      "toTile": {
+        "x": 4,
+        "y": 7
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 1
+      },
+      "fromTile": {
+        "x": 36,
+        "y": 19
+      },
+      "to": {
+        "group": 5,
+        "num": 3
+      },
+      "toTile": {
+        "x": 4,
+        "y": 7
+      }
+    },
+    {
+      "kind": "connection",
+      "from": {
+        "group": 3,
+        "num": 1
+      },
+      "direction": "up",
+      "offset": 12,
+      "to": {
+        "group": 3,
+        "num": 20
+      }
+    },
+    {
+      "kind": "connection",
+      "from": {
+        "group": 3,
+        "num": 1
+      },
+      "direction": "down",
+      "offset": 12,
+      "to": {
+        "group": 3,
+        "num": 19
+      }
+    },
+    {
+      "kind": "connection",
+      "from": {
+        "group": 3,
+        "num": 1
+      },
+      "direction": "left",
+      "offset": 10,
+      "to": {
+        "group": 3,
+        "num": 41
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 3,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 25,
+        "y": 11
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 4,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 25,
+        "y": 11
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 25,
+        "y": 11
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 1
+      },
+      "fromTile": {
+        "x": 16,
+        "y": 22
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 36,
+        "y": 10
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 1
+      },
+      "fromTile": {
+        "x": 17,
+        "y": 22
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 36,
+        "y": 10
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 1
+      },
+      "fromTile": {
+        "x": 18,
+        "y": 22
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 36,
+        "y": 10
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 3,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 25,
+        "y": 18
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 4,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 25,
+        "y": 18
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 25,
+        "y": 18
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 3
+      },
+      "fromTile": {
+        "x": 3,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 36,
+        "y": 19
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 3
+      },
+      "fromTile": {
+        "x": 4,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 36,
+        "y": 19
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 3
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 36,
+        "y": 19
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 4
+      },
+      "fromTile": {
+        "x": 6,
+        "y": 8
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 26,
+        "y": 26
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 4
+      },
+      "fromTile": {
+        "x": 7,
+        "y": 8
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 26,
+        "y": 26
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 4
+      },
+      "fromTile": {
+        "x": 8,
+        "y": 8
+      },
+      "to": {
+        "group": 3,
+        "num": 1
+      },
+      "toTile": {
+        "x": 26,
+        "y": 26
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 4
+      },
+      "fromTile": {
+        "x": 1,
+        "y": 6
+      },
+      "to": {
+        "group": 5,
+        "num": 5
+      },
+      "toTile": {
+        "x": 1,
+        "y": 6
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 5
+      },
+      "fromTile": {
+        "x": 1,
+        "y": 6
+      },
+      "to": {
+        "group": 5,
+        "num": 4
+      },
+      "toTile": {
+        "x": 1,
+        "y": 6
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 41
+      },
+      "fromTile": {
+        "x": 8,
+        "y": 5
+      },
+      "to": {
+        "group": 28,
+        "num": 0
+      },
+      "toTile": {
+        "x": 7,
+        "y": 10
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 41
+      },
+      "fromTile": {
+        "x": 9,
+        "y": 5
+      },
+      "to": {
+        "group": 28,
+        "num": 0
+      },
+      "toTile": {
+        "x": 7,
+        "y": 10
+      }
+    },
+    {
+      "kind": "connection",
+      "from": {
+        "group": 3,
+        "num": 41
+      },
+      "direction": "right",
+      "offset": -10,
+      "to": {
+        "group": 3,
+        "num": 1
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 28,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 6,
+        "y": 10
+      },
+      "to": {
+        "group": 3,
+        "num": 41
+      },
+      "toTile": {
+        "x": 8,
+        "y": 5
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 28,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 7,
+        "y": 10
+      },
+      "to": {
+        "group": 3,
+        "num": 41
+      },
+      "toTile": {
+        "x": 8,
+        "y": 5
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 28,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 8,
+        "y": 10
+      },
+      "to": {
+        "group": 3,
+        "num": 41
+      },
+      "toTile": {
+        "x": 8,
+        "y": 5
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 20
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 13
+      },
+      "to": {
+        "group": 15,
+        "num": 3
+      },
+      "toTile": {
+        "x": 7,
+        "y": 1
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 20
+      },
+      "fromTile": {
+        "x": 6,
+        "y": 13
+      },
+      "to": {
+        "group": 15,
+        "num": 3
+      },
+      "toTile": {
+        "x": 7,
+        "y": 1
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 20
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 51
+      },
+      "to": {
+        "group": 15,
+        "num": 0
+      },
+      "toTile": {
+        "x": 7,
+        "y": 10
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 20
+      },
+      "fromTile": {
+        "x": 17,
+        "y": 22
+      },
+      "to": {
+        "group": 15,
+        "num": 1
+      },
+      "toTile": {
+        "x": 4,
+        "y": 7
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 20
+      },
+      "fromTile": {
+        "x": 18,
+        "y": 46
+      },
+      "to": {
+        "group": 15,
+        "num": 2
+      },
+      "toTile": {
+        "x": 7,
+        "y": 10
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 20
+      },
+      "fromTile": {
+        "x": 18,
+        "y": 41
+      },
+      "to": {
+        "group": 15,
+        "num": 2
+      },
+      "toTile": {
+        "x": 7,
+        "y": 1
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 20
+      },
+      "fromTile": {
+        "x": 19,
+        "y": 41
+      },
+      "to": {
+        "group": 15,
+        "num": 2
+      },
+      "toTile": {
+        "x": 7,
+        "y": 1
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 20
+      },
+      "fromTile": {
+        "x": 19,
+        "y": 46
+      },
+      "to": {
+        "group": 15,
+        "num": 2
+      },
+      "toTile": {
+        "x": 7,
+        "y": 10
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 20
+      },
+      "fromTile": {
+        "x": 6,
+        "y": 51
+      },
+      "to": {
+        "group": 15,
+        "num": 0
+      },
+      "toTile": {
+        "x": 7,
+        "y": 10
+      }
+    },
+    {
+      "kind": "connection",
+      "from": {
+        "group": 3,
+        "num": 20
+      },
+      "direction": "up",
+      "offset": -12,
+      "to": {
+        "group": 3,
+        "num": 2
+      }
+    },
+    {
+      "kind": "connection",
+      "from": {
+        "group": 3,
+        "num": 20
+      },
+      "direction": "down",
+      "offset": -12,
+      "to": {
+        "group": 3,
+        "num": 1
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 6,
+        "y": 10
+      },
+      "to": {
+        "group": 3,
+        "num": 20
+      },
+      "toTile": {
+        "x": 5,
+        "y": 51
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 7,
+        "y": 10
+      },
+      "to": {
+        "group": 3,
+        "num": 20
+      },
+      "toTile": {
+        "x": 5,
+        "y": 51
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 8,
+        "y": 10
+      },
+      "to": {
+        "group": 3,
+        "num": 20
+      },
+      "toTile": {
+        "x": 5,
+        "y": 51
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 7,
+        "y": 1
+      },
+      "to": {
+        "group": 1,
+        "num": 0
+      },
+      "toTile": {
+        "x": 29,
+        "y": 62
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 3
+      },
+      "fromTile": {
+        "x": 6,
+        "y": 10
+      },
+      "to": {
+        "group": 1,
+        "num": 0
+      },
+      "toTile": {
+        "x": 5,
+        "y": 9
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 3
+      },
+      "fromTile": {
+        "x": 7,
+        "y": 10
+      },
+      "to": {
+        "group": 1,
+        "num": 0
+      },
+      "toTile": {
+        "x": 5,
+        "y": 9
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 3
+      },
+      "fromTile": {
+        "x": 8,
+        "y": 10
+      },
+      "to": {
+        "group": 1,
+        "num": 0
+      },
+      "toTile": {
+        "x": 5,
+        "y": 9
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 3
+      },
+      "fromTile": {
+        "x": 7,
+        "y": 1
+      },
+      "to": {
+        "group": 3,
+        "num": 20
+      },
+      "toTile": {
+        "x": 5,
+        "y": 13
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 1
+      },
+      "fromTile": {
+        "x": 3,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 20
+      },
+      "toTile": {
+        "x": 17,
+        "y": 22
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 1
+      },
+      "fromTile": {
+        "x": 4,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 20
+      },
+      "toTile": {
+        "x": 17,
+        "y": 22
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 1
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 20
+      },
+      "toTile": {
+        "x": 17,
+        "y": 22
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 6,
+        "y": 10
+      },
+      "to": {
+        "group": 3,
+        "num": 20
+      },
+      "toTile": {
+        "x": 18,
+        "y": 46
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 7,
+        "y": 10
+      },
+      "to": {
+        "group": 3,
+        "num": 20
+      },
+      "toTile": {
+        "x": 18,
+        "y": 46
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 8,
+        "y": 10
+      },
+      "to": {
+        "group": 3,
+        "num": 20
+      },
+      "toTile": {
+        "x": 18,
+        "y": 46
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 15,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 7,
+        "y": 1
+      },
+      "to": {
+        "group": 3,
+        "num": 20
+      },
+      "toTile": {
+        "x": 18,
+        "y": 41
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 1,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 29,
+        "y": 62
+      },
+      "to": {
+        "group": 15,
+        "num": 0
+      },
+      "toTile": {
+        "x": 7,
+        "y": 1
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 1,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 28,
+        "y": 62
+      },
+      "to": {
+        "group": 15,
+        "num": 0
+      },
+      "toTile": {
+        "x": 7,
+        "y": 1
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 1,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 9
+      },
+      "to": {
+        "group": 15,
+        "num": 3
+      },
+      "toTile": {
+        "x": 7,
+        "y": 10
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 1,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 6,
+        "y": 9
+      },
+      "to": {
+        "group": 15,
+        "num": 3
+      },
+      "toTile": {
+        "x": 7,
+        "y": 10
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 1,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 30,
+        "y": 62
+      },
+      "to": {
+        "group": 15,
+        "num": 0
+      },
+      "toTile": {
+        "x": 7,
+        "y": 1
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 1,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 4,
+        "y": 9
+      },
+      "to": {
+        "group": 15,
+        "num": 3
+      },
+      "toTile": {
+        "x": 7,
+        "y": 10
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 17,
+        "y": 6
+      },
+      "to": {
+        "group": 6,
+        "num": 0
+      },
+      "toTile": {
+        "x": 14,
+        "y": 9
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 25,
+        "y": 4
+      },
+      "to": {
+        "group": 6,
+        "num": 0
+      },
+      "toTile": {
+        "x": 21,
+        "y": 9
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 15,
+        "y": 16
+      },
+      "to": {
+        "group": 6,
+        "num": 2
+      },
+      "toTile": {
+        "x": 6,
+        "y": 14
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 28,
+        "y": 18
+      },
+      "to": {
+        "group": 6,
+        "num": 3
+      },
+      "toTile": {
+        "x": 4,
+        "y": 7
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 33,
+        "y": 11
+      },
+      "to": {
+        "group": 6,
+        "num": 4
+      },
+      "toTile": {
+        "x": 4,
+        "y": 7
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 17,
+        "y": 25
+      },
+      "to": {
+        "group": 6,
+        "num": 5
+      },
+      "toTile": {
+        "x": 7,
+        "y": 8
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 9,
+        "y": 30
+      },
+      "to": {
+        "group": 6,
+        "num": 7
+      },
+      "toTile": {
+        "x": 4,
+        "y": 7
+      }
+    },
+    {
+      "kind": "connection",
+      "from": {
+        "group": 3,
+        "num": 2
+      },
+      "direction": "down",
+      "offset": 12,
+      "to": {
+        "group": 3,
+        "num": 20
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 13,
+        "y": 9
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 17,
+        "y": 6
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 14,
+        "y": 9
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 17,
+        "y": 6
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 15,
+        "y": 9
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 17,
+        "y": 6
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 21,
+        "y": 9
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 25,
+        "y": 4
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 22,
+        "y": 9
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 25,
+        "y": 4
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 8,
+        "y": 8
+      },
+      "to": {
+        "group": 6,
+        "num": 1
+      },
+      "toTile": {
+        "x": 11,
+        "y": 8
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 1
+      },
+      "fromTile": {
+        "x": 11,
+        "y": 8
+      },
+      "to": {
+        "group": 6,
+        "num": 0
+      },
+      "toTile": {
+        "x": 8,
+        "y": 8
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 14
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 15,
+        "y": 16
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 6,
+        "y": 14
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 15,
+        "y": 16
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 2
+      },
+      "fromTile": {
+        "x": 7,
+        "y": 14
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 15,
+        "y": 16
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 3
+      },
+      "fromTile": {
+        "x": 3,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 28,
+        "y": 18
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 3
+      },
+      "fromTile": {
+        "x": 4,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 28,
+        "y": 18
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 3
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 28,
+        "y": 18
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 4
+      },
+      "fromTile": {
+        "x": 3,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 33,
+        "y": 11
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 4
+      },
+      "fromTile": {
+        "x": 4,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 33,
+        "y": 11
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 4
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 33,
+        "y": 11
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 7
+      },
+      "fromTile": {
+        "x": 3,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 9,
+        "y": 30
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 7
+      },
+      "fromTile": {
+        "x": 4,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 9,
+        "y": 30
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 7
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 7
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 9,
+        "y": 30
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 5
+      },
+      "fromTile": {
+        "x": 6,
+        "y": 8
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 17,
+        "y": 25
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 5
+      },
+      "fromTile": {
+        "x": 7,
+        "y": 8
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 17,
+        "y": 25
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 5
+      },
+      "fromTile": {
+        "x": 8,
+        "y": 8
+      },
+      "to": {
+        "group": 3,
+        "num": 2
+      },
+      "toTile": {
+        "x": 17,
+        "y": 25
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 5
+      },
+      "fromTile": {
+        "x": 1,
+        "y": 6
+      },
+      "to": {
+        "group": 6,
+        "num": 6
+      },
+      "toTile": {
+        "x": 1,
+        "y": 6
+      }
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 6
+      },
+      "fromTile": {
+        "x": 1,
+        "y": 6
+      },
+      "to": {
+        "group": 6,
+        "num": 5
+      },
+      "toTile": {
+        "x": 1,
+        "y": 6
+      }
+    }
+  ],
+  "boundaryEdges": [
+    {
+      "kind": "connection",
+      "from": {
+        "group": 3,
+        "num": 0
+      },
+      "direction": "down",
+      "offset": 0,
+      "to": "MAP_ROUTE21_NORTH"
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 5
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 1
+      },
+      "to": "MAP_UNION_ROOM"
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 5,
+        "num": 5
+      },
+      "fromTile": {
+        "x": 9,
+        "y": 1
+      },
+      "to": "MAP_TRADE_CENTER"
+    },
+    {
+      "kind": "connection",
+      "from": {
+        "group": 3,
+        "num": 41
+      },
+      "direction": "up",
+      "offset": 0,
+      "to": "MAP_ROUTE23"
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 28,
+        "num": 0
+      },
+      "fromTile": {
+        "x": 7,
+        "y": 1
+      },
+      "to": "MAP_ROUTE23"
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 3,
+        "num": 20
+      },
+      "fromTile": {
+        "x": 17,
+        "y": 11
+      },
+      "to": "MAP_DIGLETTS_CAVE_NORTH_ENTRANCE"
+    },
+    {
+      "kind": "connection",
+      "from": {
+        "group": 3,
+        "num": 2
+      },
+      "direction": "right",
+      "offset": 10,
+      "to": "MAP_ROUTE3"
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 6
+      },
+      "fromTile": {
+        "x": 5,
+        "y": 1
+      },
+      "to": "MAP_UNION_ROOM"
+    },
+    {
+      "kind": "warp",
+      "from": {
+        "group": 6,
+        "num": 6
+      },
+      "fromTile": {
+        "x": 9,
+        "y": 1
+      },
+      "to": "MAP_TRADE_CENTER"
+    }
+  ]
+}

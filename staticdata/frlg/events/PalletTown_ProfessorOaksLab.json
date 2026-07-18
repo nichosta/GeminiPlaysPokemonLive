@@ -1,0 +1,378 @@
+{
+  "id": "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB",
+  "name": "PalletTown_ProfessorOaksLab",
+  "group": 4,
+  "num": 3,
+  "trainers": [],
+  "items": [
+    {
+      "local_id": "LOCALID_BULBASAUR_BALL",
+      "x": 8,
+      "y": 4,
+      "elevation": 0,
+      "script": "PalletTown_ProfessorOaksLab_EventScript_BulbasaurBall",
+      "flag": "FLAG_HIDE_BULBASAUR_BALL",
+      "item": null,
+      "item_num": null,
+      "gives_starter": "SPECIES_BULBASAUR"
+    },
+    {
+      "local_id": "LOCALID_SQUIRTLE_BALL",
+      "x": 9,
+      "y": 4,
+      "elevation": 0,
+      "script": "PalletTown_ProfessorOaksLab_EventScript_SquirtleBall",
+      "flag": "FLAG_HIDE_SQUIRTLE_BALL",
+      "item": null,
+      "item_num": null,
+      "gives_starter": "SPECIES_SQUIRTLE"
+    },
+    {
+      "local_id": "LOCALID_CHARMANDER_BALL",
+      "x": 10,
+      "y": 4,
+      "elevation": 0,
+      "script": "PalletTown_ProfessorOaksLab_EventScript_CharmanderBall",
+      "flag": "FLAG_HIDE_CHARMANDER_BALL",
+      "item": null,
+      "item_num": null,
+      "gives_starter": "SPECIES_CHARMANDER"
+    }
+  ],
+  "hidden_items": [],
+  "scripted_encounters": [
+    {
+      "trigger": {
+        "x": 5,
+        "y": 8,
+        "elevation": 3,
+        "var": "VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB",
+        "var_value": "3"
+      },
+      "script": "PalletTown_ProfessorOaksLab_EventScript_RivalBattleTriggerLeft",
+      "battles": [
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_OAKS_LAB_CHARMANDER",
+          "trainer_num": 328,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_CHARMANDER",
+              "species_num": 4,
+              "level": 5,
+              "iv": 0,
+              "item": null,
+              "item_num": null,
+              "moves": null,
+              "moves_num": null
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "0"
+            },
+            {
+              "var": "VAR_TEMP_2",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_OAKS_LAB_BULBASAUR",
+          "trainer_num": 327,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_BULBASAUR",
+              "species_num": 1,
+              "level": 5,
+              "iv": 0,
+              "item": null,
+              "item_num": null,
+              "moves": null,
+              "moves_num": null
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "1"
+            },
+            {
+              "var": "VAR_TEMP_2",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_OAKS_LAB_SQUIRTLE",
+          "trainer_num": 326,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_SQUIRTLE",
+              "species_num": 7,
+              "level": 5,
+              "iv": 0,
+              "item": null,
+              "item_num": null,
+              "moves": null,
+              "moves_num": null
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "2"
+            },
+            {
+              "var": "VAR_TEMP_2",
+              "value": "1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "trigger": {
+        "x": 6,
+        "y": 8,
+        "elevation": 3,
+        "var": "VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB",
+        "var_value": "3"
+      },
+      "script": "PalletTown_ProfessorOaksLab_EventScript_RivalBattleTriggerMid",
+      "battles": [
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_OAKS_LAB_CHARMANDER",
+          "trainer_num": 328,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_CHARMANDER",
+              "species_num": 4,
+              "level": 5,
+              "iv": 0,
+              "item": null,
+              "item_num": null,
+              "moves": null,
+              "moves_num": null
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "0"
+            },
+            {
+              "var": "VAR_TEMP_2",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_OAKS_LAB_BULBASAUR",
+          "trainer_num": 327,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_BULBASAUR",
+              "species_num": 1,
+              "level": 5,
+              "iv": 0,
+              "item": null,
+              "item_num": null,
+              "moves": null,
+              "moves_num": null
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "1"
+            },
+            {
+              "var": "VAR_TEMP_2",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_OAKS_LAB_SQUIRTLE",
+          "trainer_num": 326,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_SQUIRTLE",
+              "species_num": 7,
+              "level": 5,
+              "iv": 0,
+              "item": null,
+              "item_num": null,
+              "moves": null,
+              "moves_num": null
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "2"
+            },
+            {
+              "var": "VAR_TEMP_2",
+              "value": "1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "trigger": {
+        "x": 7,
+        "y": 8,
+        "elevation": 3,
+        "var": "VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB",
+        "var_value": "3"
+      },
+      "script": "PalletTown_ProfessorOaksLab_EventScript_RivalBattleTriggerRight",
+      "battles": [
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_OAKS_LAB_CHARMANDER",
+          "trainer_num": 328,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_CHARMANDER",
+              "species_num": 4,
+              "level": 5,
+              "iv": 0,
+              "item": null,
+              "item_num": null,
+              "moves": null,
+              "moves_num": null
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "0"
+            },
+            {
+              "var": "VAR_TEMP_2",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_OAKS_LAB_BULBASAUR",
+          "trainer_num": 327,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_BULBASAUR",
+              "species_num": 1,
+              "level": 5,
+              "iv": 0,
+              "item": null,
+              "item_num": null,
+              "moves": null,
+              "moves_num": null
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "1"
+            },
+            {
+              "var": "VAR_TEMP_2",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "trainerbattle_type": "earlyrival",
+          "trainer_id": "TRAINER_RIVAL_OAKS_LAB_SQUIRTLE",
+          "trainer_num": 326,
+          "trainer_class": "TRAINER_CLASS_RIVAL_EARLY",
+          "trainer_class_num": 81,
+          "trainer_class_name": "RIVAL",
+          "trainer_name": "TERRY",
+          "double_battle": false,
+          "items": [],
+          "party": [
+            {
+              "species": "SPECIES_SQUIRTLE",
+              "species_num": 7,
+              "level": 5,
+              "iv": 0,
+              "item": null,
+              "item_num": null,
+              "moves": null,
+              "moves_num": null
+            }
+          ],
+          "conditions": [
+            {
+              "var": "VAR_STARTER_MON",
+              "value": "2"
+            },
+            {
+              "var": "VAR_TEMP_2",
+              "value": "1"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

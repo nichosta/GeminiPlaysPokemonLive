@@ -1,0 +1,22 @@
+{
+  "id": "MAP_VIRIDIAN_CITY",
+  "name": "ViridianCity",
+  "group": 3,
+  "num": 1,
+  "trainers": [],
+  "items": [
+    {
+      "local_id": null,
+      "x": 17,
+      "y": 5,
+      "elevation": 3,
+      "script": "ViridianCity_EventScript_ItemPotion",
+      "flag": "FLAG_HIDE_VIRIDIAN_CITY_POTION",
+      "item": "ITEM_POTION",
+      "item_num": 13,
+      "gives_starter": null
+    }
+  ],
+  "hidden_items": [],
+  "scripted_encounters": []
+}

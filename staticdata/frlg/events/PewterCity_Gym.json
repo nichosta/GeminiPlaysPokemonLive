@@ -1,0 +1,137 @@
+{
+  "id": "MAP_PEWTER_CITY_GYM",
+  "name": "PewterCity_Gym",
+  "group": 6,
+  "num": 2,
+  "trainers": [
+    {
+      "local_id": null,
+      "x": 6,
+      "y": 5,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
+      "facing": "down",
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "sight_range": null,
+      "script": "PewterCity_Gym_EventScript_Brock",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_LEADER_BROCK",
+      "trainer_num": 414,
+      "trainer_class": "TRAINER_CLASS_LEADER",
+      "trainer_class_num": 84,
+      "trainer_class_name": "LEADER",
+      "trainer_name": "BROCK",
+      "double_battle": false,
+      "items": [],
+      "party": [
+        {
+          "species": "SPECIES_GEODUDE",
+          "species_num": 74,
+          "level": 12,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_TACKLE",
+            "MOVE_DEFENSE_CURL",
+            "MOVE_NONE",
+            "MOVE_NONE"
+          ],
+          "moves_num": [
+            33,
+            111,
+            0,
+            0
+          ]
+        },
+        {
+          "species": "SPECIES_ONIX",
+          "species_num": 95,
+          "level": 14,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_TACKLE",
+            "MOVE_BIND",
+            "MOVE_ROCK_TOMB",
+            "MOVE_NONE"
+          ],
+          "moves_num": [
+            33,
+            20,
+            317,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "local_id": null,
+      "x": 3,
+      "y": 8,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_RIGHT",
+      "facing": "right",
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 4,
+      "script": "PewterCity_Gym_EventScript_Liam",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_CAMPER_LIAM",
+      "trainer_num": 142,
+      "trainer_class": "TRAINER_CLASS_CAMPER",
+      "trainer_class_num": 61,
+      "trainer_class_name": "CAMPER",
+      "trainer_name": "LIAM",
+      "double_battle": false,
+      "items": [],
+      "party": [
+        {
+          "species": "SPECIES_GEODUDE",
+          "species_num": 74,
+          "level": 10,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_TACKLE",
+            "MOVE_DEFENSE_CURL",
+            "MOVE_NONE",
+            "MOVE_NONE"
+          ],
+          "moves_num": [
+            33,
+            111,
+            0,
+            0
+          ]
+        },
+        {
+          "species": "SPECIES_SANDSHREW",
+          "species_num": 27,
+          "level": 11,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": [
+            "MOVE_SCRATCH",
+            "MOVE_DEFENSE_CURL",
+            "MOVE_SAND_ATTACK",
+            "MOVE_NONE"
+          ],
+          "moves_num": [
+            10,
+            111,
+            28,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "items": [],
+  "hidden_items": [],
+  "scripted_encounters": []
+}

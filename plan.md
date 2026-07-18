@@ -22,12 +22,55 @@ Scope: everything up to and including the Pewter City gym.
     - *Found:* the runtime reader `gamestate/overworld/mapMetatiles.js` decodes
       FRLG behaviors as `u16 & 0x00FF`, truncating the 9-bit field — exactly the
       fragile RAM read this workstream replaces. Not yet fixed.
-- **A2. Extract trainers, sightlines, and items** — trainer positions,
-  facing/view range (for encounter-tile prediction), parties, ground items and
-  hidden items on those maps.
-- **A3. Location registry + cross-map graph** — named locations ("Pewter City",
-  "nearest Pokécenter", "Viridian Mart") → (map, coords); graph of maps joined
-  by warps/connections for cross-map routing.
+- **A2. Extract trainers, sightlines, and items** — ✅ **DONE.**
+  [`staticdata/extractEvents.js`](staticdata/extractEvents.js) emits
+  `staticdata/frlg/events/<MapName>.json` for the same 30 maps: `trainers[]`
+  (position, facing, `trainer_type`/`sight_range`, and the resolved trainer —
+  class, name, held items, full `party[]` with species/level/IV/moves,
+  symbolic decomp names alongside resolved numeric ids), `items[]` (ground
+  item balls resolved through their `finditem` script; the 3 Pallet Town
+  starter balls carry `gives_starter` instead), `hidden_items[]` (straight
+  from `bg_events`), and `scripted_encounters[]` (trigger-based battles like
+  the Route 22 / Oak's Lab rival fights, with the `_if_eq` branch conditions
+  walked to reach each one). Trainer/item scripts are resolved by flattening
+  every map's `scripts.inc` + the shared `data/scripts/*.inc` files into one
+  label index and BFS-walking `goto`/`call` indirection from each
+  object's/trigger's script — needed since item balls route through a shared
+  script file and the rival fights branch through `VAR_STARTER_MON`. Trainer
+  class/name/party come from `src/data/trainers.h` +
+  `src/data/trainer_parties.h`, parsed generically across all four
+  `TrainerMon*` struct variants.
+    - *Note:* `sight_range`/`facing` describe the sightline trigger as
+      encoded (origin, direction, tile count) — not precomputed sightline
+      tiles. Ray-casting that through A1's collision grid (stopping at the
+      first obstacle) is downstream work for whichever C-workstream skill
+      consumes this, per the plan text below ("A2's trainer sightline tiles
+      will plug in unchanged").
+- **A3. Location registry + cross-map graph** — ✅ **DONE.** Second pass over
+  A1's output (no decomp access needed):
+  [`staticdata/extractLocations.js`](staticdata/extractLocations.js) emits
+  `staticdata/frlg/locations.json` (one named entry per map — humanized name,
+  aliases, a type tag, and an anchor tile: the landing tile of the first
+  in-scope warp for indoor maps, nearest-passable-to-center for outdoor ones)
+  and `staticdata/frlg/mapGraph.json` (30 nodes, warp edges with concrete
+  tiles both ends + connection edges with direction/offset, plus
+  `boundaryEdges` for the 9 real edges that leave the pre-Brock scope rather
+  than dropping them silently). Query layer:
+  [`skills/locationGraph.js`](skills/locationGraph.js) —
+  `resolveLocation`/`resolveDestination` (name/alias/"nearest \<type\>",
+  backing the `goto` tool's `location` field) and `mapRoute`/`mapDistance`
+  (BFS over the graph, unweighted). `skills/locationGraph.test.js` verifies
+  every anchor is passable, every warp edge's landing tile is real, the graph
+  composes correctly with C1 end-to-end (Pallet Town → Pewter Gym door), and
+  the D1 tool-schema example queries resolve (58 checks, all green).
+    - *Found:* door metatiles (`MB_WARP_DOOR`) read as collision-blocked in
+      A1's static grid — the engine special-cases doors past the normal
+      collision check. C1's `stopAdjacent` was already designed around this;
+      a warp edge's `fromTile` is meant to be routed to that way (then press
+      `facing`), not stood on directly.
+    - *Note:* connection edges only carry `direction`/`offset`, not exact
+      border tiles — C2 resolves those from both maps' live dimensions at
+      execution time.
 - **A4. Milestone/quest graph** — the pre-Brock story sequence encoded with the
   RAM flags that mark each step complete (Oak's Parcel, rival fights, badge).
 - **A5. Scrape walkthrough/wiki corpus** — ✅ **DONE.**

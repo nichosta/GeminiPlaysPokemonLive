@@ -1,0 +1,302 @@
+{
+  "id": "MAP_VIRIDIAN_FOREST",
+  "name": "ViridianForest",
+  "group": 1,
+  "num": 0,
+  "trainers": [
+    {
+      "local_id": null,
+      "x": 47,
+      "y": 45,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_LEFT",
+      "facing": "left",
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 5,
+      "script": "ViridianForest_EventScript_Rick",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_BUG_CATCHER_RICK",
+      "trainer_num": 102,
+      "trainer_class": "TRAINER_CLASS_BUG_CATCHER",
+      "trainer_class_num": 58,
+      "trainer_class_name": "BUG CATCHER",
+      "trainer_name": "RICK",
+      "double_battle": false,
+      "items": [],
+      "party": [
+        {
+          "species": "SPECIES_WEEDLE",
+          "species_num": 13,
+          "level": 6,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        },
+        {
+          "species": "SPECIES_CATERPIE",
+          "species_num": 10,
+          "level": 6,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        }
+      ]
+    },
+    {
+      "local_id": null,
+      "x": 47,
+      "y": 29,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_LEFT",
+      "facing": "left",
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 4,
+      "script": "ViridianForest_EventScript_Doug",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_BUG_CATCHER_DOUG",
+      "trainer_num": 103,
+      "trainer_class": "TRAINER_CLASS_BUG_CATCHER",
+      "trainer_class_num": 58,
+      "trainer_class_name": "BUG CATCHER",
+      "trainer_name": "DOUG",
+      "double_battle": false,
+      "items": [],
+      "party": [
+        {
+          "species": "SPECIES_WEEDLE",
+          "species_num": 13,
+          "level": 7,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        },
+        {
+          "species": "SPECIES_KAKUNA",
+          "species_num": 14,
+          "level": 7,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        },
+        {
+          "species": "SPECIES_WEEDLE",
+          "species_num": 13,
+          "level": 7,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        }
+      ]
+    },
+    {
+      "local_id": null,
+      "x": 7,
+      "y": 22,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_LEFT",
+      "facing": "left",
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 4,
+      "script": "ViridianForest_EventScript_Sammy",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_BUG_CATCHER_SAMMY",
+      "trainer_num": 104,
+      "trainer_class": "TRAINER_CLASS_BUG_CATCHER",
+      "trainer_class_num": 58,
+      "trainer_class_name": "BUG CATCHER",
+      "trainer_name": "SAMMY",
+      "double_battle": false,
+      "items": [],
+      "party": [
+        {
+          "species": "SPECIES_WEEDLE",
+          "species_num": 13,
+          "level": 9,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        }
+      ]
+    },
+    {
+      "local_id": null,
+      "x": 43,
+      "y": 6,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_DOWN_AND_UP",
+      "facing": null,
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 1,
+      "script": "ViridianForest_EventScript_Anthony",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_BUG_CATCHER_ANTHONY",
+      "trainer_num": 531,
+      "trainer_class": "TRAINER_CLASS_BUG_CATCHER",
+      "trainer_class_num": 58,
+      "trainer_class_name": "BUG CATCHER",
+      "trainer_name": "ANTHONY",
+      "double_battle": false,
+      "items": [],
+      "party": [
+        {
+          "species": "SPECIES_CATERPIE",
+          "species_num": 10,
+          "level": 7,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        },
+        {
+          "species": "SPECIES_CATERPIE",
+          "species_num": 10,
+          "level": 8,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        }
+      ]
+    },
+    {
+      "local_id": null,
+      "x": 16,
+      "y": 5,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_FACE_UP",
+      "facing": "up",
+      "trainer_type": "TRAINER_TYPE_NORMAL",
+      "sight_range": 1,
+      "script": "ViridianForest_EventScript_Charlie",
+      "flag": "0",
+      "trainerbattle_type": "single",
+      "trainer_id": "TRAINER_BUG_CATCHER_CHARLIE",
+      "trainer_num": 532,
+      "trainer_class": "TRAINER_CLASS_BUG_CATCHER",
+      "trainer_class_num": 58,
+      "trainer_class_name": "BUG CATCHER",
+      "trainer_name": "CHARLIE",
+      "double_battle": false,
+      "items": [],
+      "party": [
+        {
+          "species": "SPECIES_METAPOD",
+          "species_num": 11,
+          "level": 7,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        },
+        {
+          "species": "SPECIES_CATERPIE",
+          "species_num": 10,
+          "level": 7,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        },
+        {
+          "species": "SPECIES_METAPOD",
+          "species_num": 11,
+          "level": 7,
+          "iv": 0,
+          "item": null,
+          "item_num": null,
+          "moves": null,
+          "moves_num": null
+        }
+      ]
+    }
+  ],
+  "items": [
+    {
+      "local_id": null,
+      "x": 5,
+      "y": 41,
+      "elevation": 3,
+      "script": "ViridianForest_EventScript_ItemPokeBall",
+      "flag": "FLAG_HIDE_VIRIDIAN_FOREST_POKE_BALL",
+      "item": "ITEM_POKE_BALL",
+      "item_num": 4,
+      "gives_starter": null
+    },
+    {
+      "local_id": null,
+      "x": 40,
+      "y": 21,
+      "elevation": 3,
+      "script": "ViridianForest_EventScript_ItemAntidote",
+      "flag": "FLAG_HIDE_VIRIDIAN_FOREST_ANTIDOTE",
+      "item": "ITEM_ANTIDOTE",
+      "item_num": 14,
+      "gives_starter": null
+    },
+    {
+      "local_id": null,
+      "x": 21,
+      "y": 34,
+      "elevation": 3,
+      "script": "ViridianForest_EventScript_ItemPotion",
+      "flag": "FLAG_HIDE_VIRIDIAN_FOREST_POTION",
+      "item": "ITEM_POTION",
+      "item_num": 13,
+      "gives_starter": null
+    },
+    {
+      "local_id": null,
+      "x": 49,
+      "y": 60,
+      "elevation": 3,
+      "script": "ViridianForest_EventScript_ItemPotion2",
+      "flag": "FLAG_HIDE_VIRIDIAN_FOREST_POTION_2",
+      "item": "ITEM_POTION",
+      "item_num": 13,
+      "gives_starter": null
+    }
+  ],
+  "hidden_items": [
+    {
+      "x": 3,
+      "y": 22,
+      "elevation": 3,
+      "item": "ITEM_POTION",
+      "item_num": 13,
+      "flag": "FLAG_HIDDEN_ITEM_VIRIDIAN_FOREST_POTION",
+      "quantity": 1,
+      "underfoot": false
+    },
+    {
+      "x": 28,
+      "y": 57,
+      "elevation": 0,
+      "item": "ITEM_ANTIDOTE",
+      "item_num": 14,
+      "flag": "FLAG_HIDDEN_ITEM_VIRIDIAN_FOREST_ANTIDOTE",
+      "quantity": 1,
+      "underfoot": false
+    }
+  ],
+  "scripted_encounters": []
+}

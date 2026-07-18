@@ -1,0 +1,33 @@
+{
+  "id": "MAP_ROUTE2",
+  "name": "Route2",
+  "group": 3,
+  "num": 20,
+  "trainers": [],
+  "items": [
+    {
+      "local_id": null,
+      "x": 17,
+      "y": 54,
+      "elevation": 3,
+      "script": "Route2_EventScript_ItemEther",
+      "flag": "FLAG_HIDE_ROUTE2_ETHER",
+      "item": "ITEM_ETHER",
+      "item_num": 34,
+      "gives_starter": null
+    },
+    {
+      "local_id": null,
+      "x": 17,
+      "y": 64,
+      "elevation": 3,
+      "script": "Route2_EventScript_ItemParalyzeHeal",
+      "flag": "FLAG_HIDE_ROUTE2_PARALYZE_HEAL",
+      "item": "ITEM_PARALYZE_HEAL",
+      "item_num": 18,
+      "gives_starter": null
+    }
+  ],
+  "hidden_items": [],
+  "scripted_encounters": []
+}

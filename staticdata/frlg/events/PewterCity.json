@@ -1,0 +1,21 @@
+{
+  "id": "MAP_PEWTER_CITY",
+  "name": "PewterCity",
+  "group": 3,
+  "num": 2,
+  "trainers": [],
+  "items": [],
+  "hidden_items": [
+    {
+      "x": 6,
+      "y": 3,
+      "elevation": 3,
+      "item": "ITEM_POKE_BALL",
+      "item_num": 4,
+      "flag": "FLAG_HIDDEN_ITEM_PEWTER_CITY_POKE_BALL",
+      "quantity": 1,
+      "underfoot": false
+    }
+  ],
+  "scripted_encounters": []
+}
