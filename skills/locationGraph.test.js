@@ -20,6 +20,7 @@ import {
     mapRoute,
     mapDistance,
     nearestLocation,
+    edgeKey,
 } from "./locationGraph.js";
 
 let passed = 0;
@@ -166,6 +167,31 @@ function check(name, cond, detail = "") {
     check("boundaryEdges: present", Array.isArray(graph.boundaryEdges) && graph.boundaryEdges.length > 0, `got ${graph.boundaryEdges?.length}`);
     const palletBoundary = graph.boundaryEdges.some((e) => e.from.group === 3 && e.from.num === 0);
     check("boundaryEdges: Pallet Town's south connection recorded", palletBoundary);
+}
+
+// --- 10. mapRoute's excludeEdges lets C2 re-plan around an unwalkable hop --
+{
+    const graph = getMapGraph();
+    const directEdge = graph.edges.find((e) => e.kind === "connection" && e.from.group === 3 && e.from.num === 20 && e.to.group === 3 && e.to.num === 2);
+    check("excludeEdges fixture: Route 2 -> Pewter connection exists", !!directEdge);
+
+    if (directEdge) {
+        const withoutExclusion = mapRoute(3, 0, 3, 2);
+        const usesDirectEdge = withoutExclusion.found && withoutExclusion.hops.some((e) => edgeKey(e) === edgeKey(directEdge));
+        check("mapRoute: shortest route to Pewter City uses the direct Route 2 edge", usesDirectEdge);
+
+        const excluded = new Set([edgeKey(directEdge)]);
+        const withExclusion = mapRoute(3, 0, 3, 2, excluded);
+        check(
+            "mapRoute: excludeEdges removes that edge from consideration",
+            !withExclusion.found || !withExclusion.hops.some((e) => edgeKey(e) === edgeKey(directEdge))
+        );
+    }
+
+    // edgeKey is stable and distinguishes different edges.
+    const warpEdge = graph.edges.find((e) => e.kind === "warp");
+    check("edgeKey: same edge -> same key", edgeKey(warpEdge) === edgeKey({ ...warpEdge }));
+    check("edgeKey: warp and connection keys don't collide", !graph.edges.some((e) => e !== warpEdge && edgeKey(e) === edgeKey(warpEdge) && e.kind !== warpEdge.kind));
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

@@ -121,8 +121,46 @@ Scope: everything up to and including the Pewter City gym.
   strand the search. `skills/pathfinding.test.js` re-simulates every emitted
   route against the movement rules over the checked-in static data (18 checks,
   all green). C2 composes this per map with warp/connection traversal.
-- **C2. Cross-map router** — "goto Pewter City" = graph search over A3 + C1 per
-  map + warp traversal, executed step-by-step under B2's interrupt watch.
+- **C2. Cross-map router** — ✅ **DONE.** "goto Pewter City" = A3's map-hop
+  graph search + a C1 leg per map + warp/connection traversal. Source:
+  [`skills/crossMapRouter.js`](skills/crossMapRouter.js) — `resolveConnectionCrossing`
+  (border-tile math for overworld connections, taken from the decomp's own
+  `SetPositionFromConnection`/`IsCoordInIncomingConnectingMap`, not guessed:
+  vertical connections relate `to.x = from.x - offset`, horizontal ones
+  `to.y = from.y - offset`), `planCrossMapRoute` (pure planner, composes a C1
+  `findPath` per map), and `gotoLive` (live adapter: re-derives one leg at a
+  time from wherever the player actually is, so B1's live NPC positions fold
+  in fresh at every map crossed, not just the first; polls B2's
+  `classifyInterrupt` after every button press and returns a D1
+  `makeOutcome(...)` envelope, so this can back the `goto` tool directly once
+  D2 wires it in). `skills/crossMapRouter.test.js` verifies the connection
+  math against an independently-written copy of the decomp formula for all 10
+  in-scope connection edges (round-trip A→B→A too), and replays a full
+  Pallet Town → Viridian City Pokémon Center plan (2 connections + 1 warp)
+  leg-by-leg under real movement rules (94 checks, all green).
+    - *Found:* the map-hop graph (A3) is unweighted and knows nothing about
+      what's actually walkable *inside* a map. When a hop's leg comes back
+      no-path, C2 excludes that specific edge and re-runs the BFS
+      (`mapRoute`'s new `excludeEdges` param + `edgeKey` in
+      [`skills/locationGraph.js`](skills/locationGraph.js)) rather than
+      failing the whole plan on a graph-level shortest path that isn't
+      actually walkable — this recovers whenever a genuinely different
+      map-level route exists.
+    - *Found (unresolved):* that recovery can NOT fix the case where the fix
+      requires re-entering the SAME map at a different position, because the
+      graph has one node per map, not one per connected region within a map.
+      Route 2 is the pre-Brock example: rows 42-44 are a fully impassable
+      Cut-tree line (no Cut pre-Boulder-Badge) splitting it into a south half
+      (borders Viridian City) and a north half (borders Pewter City); the
+      real route detours through Viridian Forest's warps, which land back on
+      Route 2's north half — the same graph node BFS already marked visited
+      via the south half. So **`goto`/C2 cannot currently route Pallet Town →
+      Pewter City/Gym** (pinned as an expected-failure test in
+      crossMapRouter.test.js so a future fix has to notice and update it).
+      Fixing this for real needs A3 to split a map into per-connected-
+      component graph nodes (accounting for one-way ledges as directed
+      edges) — real work, deferred; every other pre-Brock map was scanned and
+      Route 2 is the only one whose split actually sits on a needed route.
 - **C3. Battle policy engine** — rule-based, parameterized by a strategy the
   model sets; escalates to the model on no-PP / about-to-faint / unknown state.
 - **C4. Menu macros** — heal at Pokécenter, use item, reorder party, handle

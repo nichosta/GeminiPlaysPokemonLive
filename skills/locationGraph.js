@@ -128,8 +128,25 @@ export function resolveTag(phrase) {
 // -----------------------------------------------------------------------------
 
 /**
+ * Stable identity for a mapGraph.json edge, so a BFS can be re-run excluding
+ * one it already tried. Two edges with the same key are the same crossing.
+ * @param {object} edge
+ * @returns {string}
+ */
+export function edgeKey(edge) {
+    const from = `${edge.from.group}:${edge.from.num}`;
+    const to = `${edge.to.group}:${edge.to.num}`;
+    if (edge.kind === "warp") return `warp|${from}->${to}|${edge.fromTile.x},${edge.fromTile.y}`;
+    return `connection|${from}->${to}|${edge.direction}|${edge.offset}`;
+}
+
+/**
  * Shortest map-hop path from (fromGroup,fromNum) to (toGroup,toNum), BFS over
  * warp + connection edges (unweighted: each map crossing counts as one hop).
+ * @param {Set<string>} [excludeEdges] Edge keys (see `edgeKey`) to skip — for
+ *        re-planning around a hop that turned out to be unwalkable within its
+ *        map (see C2's note below: graph-level connectivity doesn't guarantee
+ *        an HM-gated obstacle-free walk, e.g. Route 2's Cut-tree split).
  * @returns {{found: boolean, hops?: Array<object>}} `hops` is the ordered list
  *          of mapGraph.json edges to cross; empty array if already there.
  *
@@ -142,8 +159,12 @@ export function resolveTag(phrase) {
  *   - `kind: "connection"` — an overworld border crossing, not a tile-precise
  *     warp. Only `direction`/`offset` are given; C2 must resolve the exact
  *     border tile from both maps' live dimensions before routing to it.
+ *   - The BFS is unweighted over MAP hops only: it has no idea whether a
+ *     connection's overlap is actually walkable inside either map (e.g. an
+ *     HM-gated obstacle). When C1 reports no-path on a hop, C2 re-plans via
+ *     `excludeEdges` rather than trusting the graph-level route blindly.
  */
-export function mapRoute(fromGroup, fromNum, toGroup, toNum) {
+export function mapRoute(fromGroup, fromNum, toGroup, toNum, excludeEdges) {
     const fromKey = key(fromGroup, fromNum);
     const toKey = key(toGroup, toNum);
     if (fromKey === toKey) return { found: true, hops: [] };
@@ -158,6 +179,7 @@ export function mapRoute(fromGroup, fromNum, toGroup, toNum) {
         if (cur === toKey) break;
         for (const { to, edge } of adjacency.get(cur) || []) {
             if (visited.has(to)) continue;
+            if (excludeEdges && excludeEdges.has(edgeKey(edge))) continue;
             visited.add(to);
             cameFrom.set(to, { prevKey: cur, edge });
             queue.push(to);
