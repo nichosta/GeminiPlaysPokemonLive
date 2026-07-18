@@ -342,3 +342,48 @@ This corpus is derived from:
 - **Video transcripts**: assumed derivative; corpus is regenerable offline.
 
 The generated `corpus/` directory is gitignored (bulk text); only `index.json` is tracked.
+
+## Battle data (`frlg/move_data.json`, `frlg/type_chart.json`)
+
+Per-move metadata and the Gen-3 type-effectiveness table, parsed from the
+decomp's own sources so the C3 battle policy engine can make rule-based
+decisions (highest-damage, type-effective, conserve-PP) without runtime RAM
+reads of move/type info. Tracked JSON, same convention as A1's map data.
+
+### Generating
+
+```bash
+node staticdata/extractBattleData.js
+# or:  POKEFIRERED_PATH=/path node staticdata/extractBattleData.js
+# or:  node staticdata/extractBattleData.js --decomp /path --out staticdata/frlg
+```
+
+### Output
+
+- `frlg/move_data.json` — move id (1..355) → `{ name, type, power, accuracy, pp,
+  category, effect, priority, target, flags }`. `name` is the runtime form
+  (e.g. `EMBER`, not `MOVE_EMBER`) so it joins B1's party-snapshot move names
+  directly. `category` is derived, not read: Gen-3 has no per-move category field
+  — damage category is determined by the move's TYPE (Fire/Water/Grass/Electric/
+  Psychic/Ice/Dragon/Dark = special; everything else with power > 0 = physical;
+  power 0 = status).
+- `frlg/type_chart.json` — `types[]` (id↔name table) + `entries[]` of
+  `{ attackType, defendType, multiplier }` (0 / 0.5 / 1 / 2), parsed straight
+  from `gTypeEffectiveness[336]` in `src/battle_main.c`. Only NON-1.0 matchups
+  are listed (the engine treats an absent pair as ×1).
+
+### How it's decoded (all authoritative, from the decomp)
+
+- move fields: `src/data/battle_moves.h` (`gBattleMoves[]`).
+- move id↔name: `include/constants/moves.h`.
+- type id↔name: `include/constants/pokemon.h` (`TYPE_*`).
+- effect id↔name: `include/constants/battle_move_effects.h` (`EFFECT_*`).
+- flags: `include/constants/pokemon.h` (`FLAG_*` bit masks).
+- target: `include/battle.h` (`MOVE_TARGET_*`).
+- type chart: `src/battle_main.c` (`gTypeEffectiveness[336]`), multipliers via
+  the `TYPE_MUL_*` constants defined in `include/battle_main.h`.
+
+Query layer: [`skills/battleData.js`](../skills/battleData.js) — `getMoveByName`
+/ `getMoveById` / `typeMultiplier` (cached, lazy-loaded). The C3 policy engine
+([`skills/battlePolicy.js`](../skills/battlePolicy.js)) consumes it.
+

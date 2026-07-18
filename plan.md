@@ -241,8 +241,60 @@ Scope: everything up to and including the Pewter City gym.
       component graph nodes (accounting for one-way ledges as directed
       edges) — real work, deferred; every other pre-Brock map was scanned and
       Route 2 is the only one whose split actually sits on a needed route.
-- **C3. Battle policy engine** — rule-based, parameterized by a strategy the
-  model sets; escalates to the model on no-PP / about-to-faint / unknown state.
+- **C3. Battle policy engine** — ✅ **DONE.** Rule-based, strategy-parameterized
+  decision-maker behind D1's `set_battle_strategy` (the tool only updates the
+  standing policy; this is what consumes it each battle turn).
+  [`skills/battleData.js`](skills/battleData.js) is the cached loader over two
+  static tables extracted from the decomp:
+  [`staticdata/extractBattleData.js`](staticdata/extractBattleData.js) emits
+  `staticdata/frlg/move_data.json` (per-move power/type/accuracy/pp/category/
+  effect/priority/target/flags, parsed from `src/data/battle_moves.h` +
+  `include/constants/{moves,pokemon,battle_move_effects}.h` + `include/battle.h`;
+  `category` is derived from type per the Gen-3 rule, not read) and
+  `staticdata/frlg/type_chart.json` (the `gTypeEffectiveness[336]` triplets from
+  `src/battle_main.c`, normalized to 0/0.5/1/2 via the `TYPE_MUL_*` constants in
+  `include/battle_main.h`; only non-1.0 matchups listed, engine default ×1).
+  `getMoveByName`/`typeMultiplier` (single + combined two-type product) are the
+  query surface; move names are emitted in the runtime `EMBER` form (not
+  `MOVE_EMBER`) so they join B1's party-snapshot move names directly.
+  [`skills/battlePolicy.js`](skills/battlePolicy.js) is the engine:
+  pure `decideAction(battleState, policy, options)` scores the lead's usable
+  damaging moves per the six `BATTLE_STRATEGY` presets — `default` (highest
+  effective damage, switch on faint), `highest_damage` (raw power, type-blind
+  tie-break to effective), `type_effective` (power × type-multiplier × 1.5 STAB),
+  `conserve_pp` (favor high-remaining-PP / STAB, avoid burning rare PP),
+  `level_grind` (stay in for XP, never switch), `flee` (wild only; trainer falls
+  back to `default`) — plus `catch_wild` (chip with the weakest effective move;
+  the ball throw is `use_item`'s job). It escalates exactly on `out_of_pp` (no
+  damaging move with PP left), `about_to_faint` (lead ≤ HP threshold with no
+  healthier switch available — when one exists it returns a `switch` action
+  instead), and `unknown_state` (not in battle / lead unreadable), and honors
+  `set_battle_strategy`'s `lead` arg (switch to the requested battler when
+  possible). `runBattleLive` is the live adapter: polls B1's `getState`, asks
+  `decideAction`, executes the chosen move's fight-menu sequence through B3's
+  `executeQueue` (and a `flee`/`switch` branch), and returns a D1
+  `makeOutcome(...)` envelope — escalating verbatim when the policy says to.
+  [`skills/battlePolicy.test.js`](skills/battlePolicy.test.js) covers each
+  strategy's move choice, the type/STAB scoring math, PP conservation,
+  `catch_wild`, the `lead` preference, every escalation path, and the live
+  adapter's outcome contract + escalation paths with an injected fake transport
+  (33 checks, all green).
+    - *Found (unresolved):* `runBattleLive` has two runtime gaps vs. a fully-
+      equipped battle engine, both deferred B-work (the plan's C3 only needs
+      A1–A3 + B1–B3; neither reader is part of B1's snapshot). (1) **Enemy-side
+      data** (opponent species/types/HP) isn't readable from B1's snapshot, so
+      `enemy` is passed as `null` and the policy degrades to raw-power / highest-
+      damage scoring (its documented behavior when enemy types are unknown) —
+      `type_effective` won't actually exploit live matchups until an opponent-
+      struct RAM read lands. (2) **Battle-menu cursor** position isn't readable;
+      move selection assumes the cursor opens on slot 0 and presses `down` N
+      times — Gen-3 remembers the last-used move's position so the count can be
+      off by the distance from that slot; a wrong count still selects a valid
+      move (never a dead press) and B2 surfaces any resulting state next poll.
+      Making either exact is downstream B-work; the `switch` action is surfaced
+      to the model as `choice_required` until C4's party-menu macros land (party
+      menu is C4's domain, not this engine's).
+
 - **C4. Menu macros** — heal at Pokécenter, use item, reorder party, handle
   move-learn prompts.
 - **C5. Dialog handler** — advance text; surface yes/no choices to the model or
