@@ -11,9 +11,17 @@ Scope: everything up to and including the Pewter City gym.
 
 ## Workstream A — Static data pipeline (offline; no emulator needed)
 
-- **A1. Extract map data from pret/pokefirered** — layouts, collision/metatile
-  behaviors, warps, connections for the ~10 pre-Brock maps → static JSON. The
-  decomp's `data/maps/*/map.json` files give this almost directly.
+- **A1. Extract map data from pret/pokefirered** — ✅ **DONE** (branch
+  `a1-static-map-data`). `staticdata/extractMapData.js` emits per-tile
+  collision/elevation/metatile-behavior grids, warps, and connections for the
+  30 pre-Brock maps (Pallet Town → Pewter gym) to `staticdata/frlg/`, keyed by
+  map group/num so live state can look them up. Decode is taken from the
+  decomp's own field/tileset source (blocks, `u32`/`0x1FF` behaviors, tileset→
+  attributes via `headers.h`+`metatiles.h`), not guessed. Decomp cloned to
+  `~/Desktop/pokefirered` (not vendored; see `staticdata/README.md`).
+    - *Found:* the runtime reader `gamestate/overworld/mapMetatiles.js` decodes
+      FRLG behaviors as `u16 & 0x00FF`, truncating the 9-bit field — exactly the
+      fragile RAM read this workstream replaces. Not yet fixed.
 - **A2. Extract trainers, sightlines, and items** — trainer positions,
   facing/view range (for encounter-tile prediction), parties, ground items and
   hidden items on those maps.
@@ -48,8 +56,19 @@ Scope: everything up to and including the Pewter City gym.
 
 ## Workstream C — Skills/macros (needs A1–A3 + B1–B3)
 
-- **C1. Within-map A\*** — over A1 collision data, avoiding trainer sightline
-  tiles from A2, live NPC positions from B1.
+- **C1. Within-map A\*** — ✅ **DONE.** Grid A\* over A1 collision data for a
+  single map, returning the `up/down/left/right` button sequence to a goal (or
+  no-path). Source: [`skills/pathfinding.js`](skills/pathfinding.js) (`findPath`
+  pure core + `findPathLive` emulator adapter) over
+  [`skills/staticMap.js`](skills/staticMap.js) (cached (group,num)→map loader).
+  Passability = static `collision === 0` minus a `blockedTiles` set — where B1's
+  live NPC positions fold in (automatic in `findPathLive`) and A2's trainer
+  sightline tiles will plug in unchanged. Ledges (`MB_JUMP_*`) are modelled as
+  legal one-way jump shortcuts; `stopAdjacent` routes next to interact-only tiles
+  (warps/NPCs/signs) and reports the `facing` press; a blocked start tile can't
+  strand the search. `skills/pathfinding.test.js` re-simulates every emitted
+  route against the movement rules over the checked-in static data (18 checks,
+  all green). C2 composes this per map with warp/connection traversal.
 - **C2. Cross-map router** — "goto Pewter City" = graph search over A3 + C1 per
   map + warp traversal, executed step-by-step under B2's interrupt watch.
 - **C3. Battle policy engine** — rule-based, parameterized by a strategy the
