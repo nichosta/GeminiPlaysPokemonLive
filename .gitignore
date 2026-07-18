@@ -8,3 +8,6 @@ package-lock.json
 .env
 /staticdata/corpus/wiki/
 /staticdata/corpus/transcripts/
+# E1 wiki-QA generator output (regenerable; the index manifest is tracked)
+/staticdata/frlg/wiki_qa.jsonl
+/staticdata/frlg/.wiki_qa_cache.json

@@ -268,7 +268,29 @@ Scope: everything up to and including the Pewter City gym.
 
 ## Workstream E — Finetuning (after D2 is stable)
 
-- **E1. QA pairs from wiki corpus** (slim) — needs A5.
+- **E1. QA pairs from wiki corpus** (slim) — ✅ **DONE.**
+  [`staticdata/extractWikiQA.js`](staticdata/extractWikiQA.js) generates a slim
+  SFT dataset of question/answer pairs grounded in A5's wiki corpus
+  (`staticdata/corpus/wiki/*.txt`; transcripts are E2's domain, skipped here).
+  The "teacher" — Cerebras `gemma-4-31b` (`CONFIGS.CEREBRAS_MODEL_NAME`, the
+  OpenAI-compatible client from `agent.js:42`) — only *generates* Q/A from the
+  passage text; the prompt forbids inventing facts not in the passage, so this
+  is grounded data generation, not distillation of the model's own behavior
+  (that's E3's job). Each wiki file is chunked by MediaWiki `==`/`===` section
+  (preamble → "Introduction"; table-only stubs dropped; over-long sections
+  paragraph-batched at ~2000 chars), each passage → one `temperature:0` call
+  returning `{pairs:[{question,answer}]}`, parsed robustly (brace-matched JSON
+  extraction so gemma's loose output survives). Per-passage error isolation so
+  one bad passage can't blank the run; a sha1(passage) cache
+  (`.wiki_qa_cache.json`) makes re-runs free and idempotent and survives a
+  mid-run abort; bounded-concurrency pool (default 2). Output: `wiki_qa.jsonl`
+  (one `{id,source,title,section,question,answer}` per line — git-ignored/
+  regenerable, A5 convention) + tracked `wiki_qa_index.json` manifest (counts,
+  model, `temperature`, `promptHash`, `failures[]`). Full run: 49 passages →
+  201 pairs (104 Bulbapedia + 97 StrategyWiki), 0 failures, ~9s; re-run is all
+  cache hits. CLI: `--limit`, `--source`, `--model`, `--concurrency`,
+  `--out`, `--dry-run` (chunk + manifest, no API key needed).
+
 - **E2. State→intent pairs from walkthroughs** — needs A5 + D1; can start
   before the harness works.
 - **E3. Distillation trace collection** — big-model runs on the finished
