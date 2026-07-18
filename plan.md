@@ -297,8 +297,54 @@ Scope: everything up to and including the Pewter City gym.
 
 - **C4. Menu macros** — heal at Pokécenter, use item, reorder party, handle
   move-learn prompts.
-- **C5. Dialog handler** — advance text; surface yes/no choices to the model or
-  apply a default policy.
+- **C5. Dialog handler** — ✅ **DONE.** Advances in-game text/cutscene/script
+  dialog and resolves yes/no prompts, surfacing a `choice_required` interrupt to
+  the model only when it can't blast through on its own — the implementation
+  behind docs/tool-interface.md's "no `talk`/`interact` tool" rule (advancing
+  dialog happens automatically inside a macro and surfaces as
+  `choice_required`, never as a separate tool). Source:
+  [`skills/dialogHandler.js`](skills/dialogHandler.js) — pure
+  `decideDialogAction(state, policy, context)` core (delegates the interrupt
+  *priority* — battle > dialog > warp > hp > menu > unknown — to B2's
+  `classifyInterrupt` so the stop vocabulary stays unified; C5 only owns the
+  dialog-specific layer: which button to mash, and the budget-exhausted →
+  `choice_required` escalation B2 deliberately leaves to this handler) +
+  `advanceDialogLive(policy, options)` live adapter (polls B1's `getState`,
+  asks the core, executes the returned tap through B3's `executeQueue`, returns
+  a D1 `makeOutcome(...)` envelope — escalating verbatim on battle/menu/hp/
+  unknown mid-mash, or `choice_required` when the step budget runs out before
+  the dialog clears). Standing dialog policy `choice: yes | no | ask`:
+  `ask` (default) mashes A and surfaces when stuck; `yes` mashes A (Gen-3
+  yes/no cursor opens on YES, so A confirms and clears); `no` mashes B (B
+  cancels = NO on a yes/no box and also advances plain text, so the loop never
+  stalls waiting for A). Self-test
+  [`skills/dialogHandler.test.js`](skills/dialogHandler.test.js) covers every
+  core branch (done/press/escalate per STOP_REASON, the per-policy button, the
+  budget-headroom boundary, locked-trumps-concurrent-low-HP priority) and the
+  live adapter's outcome contract (OK-clear, `choice_required` on a stuck
+  prompt after the full budget, battle/hp escalation mid-mash, 0-press
+  early-surface when already interrupted at start, `no` policy → B, AbortSignal)
+  with an injected `FakeIo` + scripted `pollState` (39 checks, all green).
+    - *Found (unresolved):* B1's snapshot carries no yes/no-prompt field — the
+      deprecated `gamestate/menustate/partyMenu.js` reader is the closest thing
+      and is documented as unreliable (its internal pointer isn't cleared on
+      close). So this handler CANNOT pre-detect a yes/no box and stop *before*
+      answering it: it only detects "controls still locked after the step
+      budget" → `choice_required`. Under `ask`/`yes` the budget-mash will have
+      confirmed YES on any yes/no box encountered (A = default-YES); under `no`
+      it will have answered NO (B = cancel). Making `ask` truly surface a yes/no
+      *before* answering needs a yes/no-prompt RAM read, which is downstream
+      B-work (the plan's C5 only needs A1–A3 + B1–B3; no such reader is in B1's
+      snapshot). The pure core + envelope contract are fully exercised offline
+      regardless.
+    - *Note:* like C3's `runBattleLive`, this skill is built + tested but not
+      yet wired into a dispatch path. Its natural consumer is `gotoLive` (on a
+      `dialog` interrupt from B2, call `advanceDialogLive` to clear it and only
+      surface if it returns `choice_required`/other) — currently `gotoLive`
+      surfaces `dialog` straight to the model. Rewiring C2 to auto-clear dialog
+      is a behavior change to a DONE skill's 94-check suite and is deferred so
+      it lands deliberately, matching how C3's engine is also unwired pending
+      the loop integration.
 
 ## Workstream D — Agent framework
 
