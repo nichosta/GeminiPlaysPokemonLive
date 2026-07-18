@@ -15,9 +15,8 @@
 //   - `set_battle_strategy` → records the standing policy in memory (C3's
 //                             engine isn't built yet; the stored policy is
 //                             what C3 will consume when it lands).
-//   - `heal` / `use_item`   → precondition_failed: C4's menu macros aren't
-//                             built yet. The model gets a precise stop_reason
-//                             rather than a silent no-op or a crash.
+//   - `heal`            → C4's healLive (pokecenter nurse / bag items / auto).
+//   - `use_item`        → C4's useItemLive (bag → item → party target).
 //
 // `press` interrupt policy is intentionally narrower than `goto`'s: the model
 // is manually driving an escape hatch (odd menus, cutscenes), so a
@@ -67,13 +66,20 @@ export function getBattlePolicy() {
  * @returns {Promise<object>}
  */
 async function defaultDeps() {
-    const [{ gotoLive }, { executeQueue }, { getState }, { classifyInterrupt }] = await Promise.all([
+    const [
+        { gotoLive },
+        { executeQueue },
+        { getState },
+        { classifyInterrupt },
+        { healLive, useItemLive },
+    ] = await Promise.all([
         import("../skills/crossMapRouter.js"),
         import("../tools/inputExecutor.js"),
         import("../gamestate/getState.js"),
         import("../gamestate/interruptDetector.js"),
+        import("../skills/menuMacros.js"),
     ]);
-    return { gotoLive, executeQueue, getState, classifyInterrupt };
+    return { gotoLive, executeQueue, getState, classifyInterrupt, healLive, useItemLive };
 }
 
 /**
@@ -248,6 +254,71 @@ async function dispatchSetBattleStrategy(args) {
 }
 
 /**
+ * Validate + execute a `heal` tool call via C4's healLive. `method` is
+ * validated against D1's HEAL_METHOD enum; invalid -> FAILED/invalid_args.
+ * @param {object} args
+ * @param {object} deps
+ * @returns {Promise<object>} outcome envelope
+ */
+async function dispatchHeal(args, deps) {
+    const allowed = TOOLS_BY_NAME.heal.parameters.properties.method.enum;
+    const method = args?.method ?? "auto";
+    if (!allowed.includes(method)) {
+        return makeOutcome(OUTCOME_STATUS.FAILED, {
+            stopReason: STOP_REASON.INVALID_ARGS,
+            message: `heal: method must be one of ${allowed.join(", ")}`,
+        });
+    }
+    const maxSteps = typeof args.max_steps === "number" ? args.max_steps : 400;
+    try {
+        return await deps.healLive({ method, max_steps: maxSteps }, {});
+    } catch (error) {
+        return makeOutcome(OUTCOME_STATUS.FAILED, {
+            stopReason: STOP_REASON.UNKNOWN_STATE,
+            message: `heal threw: ${error?.message ?? String(error)}`,
+        });
+    }
+}
+
+/**
+ * Validate + execute a `use_item` tool call via C4's useItemLive. `item` is
+ * required; `target_slot` (0-5) and `quantity` (1-99) are bounded per D1.
+ * @param {object} args
+ * @param {object} deps
+ * @returns {Promise<object>} outcome envelope
+ */
+async function dispatchUseItem(args, deps) {
+    const item = args?.item;
+    if (typeof item !== "string" || !item.trim()) {
+        return makeOutcome(OUTCOME_STATUS.FAILED, {
+            stopReason: STOP_REASON.INVALID_ARGS,
+            message: "use_item requires an item name (string)",
+        });
+    }
+    if (args.target_slot != null && (typeof args.target_slot !== "number" || args.target_slot < 0 || args.target_slot > 5)) {
+        return makeOutcome(OUTCOME_STATUS.FAILED, {
+            stopReason: STOP_REASON.INVALID_ARGS,
+            message: "use_item target_slot must be an integer 0-5",
+        });
+    }
+    let quantity = typeof args.quantity === "number" ? args.quantity : 1;
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+        return makeOutcome(OUTCOME_STATUS.FAILED, {
+            stopReason: STOP_REASON.INVALID_ARGS,
+            message: "use_item quantity must be an integer 1-99",
+        });
+    }
+    try {
+        return await deps.useItemLive({ item, target_slot: args.target_slot, quantity }, {});
+    } catch (error) {
+        return makeOutcome(OUTCOME_STATUS.FAILED, {
+            stopReason: STOP_REASON.UNKNOWN_STATE,
+            message: `use_item threw: ${error?.message ?? String(error)}`,
+        });
+    }
+}
+
+/**
  * Dispatch a frozen D1 tool call to its implementation.
  *
  * @param {string} name Tool name (must be in TOOLS_BY_NAME).
@@ -267,8 +338,8 @@ export async function dispatchTool(name, args, deps = {}) {
 
     // Fill in real transports only for the tools that need them, and only if
     // the caller didn't inject a fake. Keeps tests stub-free for set_battle_strategy.
-    if (name === "goto" || name === "press") {
-        if (!deps.gotoLive || !deps.executeQueue || !deps.getState || !deps.classifyInterrupt) {
+    if (name === "goto" || name === "press" || name === "heal" || name === "use_item") {
+        if (!deps.gotoLive || !deps.executeQueue || !deps.getState || !deps.classifyInterrupt || !deps.healLive || !deps.useItemLive) {
             const real = await defaultDeps();
             deps = { ...real, ...deps };
         }
@@ -282,15 +353,9 @@ export async function dispatchTool(name, args, deps = {}) {
         case "set_battle_strategy":
             return dispatchSetBattleStrategy(args);
         case "heal":
-            return makeOutcome(OUTCOME_STATUS.FAILED, {
-                stopReason: STOP_REASON.PRECONDITION_FAILED,
-                message: "heal not implemented (C4 menu macros pending)",
-            });
+            return dispatchHeal(args, deps);
         case "use_item":
-            return makeOutcome(OUTCOME_STATUS.FAILED, {
-                stopReason: STOP_REASON.PRECONDITION_FAILED,
-                message: "use_item not implemented (C4 menu macros pending)",
-            });
+            return dispatchUseItem(args, deps);
         default:
             return makeOutcome(OUTCOME_STATUS.FAILED, {
                 stopReason: STOP_REASON.INVALID_ARGS,

@@ -295,8 +295,65 @@ Scope: everything up to and including the Pewter City gym.
       to the model as `choice_required` until C4's party-menu macros land (party
       menu is C4's domain, not this engine's).
 
-- **C4. Menu macros** — heal at Pokécenter, use item, reorder party, handle
-  move-learn prompts.
+- **C4. Menu macros** — ✅ **DONE.** The four menu interactions behind D1's
+  tools, in [`skills/menuMacros.js`](skills/menuMacros.js): heal at a
+  Pokécenter, use an item, reorder the party, handle move-learn prompts. Same
+  two-layer split as C1/C2/C3 — pure sequence builders + bag/party-state
+  resolvers (`resolveBagItem`, `buildBagNavigationSequence`,
+  `buildStartMenuToBagSequence`, `buildMoveLearnAcceptSequence`/`…Decline`,
+  `partySlotDirection`) exercised offline, and live adapters that poll B1's
+  `getState`, drive B3's `executeQueue`/`advanceDialog`, poll B2's
+  `classifyInterrupt`, and return D1 `makeOutcome(...)` envelopes. Live
+  adapters: `selectPartySlotLive` (party-menu cursor nav),
+  `useItemLive` (`use_item`), `healAtPokecenterLive` + `healWithItemsLive` +
+  `healLive` (`heal`, method-dispatched), `reorderPartyLive`,
+  `handleMoveLearnPromptLive`. [`skills/menuMacros.test.js`](skills/menuMacros.test.js)
+  covers the pure helpers, the reliable party-slot navigation (down/up/wrap via
+  re-reading the slot id, menu-closed precondition, battle-mid-nav interrupt),
+  `useItemLive`'s outcome contract + every precondition (item not in bag,
+  in-battle, controls-locked, missing item, over-quantity, mid-use battle
+  interrupt, with/without `target_slot`), the nurse-heal path (leg1/leg2
+  `gotoLive` propagation, unknown-layout precondition, talk+dialog-mash happy
+  path, dialog-never-engaged, advanceDialog-interrupted), `healWithItemsLive`
+  (items-applied→ok, out-of-items→choice_required), `healLive` method dispatch
+  (pokecenter/items/auto: healthy no-op, items-when-sufficient, pokecenter-else),
+  reorder happy path + arg guards, and both move-learn decisions (decline default,
+  accept+replaceSlot) (80 checks, all green).
+    - *Reliable paths:* the **party-menu cursor** is readable from B1's snapshot
+      (`menu.partyMenuSlot` via `getPartyMenuSlotId`), so `selectPartySlotLive`
+      navigates to a target slot by re-reading the slot id after every up/down
+      press — exact, no guessing, wrap-around handled. The **Pokécenter nurse
+      heal** sidesteps the menu-cursor gaps entirely: every in-scope center uses
+      FRLG's standard layout (verified against the decomp's `map.json`
+      `object_events` + A1's collision/behavior grid for both pre-Brock centers
+      — Viridian 5:4, Pewter 6:5 — nurse at (7,2) facing down behind an
+      `MB_COUNTER` tile at (7,3), so the player talks across the counter by
+      standing on the walkable tile (7,4) facing up), and the heal itself is a
+      dialog B3's `advanceDialog` mashes through (the YES/NO "heal your
+      Pokémon?" prompt defaults to YES, so mashing A confirms and advances).
+      `POKECENTER_NURSE_INTERACT` keys the nurse-interact tile by `group:num`;
+      an unknown center surfaces as `precondition_failed` rather than a guessed
+      tile. `heal method=auto` prefers items when the bag has sufficient
+      HP/status items for the injured party, else the (reliable) pokecenter.
+    - *Found (unresolved):* the **start-menu and bag cursors** are NOT readable
+      from B1's snapshot (no RAM read exists for them), so navigating to the
+      BAG entry, a specific bag pocket, or a specific item slot assumes a known
+      cursor start and presses a counted up/down — the SAME class of gap as
+      C3's battle-move cursor (see `battlePolicy.js`'s docstring). A wrong
+      count still presses SOME valid entry (never a dead press) and B2 surfaces
+      odd state next poll; the live adapters are tested offline against the
+      pure sequence logic + outcome contract, exactly as C3 is. Making either
+      exact is downstream B-work (a bag/start-menu cursor RAM read, alongside
+      the enemy-side and battle-menu-cursor reads C3 already defers), NOT this
+      workstream. `heal method=pokecenter` is the reliable full-heal; items
+      inherit the bag-cursor gap.
+    - *Note:* move-learn prompts are not a model tool (D1 keeps the action
+      space small); `handleMoveLearnPromptLive` is invoked from the agent loop
+      when a level-up dialog is detected and defaults to **decline** (press B →
+      "No") — the harness never overwrites a move the model might want without
+      the model asking, since the move-forget cursor's start position is
+      unreadable (same gap). `accept`+`replaceSlot` is available for a future
+      policy.
 - **C5. Dialog handler** — ✅ **DONE.** Advances in-game text/cutscene/script
   dialog and resolves yes/no prompts, surfacing a `choice_required` interrupt to
   the model only when it can't blast through on its own — the implementation
@@ -373,8 +430,8 @@ Scope: everything up to and including the Pewter City gym.
   implementations have landed (per the critical path): `goto` → C2's `gotoLive`,
   `press` → B3's `executeQueue` polled for interrupts per press,
   `set_battle_strategy` → records the standing policy in memory (C3 pending —
-  the stored policy is what C3 will consume). `heal`/`use_item` return
-  `precondition_failed` until C4's menu macros land. `press`'s interrupt policy
+  the stored policy is what C3 will consume). `heal` → C4's `healLive`,
+  `use_item` → C4's `useItemLive` (both wired once C4 landed; see C4). `press`'s interrupt policy
   is deliberately narrower than `goto`'s: because the model is manually driving
   the escape hatch, a dialog/script lock or open menu is *expected*, not an
   interrupt — it only stops early on battle-start / warp / hp-low (pressing A
@@ -389,10 +446,11 @@ Scope: everything up to and including the Pewter City gym.
   the pre-D2 history on disk as incompatible (starts fresh); tool-call pairs are
   flattened to text for the summarization call so that request stays
   provider-portable. Offline tests: [`toolDispatcher.test.js`](llminteract/toolDispatcher.test.js)
-  (25 checks — unknown tool, goto delegation + arg pass-through + missing-args,
+  (37 checks — unknown tool, goto delegation + arg pass-through + missing-args,
   press execution / button-enum validation / `max_steps` cap, the press
   interrupt policy across all four stop branches incl. the dialog-lock opt-out,
-  `set_battle_strategy` storage + enum validation, heal/use_item stubs) and
+  `set_battle_strategy` storage + enum validation, heal/use_item delegation +
+  arg validation incl. bad method/target_slot/quantity + throw-isolation) and
   [`buildStatePrompt.test.js`](llminteract/buildStatePrompt.test.js) (25 checks —
   every snapshot section surfaces, read-errors reported inline, and no
   screenshot/vision wording survives), all green. The dead-on-disk

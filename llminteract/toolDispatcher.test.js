@@ -230,20 +230,67 @@ function makeDeps({ gotoLiveImpl, states }) {
         JSON.stringify(out));
 }
 
-// 16. heal -> precondition_failed (C4 pending)
+// 16. heal delegates to healLive with validated method + default max_steps
 {
-    const out = await dispatchTool("heal", { method: "auto" });
-    check("heal -> failed/precondition_failed",
-        out.status === OUTCOME_STATUS.FAILED && out.stop_reason === STOP_REASON.PRECONDITION_FAILED,
-        JSON.stringify(out));
+    let captured = null;
+    const deps = makeDeps({});
+    deps.healLive = async (args) => { captured = args; return makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 7, message: "healed" }); };
+    const out = await dispatchTool("heal", { method: "pokecenter" }, deps);
+    check("heal delegates method", captured?.method === "pokecenter", JSON.stringify(captured));
+    check("heal default max_steps = 400", captured?.max_steps === 400, String(captured?.max_steps));
+    check("heal returns healLive outcome", out.status === OUTCOME_STATUS.OK && out.steps_used === 7, JSON.stringify(out));
+
+    // default method (auto) when omitted
+    let captured2 = null;
+    deps.healLive = async (args) => { captured2 = args; return makeOutcome(OUTCOME_STATUS.OK); };
+    await dispatchTool("heal", {}, deps);
+    check("heal defaults method to auto", captured2?.method === "auto", JSON.stringify(captured2));
+
+    // invalid method enum
+    const bad = await dispatchTool("heal", { method: "wishful_thinking" }, deps);
+    check("heal bad method -> failed/invalid_args",
+        bad.status === OUTCOME_STATUS.FAILED && bad.stop_reason === STOP_REASON.INVALID_ARGS, JSON.stringify(bad));
+
+    // heal throws -> failed (not a crash)
+    deps.healLive = async () => { throw new Error("boom"); };
+    const thrown = await dispatchTool("heal", { method: "items" }, deps);
+    check("heal exception -> failed/unknown_state",
+        thrown.status === OUTCOME_STATUS.FAILED && thrown.stop_reason === STOP_REASON.UNKNOWN_STATE && /boom/.test(thrown.message),
+        JSON.stringify(thrown));
 }
 
-// 17. use_item -> precondition_failed (C4 pending)
+// 17. use_item delegates to useItemLive with validated args
 {
-    const out = await dispatchTool("use_item", { item: "Potion" });
-    check("use_item -> failed/precondition_failed",
-        out.status === OUTCOME_STATUS.FAILED && out.stop_reason === STOP_REASON.PRECONDITION_FAILED,
-        JSON.stringify(out));
+    let captured = null;
+    const deps = makeDeps({});
+    deps.useItemLive = async (args) => { captured = args; return makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 9, message: "used" }); };
+    const out = await dispatchTool("use_item", { item: "Potion", target_slot: 1, quantity: 2 }, deps);
+    check("use_item delegates item", captured?.item === "Potion", JSON.stringify(captured));
+    check("use_item passes target_slot", captured?.target_slot === 1, JSON.stringify(captured));
+    check("use_item passes quantity", captured?.quantity === 2, JSON.stringify(captured));
+    check("use_item returns adapter outcome", out.status === OUTCOME_STATUS.OK && out.steps_used === 9, JSON.stringify(out));
+
+    // missing item name
+    const noItem = await dispatchTool("use_item", {}, deps);
+    check("use_item missing item -> failed/invalid_args",
+        noItem.status === OUTCOME_STATUS.FAILED && noItem.stop_reason === STOP_REASON.INVALID_ARGS, JSON.stringify(noItem));
+
+    // out-of-range target_slot
+    const badSlot = await dispatchTool("use_item", { item: "Potion", target_slot: 9 }, deps);
+    check("use_item bad target_slot -> failed/invalid_args",
+        badSlot.status === OUTCOME_STATUS.FAILED && badSlot.stop_reason === STOP_REASON.INVALID_ARGS, JSON.stringify(badSlot));
+
+    // out-of-range quantity
+    const badQty = await dispatchTool("use_item", { item: "Potion", quantity: 0 }, deps);
+    check("use_item bad quantity -> failed/invalid_args",
+        badQty.status === OUTCOME_STATUS.FAILED && badQty.stop_reason === STOP_REASON.INVALID_ARGS, JSON.stringify(badQty));
+
+    // use_item throws -> failed (not a crash)
+    deps.useItemLive = async () => { throw new Error("boom"); };
+    const thrown = await dispatchTool("use_item", { item: "Potion" }, deps);
+    check("use_item exception -> failed/unknown_state",
+        thrown.status === OUTCOME_STATUS.FAILED && thrown.stop_reason === STOP_REASON.UNKNOWN_STATE && /boom/.test(thrown.message),
+        JSON.stringify(thrown));
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);
