@@ -1,0 +1,123 @@
+{
+  "note": "Pre-Brock (up to and including Boulder Badge) walkthrough corpus from Bulbapedia, StrategyWiki, and video transcripts. Used for LLM finetuning.",
+  "generatedAt": "2026-07-18T18:41:04.512Z",
+  "items": [
+    {
+      "type": "wiki",
+      "source": "bulbapedia",
+      "title": "Introduction, Pallet Town",
+      "url": "https://bulbapedia.bulbagarden.net/wiki/Walkthrough:Pok%C3%A9mon_FireRed_and_LeafGreen/Part_1",
+      "file": "wiki/bulbapedia_part-1.txt",
+      "chars": 6215,
+      "fetchedAt": "2026-07-18T18:40:54.996Z"
+    },
+    {
+      "type": "wiki",
+      "source": "bulbapedia",
+      "title": "Route 1, Viridian City, Pallet Town (Revisited), Route 2 (West)",
+      "url": "https://bulbapedia.bulbagarden.net/wiki/Walkthrough:Pok%C3%A9mon_FireRed_and_LeafGreen/Part_2",
+      "file": "wiki/bulbapedia_part-2.txt",
+      "chars": 4758,
+      "fetchedAt": "2026-07-18T18:40:55.876Z"
+    },
+    {
+      "type": "wiki",
+      "source": "bulbapedia",
+      "title": "Viridian Forest, Pewter City, Pewter Gym",
+      "url": "https://bulbapedia.bulbagarden.net/wiki/Walkthrough:Pok%C3%A9mon_FireRed_and_LeafGreen/Part_3",
+      "file": "wiki/bulbapedia_part-3.txt",
+      "chars": 3518,
+      "fetchedAt": "2026-07-18T18:40:56.732Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Pallet Town",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Pallet_Town",
+      "file": "wiki/strategywiki_pallet-town.txt",
+      "chars": 3200,
+      "fetchedAt": "2026-07-18T18:40:57.606Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Route 1",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Route_1",
+      "file": "wiki/strategywiki_route-1.txt",
+      "chars": 1197,
+      "fetchedAt": "2026-07-18T18:40:58.488Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Viridian City",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Viridian_City",
+      "file": "wiki/strategywiki_viridian-city.txt",
+      "chars": 5547,
+      "fetchedAt": "2026-07-18T18:40:59.366Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Route 22",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Route_22",
+      "file": "wiki/strategywiki_route-22.txt",
+      "chars": 1024,
+      "fetchedAt": "2026-07-18T18:41:00.234Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Route 2",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Route_2",
+      "file": "wiki/strategywiki_route-2.txt",
+      "chars": 666,
+      "fetchedAt": "2026-07-18T18:41:01.119Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Viridian Forest",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Viridian_Forest",
+      "file": "wiki/strategywiki_viridian-forest.txt",
+      "chars": 2746,
+      "fetchedAt": "2026-07-18T18:41:02.006Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Pewter City",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Pewter_City",
+      "file": "wiki/strategywiki_pewter-city.txt",
+      "chars": 3244,
+      "fetchedAt": "2026-07-18T18:41:02.888Z"
+    },
+    {
+      "type": "transcript",
+      "source": "01_100pct_no_commentary",
+      "path": "/home/daniel/Desktop/pokemon_walkthroughs/01_100pct_no_commentary",
+      "file": "transcripts/01_100pct_no_commentary.txt",
+      "events": 734,
+      "chars": 77618,
+      "cutMarker": "A Bulbasaur level 14 with 27/38 HP is on screen, and a text box states \"RED received the BOULDERBADGE from BROCK!\"."
+    },
+    {
+      "type": "transcript",
+      "source": "02_full_game_walkthrough",
+      "path": "/home/daniel/Desktop/pokemon_walkthroughs/02_full_game_walkthrough",
+      "file": "transcripts/02_full_game_walkthrough.txt",
+      "events": 776,
+      "chars": 83827,
+      "cutMarker": "A level 15 Charmander with 11/38 HP is visible alongside the text \"NATE received the BOULDERBADGE from BROCK!\"."
+    },
+    {
+      "type": "transcript",
+      "source": "03_switch2_gameplay_walkthrough",
+      "path": "/home/daniel/Desktop/pokemon_walkthroughs/03_switch2_gameplay_walkthrough",
+      "file": "transcripts/03_switch2_gameplay_walkthrough.txt",
+      "events": 1430,
+      "chars": 185681,
+      "cutMarker": "Must be soon, right? Now would be a nice time to evolve. Maybe it's level 60. I don't know. I forgot. I used to remember all these numbers, every level, every move to use. As proof of your victory, I conferred on you this. The official Pokemon League... Boulder badge. Oh my god, yes. Scott received the boulder badge from Brock. Our first gym badge, guys. Good job. We did it. Well done, guys. It was Art Mankey. It also enables the use of the move Flash outside of battle. Of course, a Pokemon must know the move Flash to use it. Thank you very much."
+    }
+  ]
+}

@@ -81,3 +81,67 @@ node staticdata/extractMapData.js
 > truncates the 9-bit behavior field. The static extractor here uses the correct
 > `u32` / `0x1FF` decode. This is the kind of fragile runtime read A1 is meant to
 > replace.
+
+## A5 — Walkthrough/wiki corpus (`corpus/`)
+
+Clean text corpus extracted from walkthrough wikis and video transcripts,
+scoped to pre-Brock (Pallet Town through Pewter City gym / Boulder Badge).
+For LLM finetuning and reference.
+
+### Inputs
+
+- **Bulbapedia**: parts 1–3 of the FireRed/LeafGreen walkthrough (intro, routes/cities up to Pewter).
+- **StrategyWiki**: 7 pre-Brock location pages: Pallet Town, Route 1, Viridian City, Route 22, Route 2, Viridian Forest, Pewter City.
+- **Video transcripts**: Three gameplay recordings (frame descriptions + optional commentary):
+  - `01_100pct_no_commentary`: frame descriptions only.
+  - `02_full_game_walkthrough`: frame descriptions only.
+  - `03_switch2_gameplay_walkthrough`: frame descriptions + commentary.
+
+### Generating
+
+```bash
+node staticdata/scrapeWalkthroughs.js
+# or with flags:
+node staticdata/scrapeWalkthroughs.js --wiki-only      # fetch wikis only
+node staticdata/scrapeWalkthroughs.js --transcripts-only # clean transcripts only
+node staticdata/scrapeWalkthroughs.js --out <dir>      # output directory (default: staticdata/corpus)
+node staticdata/scrapeWalkthroughs.js --urls <path>    # custom URL JSON path
+node staticdata/scrapeWalkthroughs.js --transcripts <dir> # custom transcripts dir
+```
+
+### Output layout
+
+```
+staticdata/corpus/
+  index.json                  # manifest (tracked)
+  wiki/                       # (gitignored)
+    bulbapedia_part-1.txt
+    bulbapedia_part-2.txt
+    bulbapedia_part-3.txt
+    strategywiki_pallet-town.txt
+    strategywiki_route-1.txt
+    ... (7 total StrategyWiki pages)
+  transcripts/                # (gitignored)
+    01_100pct_no_commentary.txt
+    02_full_game_walkthrough.txt
+    03_switch2_gameplay_walkthrough.txt
+```
+
+### Processing steps
+
+1. **Wiki fetch**: MediaWiki API queries with polite 500ms delays. Light text cleanup (CRLF→LF, trailing space trim, blank-line collapse).
+2. **Transcript clean**:
+   - Parse frame description + commentary lines into timestamped events.
+   - Noise filtering: drop frame descriptions matching "the frame is black" or watermark artifacts.
+   - Pre-Brock truncation: stop after first event containing "boulderbadge" (case-insensitive, spaces removed).
+   - Commentary events (`Transcript (...)`) kept verbatim (no noise filter).
+3. **Manifest**: emit index.json with metadata (character counts, fetch timestamps, cut markers).
+
+### Licenses
+
+This corpus is derived from:
+- **Bulbapedia**: CC BY-NC-SA 2.5 (https://bulbapedia.bulbagarden.net/)
+- **StrategyWiki**: CC BY-SA (https://strategywiki.org/)
+- **Video transcripts**: assumed derivative; corpus is regenerable offline.
+
+The generated `corpus/` directory is gitignored (bulk text); only `index.json` is tracked.

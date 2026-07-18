@@ -30,10 +30,19 @@ Scope: everything up to and including the Pewter City gym.
   by warps/connections for cross-map routing.
 - **A4. Milestone/quest graph** — the pre-Brock story sequence encoded with the
   RAM flags that mark each step complete (Oak's Parcel, rival fights, badge).
-- **A5. Scrape walkthrough/wiki corpus** — Bulbapedia parts 1–3
-  (`~/Desktop/frlg_walkthrough_urls.json`) and saved walkthroughs
-  (`~/Desktop/pokemon_walkthroughs`) into clean text for the finetune stages.
-  Fully independent; can run anytime.
+- **A5. Scrape walkthrough/wiki corpus** — ✅ **DONE.**
+  `staticdata/scrapeWalkthroughs.js` builds a pre-Brock clean-text corpus in
+  `staticdata/corpus/` from two inputs: the MediaWiki-based wikis
+  (Bulbapedia parts 1–3 + StrategyWiki's 7 Pallet→Pewter location pages, pulled
+  as plaintext via each wiki's `extracts` API) and the saved video transcripts
+  (`~/Desktop/pokemon_walkthroughs`, 3 playthroughs). Transcripts are parsed
+  into timestamped events (both frame-description and commentary formats,
+  including indented `at Xs:` sub-lines), noise-filtered, and truncated at the
+  Boulder Badge award. Output is git-ignored/regenerable; the `index.json`
+  manifest is tracked. Feeds E1 (wiki QA) and E2 (transcript state→intent).
+    - *Note:* wiki fetches shell out to `curl`, not `fetch` — StrategyWiki's WAF
+      403s node's TLS fingerprint (both `fetch` and the `https` module); `curl`
+      passes.
 
 ## Workstream B — Runtime state layer (emulator; no static data needed)
 

@@ -2,7 +2,9 @@ extra
 node_modules
 screenshots/*
 chat_history*.json
-twitch_chat.txt
 human_readable_prompt_details.txt
 summary_history*.json
 package-lock.json
+.env
+/staticdata/corpus/wiki/
+/staticdata/corpus/transcripts/
