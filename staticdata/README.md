@@ -199,6 +199,86 @@ resolution, backing the `goto` tool's `location` field) and `mapRoute`/
 > press the returned `facing`); a warp edge's `fromTile` is meant to be routed
 > to that way, not stood on directly.
 
+## A4 — Milestone / quest graph (`frlg/milestones.json`)
+
+The pre-Brock story sequence encoded as an ordered list of milestones, each
+tagged with the RAM flag(s) that mark it complete — the reward signals E4
+(SFT+RL on milestone flags) and the savestate checkpoints D4 needs.
+
+### Generating
+
+```bash
+node staticdata/extractMilestones.js
+# or:  POKEFIRERED_PATH=/path/to/pokefirered node staticdata/extractMilestones.js
+# or:  node staticdata/extractMilestones.js --decomp /path/to/pokefirered --out staticdata/frlg
+```
+
+Needs the decomp (reads `include/constants/flags.h` + `include/constants/opponents.h`);
+emits one file independent of the other A extractors.
+
+### Output
+
+`frlg/milestones.json` — `{ source, flagBase, milestones[], locationFlags[] }`.
+
+Each milestone: `id`, `order`, `name`, `kind` (`story`/`battle`/`item`/`badge`),
+`map`, `description`, `requires[]` (prior milestone ids — the story DAG),
+`optional` (the Route 22 rival + its Poké Ball top-up are real beats the path
+to Brock can skip), `reward`, and `completion`:
+
+- `completion.mode` — `"all"` (every flag must be set) or `"any"` (any one).
+  Starter-dependent battles (both rival fights, Brock) carry the three variant
+  trainer-defeat flags under `"any"`; only the one matching the chosen starter
+  is ever set, so the milestone is complete if *any* variant is.
+- `completion.flags[]` — `{ flag, value }` pairs. `value` is the bit-offset a
+  runtime reader passes to `readPlayerFlag` (`byte = floor(v/8)`, `bit = v % 8`).
+- `completion.item.resolvesTo` — present for the Oak's Parcel milestone, which
+  has no dedicated flag (it's a key item in the bag). Its `resolvesTo` flag
+  (`FLAG_SYS_POKEDEX_GET`, set by the parcel-delivery scene) is what tracks it.
+
+The critical path (non-optional): `chose_starter → beat_rival_oaks_lab →
+got_oaks_parcel → got_pokedex → defeated_brock → got_boulder_badge`.
+
+`flagBase` records the resolved anchor values (`TRAINER_FLAGS_START = 0x500`,
+`SYS_FLAGS = 0x800`, …) so a consumer can sanity-check the math.
+
+`locationFlags[]` — soft "you've reached this area" signals (visited-Oak's-Lab,
+town-map unlocks, the Route 1 Potion aide), resolved to bit-offsets like the
+rest. Supplementary to the strict story DAG.
+
+### How it's decoded (all authoritative, from the decomp)
+
+- **Flag values** are resolved from `include/constants/flags.h` by evaluating
+  the decomp's own `#define` expressions (`SYS_FLAGS + 0x20`,
+  `FLAG_0x4FF + 1`, `FLAG_HIDDEN_ITEMS_START + N`, …) with a tiny `+ - * /`
+  integer evaluator over already-defined names — so a future flag renumbering
+  in the decomp flows through without an edit here. `flags.h` references
+  symbols from `opponents.h` (`SYS_FLAGS → TRAINER_FLAGS_END →
+  MAX_TRAINERS_COUNT`), so `opponents.h`'s defines are merged in as a fallback.
+- **Trainer defeat flags** are `TRAINER_FLAGS_START + trainerId`, where the
+  trainer id comes from `include/constants/opponents.h` (`TRAINER_RIVAL_*`,
+  `TRAINER_LEADER_BROCK`) — matching the engine's own `FlagSet` for trainers,
+  not guessed. (e.g. `TRAINER_LEADER_BROCK = 414 → 0x500 + 0x19E = 0x69E`.)
+- **Which flag marks which beat** is read from the relevant map scripts:
+  `PalletTown_ProfessorOaksLab` (`FLAG_SYS_POKEMON_GET`,
+  `FLAG_BEAT_RIVAL_IN_OAKS_LAB`, `FLAG_SYS_POKEDEX_GET`),
+  `ViridianCity_Mart` (parcel scene, gated by `goto_if_unset
+  FLAG_SYS_POKEDEX_GET`), `Route22` (trigger-based early rival, no dedicated
+  flag → trainer-defeat flag), and `PewterCity_Gym` (`FLAG_DEFEATED_BROCK` +
+  `FLAG_BADGE01_GET` set together).
+
+Query layer: [`skills/milestones.js`](../skills/milestones.js) —
+`resolveMilestone`, `completionFlags`/`flagBit`/`flagValues`,
+`isComplete`, and `currentMilestone` (furthest reached + next critical-path
+target + available optional side content, honoring the DAG). Self-test:
+[`skills/milestones.test.js`](../skills/milestones.test.js) (57 checks, all
+green).
+
+> *Note:* the runtime flag map (`constant/savestate_flag_map_frlg.js`)
+> currently only knows the 8 badge flags. Wiring these story flags into the
+> runtime `readPlayerFlag` path (so B1's snapshot / E4's reward signal can
+> actually read them) is downstream runtime work, not part of this static
+> extraction — the bit-offsets here are what that wiring will consume.
+
 ## A5 — Walkthrough/wiki corpus (`corpus/`)
 
 Clean text corpus extracted from walkthrough wikis and video transcripts,

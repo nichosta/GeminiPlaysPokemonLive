@@ -1,0 +1,278 @@
+{
+  "game": "FRLG",
+  "scope": "pre-Brock (Pallet Town through Pewter City gym / Boulder Badge)",
+  "generatedAt": "2026-07-18T20:04:53.948Z",
+  "source": {
+    "repo": "https://github.com/pret/pokefirered",
+    "commit": "df4449a27cd78dd747ce269e47d3ab4a0149d8f4"
+  },
+  "flagBase": {
+    "note": "Flag bit-offsets resolved from include/constants/flags.h by evaluating the decomp's own expressions (SYS_FLAGS + 0x20, FLAG_0x4FF + 1, FLAG_HIDDEN_ITEMS_START + N, ...). Trainer defeat flags are TRAINER_FLAGS_START + trainerId (from opponents.h), matching the engine's FlagSet for trainers. A runtime reader reads a flag by bitOffset = value: byte = floor(v/8), bit = v % 8 — see gamestate/overworld/playerData.js readPlayerFlag.",
+    "TRAINER_FLAGS_START": 1280,
+    "SYS_FLAGS": 2048,
+    "TEMP_FLAGS_START": 0,
+    "FLAG_HIDDEN_ITEMS_START": 1000
+  },
+  "note": "completion.mode 'all' = every flag must be set; 'any' = any one (used for starter-dependent battles, where only the variant matching the chosen starter is ever set). 'optional' milestones are real story beats the pre-Brock path can skip (Route 22 rival + its Poké Ball top-up); the critical path is chose_starter -> beat_rival_oaks_lab -> got_oaks_parcel -> got_pokedex -> defeated_brock -> got_boulder_badge.",
+  "milestones": [
+    {
+      "id": "chose_starter",
+      "order": 1,
+      "name": "Chose Starter Pokémon",
+      "kind": "story",
+      "map": "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB",
+      "description": "Player picks one of the three starter Poké Balls on Oak's table and receives the monster. FLAG_SYS_POKEMON_GET is set in PalletTown_ProfessorOaksLab_EventScript_ChooseStarter; FLAG_PALLET_LADY_NOT_BLOCKING_SIGN is set in the same scene so the player can leave town.",
+      "completion": {
+        "mode": "all",
+        "flags": [
+          {
+            "flag": "FLAG_SYS_POKEMON_GET",
+            "value": 2088
+          }
+        ],
+        "sideFlags": [
+          {
+            "flag": "FLAG_PALLET_LADY_NOT_BLOCKING_SIGN",
+            "value": 657
+          }
+        ]
+      },
+      "requires": [],
+      "optional": false,
+      "reward": "First party member; enables field battles and the Pallet Town exit."
+    },
+    {
+      "id": "beat_rival_oaks_lab",
+      "order": 2,
+      "name": "Defeated Rival in Oak's Lab",
+      "kind": "battle",
+      "map": "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB",
+      "description": "Immediately after choosing a starter, the rival challenges the player to a first battle in the lab. FLAG_BEAT_RIVAL_IN_OAKS_LAB is set after the trainerbattle resolves. The rival's party depends on the chosen starter, so the trainer-defeat flag is one of three variants.",
+      "completion": {
+        "mode": "any",
+        "flags": [
+          {
+            "flag": "FLAG_BEAT_RIVAL_IN_OAKS_LAB",
+            "value": 600
+          },
+          {
+            "flag": "FLAG_DEFEATED_TRAINER_RIVAL_OAKS_LAB_SQUIRTLE",
+            "value": 1606,
+            "trainerId": 326,
+            "trainer": "TRAINER_RIVAL_OAKS_LAB_SQUIRTLE"
+          },
+          {
+            "flag": "FLAG_DEFEATED_TRAINER_RIVAL_OAKS_LAB_BULBASAUR",
+            "value": 1607,
+            "trainerId": 327,
+            "trainer": "TRAINER_RIVAL_OAKS_LAB_BULBASAUR"
+          },
+          {
+            "flag": "FLAG_DEFEATED_TRAINER_RIVAL_OAKS_LAB_CHARMANDER",
+            "value": 1608,
+            "trainerId": 328,
+            "trainer": "TRAINER_RIVAL_OAKS_LAB_CHARMANDER"
+          }
+        ]
+      },
+      "requires": [
+        "chose_starter"
+      ],
+      "optional": false,
+      "reward": "Story gate cleared to leave the lab."
+    },
+    {
+      "id": "got_oaks_parcel",
+      "order": 3,
+      "name": "Received Oak's Parcel",
+      "kind": "item",
+      "map": "MAP_VIRIDIAN_CITY_MART",
+      "description": "The Viridian Mart clerk hands the player OAK'S PARCEL (a key item) to deliver to Prof. Oak. There is no dedicated setflag for receiving the parcel — the scene is gated by goto_if_unset FLAG_SYS_POKEDEX_GET and a per-map scene var (VAR_MAP_SCENE_VIRIDIAN_CITY_MART), and the item itself (ITEM_OAKS_PARCEL) is what tracks it. Delivery immediately proceeds to the Pokédex milestone, so FLAG_SYS_POKEDEX_GET marks the parcel quest *resolved*.",
+      "completion": {
+        "mode": "all",
+        "flags": [],
+        "item": {
+          "name": "ITEM_OAKS_PARCEL",
+          "resolvesTo": {
+            "flag": "FLAG_SYS_POKEDEX_GET",
+            "value": 2089
+          }
+        },
+        "note": "No dedicated flag; tracked by the OAK'S PARCEL key item. See got_pokedex for the resolved flag."
+      },
+      "requires": [
+        "beat_rival_oaks_lab"
+      ],
+      "optional": false,
+      "reward": "Oak's Parcel key item; required to advance the Oak's Lab Pokédex scene."
+    },
+    {
+      "id": "got_pokedex",
+      "order": 4,
+      "name": "Delivered Parcel / Received Pokédex",
+      "kind": "story",
+      "map": "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB",
+      "description": "Returning to Oak's Lab with the parcel triggers PalletTown_ProfessorOaksLab_EventScript_ReceiveDexScene: Oak takes the parcel, the rival enters, and Oak gives the player the Pokédex plus 5 Poké Balls. FLAG_SYS_POKEDEX_GET is set at the end of that scene.",
+      "completion": {
+        "mode": "all",
+        "flags": [
+          {
+            "flag": "FLAG_SYS_POKEDEX_GET",
+            "value": 2089
+          }
+        ]
+      },
+      "requires": [
+        "got_oaks_parcel"
+      ],
+      "optional": false,
+      "reward": "Pokédex + Poké Balls; enables catching and is the precondition for the Route 22 rival."
+    },
+    {
+      "id": "beat_route22_rival",
+      "order": 5,
+      "name": "Defeated Route 22 Rival (optional)",
+      "kind": "battle",
+      "map": "MAP_ROUTE22",
+      "description": "A trigger-based (coord_event) early rival fight on Route 22, branched on VAR_STARTER_MON into one of three TRAINER_RIVAL_ROUTE22_EARLY_* trainerbattle calls. No dedicated story flag is set for this win — completion is the trainer-defeat flag (any of the three variants). Optional: not required to reach Pewter, but returning to Oak afterward grants extra Poké Balls (got_pokeballs_topup).",
+      "completion": {
+        "mode": "any",
+        "flags": [
+          {
+            "flag": "FLAG_DEFEATED_TRAINER_RIVAL_ROUTE22_EARLY_SQUIRTLE",
+            "value": 1609,
+            "trainerId": 329,
+            "trainer": "TRAINER_RIVAL_ROUTE22_EARLY_SQUIRTLE"
+          },
+          {
+            "flag": "FLAG_DEFEATED_TRAINER_RIVAL_ROUTE22_EARLY_BULBASAUR",
+            "value": 1610,
+            "trainerId": 330,
+            "trainer": "TRAINER_RIVAL_ROUTE22_EARLY_BULBASAUR"
+          },
+          {
+            "flag": "FLAG_DEFEATED_TRAINER_RIVAL_ROUTE22_EARLY_CHARMANDER",
+            "value": 1611,
+            "trainerId": 331,
+            "trainer": "TRAINER_RIVAL_ROUTE22_EARLY_CHARMANDER"
+          }
+        ]
+      },
+      "requires": [
+        "got_pokedex"
+      ],
+      "optional": true,
+      "reward": "Story beat only; gates the Oak Poké Ball top-up."
+    },
+    {
+      "id": "got_pokeballs_topup",
+      "order": 6,
+      "name": "Received Poké Ball Top-up from Oak (optional)",
+      "kind": "item",
+      "map": "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB",
+      "description": "After the Route 22 rival, returning to Oak's Lab out of Poké Balls triggers a 5-ball top-up. FLAG_GOT_POKEBALLS_FROM_OAK_AFTER_22_RIVAL is set, which in turn sets FLAG_OAK_SKIP_22_RIVAL_CHECK (a derived flag, not a primary milestone). Optional and not on the path to Brock.",
+      "completion": {
+        "mode": "all",
+        "flags": [
+          {
+            "flag": "FLAG_GOT_POKEBALLS_FROM_OAK_AFTER_22_RIVAL",
+            "value": 583
+          }
+        ],
+        "sideFlags": [
+          {
+            "flag": "FLAG_OAK_SKIP_22_RIVAL_CHECK",
+            "value": 591
+          }
+        ]
+      },
+      "requires": [
+        "beat_route22_rival"
+      ],
+      "optional": true,
+      "reward": "+5 Poké Balls."
+    },
+    {
+      "id": "defeated_brock",
+      "order": 7,
+      "name": "Defeated Brock",
+      "kind": "battle",
+      "map": "MAP_PEWTER_CITY_GYM",
+      "description": "PewterCity_Gym's victory script sets FLAG_DEFEATED_BROCK and FLAG_BADGE01_GET together. The trainer-defeat flag (TRAINER_LEADER_BROCK) is also set by the trainerbattle. Completion is satisfied by FLAG_DEFEATED_BROCK (the dedicated story flag) OR the trainer-defeat flag.",
+      "completion": {
+        "mode": "any",
+        "flags": [
+          {
+            "flag": "FLAG_DEFEATED_BROCK",
+            "value": 1200
+          },
+          {
+            "flag": "FLAG_DEFEATED_TRAINER_LEADER_BROCK",
+            "value": 1694,
+            "trainerId": 414,
+            "trainer": "TRAINER_LEADER_BROCK"
+          }
+        ]
+      },
+      "requires": [
+        "got_pokedex"
+      ],
+      "optional": false,
+      "reward": "Gym cleared; Boulder Badge awarded."
+    },
+    {
+      "id": "got_boulder_badge",
+      "order": 8,
+      "name": "Received Boulder Badge",
+      "kind": "badge",
+      "map": "MAP_PEWTER_CITY_GYM",
+      "description": "Set in the same Pewter Gym victory script as FLAG_DEFEATED_BROCK. This is the terminal pre-Brock milestone — the project's scope ends here.",
+      "completion": {
+        "mode": "all",
+        "flags": [
+          {
+            "flag": "FLAG_BADGE01_GET",
+            "value": 2080
+          }
+        ]
+      },
+      "requires": [
+        "defeated_brock"
+      ],
+      "optional": false,
+      "reward": "Boulder Badge — pre-Brock scope complete."
+    }
+  ],
+  "locationFlags": [
+    {
+      "id": "visited_oaks_lab",
+      "flag": "FLAG_VISITED_OAKS_LAB",
+      "note": "Set on every transition into Oak's Lab.",
+      "value": 719
+    },
+    {
+      "id": "world_map_viridian_city",
+      "flag": "FLAG_WORLD_MAP_VIRIDIAN_CITY",
+      "note": "Town map unlock for Viridian City.",
+      "value": 2193
+    },
+    {
+      "id": "world_map_pewter_city",
+      "flag": "FLAG_WORLD_MAP_PEWTER_CITY",
+      "note": "Town map unlock for Pewter City.",
+      "value": 2194
+    },
+    {
+      "id": "world_map_viridian_forest",
+      "flag": "FLAG_WORLD_MAP_VIRIDIAN_FOREST",
+      "note": "Town map unlock for Viridian Forest.",
+      "value": 2212
+    },
+    {
+      "id": "got_potion_route1",
+      "flag": "FLAG_GOT_POTION_ON_ROUTE_1",
+      "note": "Oak's aide on Route 1 hands out a Potion.",
+      "value": 560
+    }
+  ]
+}

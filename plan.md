@@ -71,8 +71,42 @@ Scope: everything up to and including the Pewter City gym.
     - *Note:* connection edges only carry `direction`/`offset`, not exact
       border tiles — C2 resolves those from both maps' live dimensions at
       execution time.
-- **A4. Milestone/quest graph** — the pre-Brock story sequence encoded with the
-  RAM flags that mark each step complete (Oak's Parcel, rival fights, badge).
+- **A4. Milestone/quest graph** — ✅ **DONE.**
+  [`staticdata/extractMilestones.js`](staticdata/extractMilestones.js) emits
+  `staticdata/frlg/milestones.json`: the pre-Brock story sequence as an
+  ordered DAG of 8 milestones (chose starter → rival-in-lab → Oak's Parcel →
+  Pokédex → Route 22 rival [optional] → Poké Ball top-up [optional] → Brock →
+  Boulder Badge), each tagged with the RAM flag(s) that mark it complete.
+  Flag bit-offsets are resolved authoritatively from the decomp's own
+  `include/constants/flags.h` by evaluating its `#define` expressions
+  (`SYS_FLAGS + 0x20`, `FLAG_0x4FF + 1`, …) with a small `+ - * /` evaluator
+  over already-defined names (opponents.h defines merged in as a fallback so
+  `SYS_FLAGS → TRAINER_FLAGS_END → MAX_TRAINERS_COUNT` resolves); trainer
+  defeat flags are `TRAINER_FLAGS_START (0x500) + trainerId` from
+  `opponents.h`, matching the engine's `FlagSet`. Starter-dependent battles
+  (both rival fights, Brock) carry all three variant trainer-defeat flags
+  under `completion.mode: "any"` — only the variant matching the chosen
+  starter is ever set; the milestone is complete if *any* is. The Oak's
+  Parcel milestone has no dedicated flag (it's a key item in the bag); its
+  `completion.item.resolvesTo` points at `FLAG_SYS_POKEDEX_GET`, the flag the
+  parcel-delivery scene sets, so the DAG can still advance past it. Which flag
+  marks which beat is read from the actual map scripts (Oak's Lab, Viridian
+  Mart parcel scene, Route 22 trigger rival, Pewter Gym victory).
+  Query layer: [`skills/milestones.js`](skills/milestones.js) —
+  `resolveMilestone`, `flagBit`/`completionFlags`, `isComplete`, and
+  `currentMilestone` (furthest reached + next critical-path target +
+  available optional side content, honoring the `requires` DAG; optional
+  milestones never gate a later required one). Self-test
+  [`skills/milestones.test.js`](skills/milestones.test.js) verifies the
+  resolved flag values (badge=0x820, Pokédex=0x829, Brock trainer-defeat=
+  0x69E), the ordering/critical path, the any-of alternates, and the DAG
+  walk incl. optional-skip (57 checks, all green). Feeds E4 (milestone flags
+  as RL reward) and D4 (savestate checkpoint per milestone).
+    - *Note:* the runtime flag map
+      (`constant/savestate_flag_map_frlg.js`) currently only knows the 8
+      badge flags. Wiring these story flags into the runtime `readPlayerFlag`
+      path is downstream B-work, not this static extraction — the bit-offsets
+      here are what that wiring will consume.
 - **A5. Scrape walkthrough/wiki corpus** — ✅ **DONE.**
   `staticdata/scrapeWalkthroughs.js` builds a pre-Brock clean-text corpus in
   `staticdata/corpus/` from two inputs: the MediaWiki-based wikis
