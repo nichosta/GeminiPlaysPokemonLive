@@ -450,8 +450,73 @@ Scope: everything up to and including the Pewter City gym.
       writer, and wiring are covered offline. E3's distillation collection will
       read these JSONL files back (via `isValidTraceRecord`) and branch from
       D4's savestate checkpoints for coverage.
-- **D4. Eval harness** — savestate checkpoints at each milestone, timed
-  run-to-Brock benchmark, so harness and model changes are measurable.
+- **D4. Eval harness** — ✅ **DONE.** Savestate checkpoints at each
+  milestone + a timed run-to-Brock benchmark, so harness and model changes are
+  measurable. Source of truth:
+  [`skills/evalHarness.js`](skills/evalHarness.js). Two concerns in one module,
+  both mirroring D3's pure-builder + live-transport split so the shape and
+  decision logic are unit-testable offline with injected fakes (no emulator,
+  no API key):
+    - **Milestone checkpoints.** `EvalHarness.update(state)` polls A4's
+      milestone graph against RAM — `readFlagSet(readFlag)` reads every story
+      flag by its resolved bit-offset via `readPlayerFlag` (NOT B1's snapshot,
+      which only knows the 8 badge flags — the whole point of A4 resolving
+      the offsets authoritatively from the decomp), then `currentMilestone`
+      walks the DAG. The first time a milestone is complete AND every
+      predecessor (transitively) is complete — i.e. when `currentMilestone`
+      counts it as "reached" — an mGBA savestate is written to
+      `<checkpointDir>/<milestone-id>.ss` via `POST /core/savestatefile
+      ?path=&flags=31` (mGBA's SAVESTATE ALL bitmask; `loadstatefile` flags=29,
+      matching mGBA's own scripting defaults). Each milestone is saved at most
+      once; a `saveState` failure is swallowed (the milestone is NOT marked
+      checkpointed, so it retries next poll) — a missing checkpoint is
+      preferable to crashing a live run. E3 (distillation trace collection)
+      branches runs from these checkpoints for coverage instead of always
+      replaying Pallet Town; `checkpointPath(dir, idOrName)` is the inverse
+      it calls to load one by milestone id. Item-tracked beats with no flag of
+      their own (Oak's Parcel) checkpoint via their `resolvesTo` flag — so the
+      parcel checkpoint lands at the pokedex-delivery scene, a known limitation
+      noted inline. Optional side beats (Route 22 rival, Poké Ball top-up)
+      checkpoint too, so coverage can branch from side content.
+    - **Benchmark.** `start()` stamps run start wall-clock + (optional)
+      emulator frame counter (`/core/currentFrame`, independent of wall-clock
+      so API latency doesn't dilute the harness-efficiency signal);
+      `markTurn()` / `markSteps(n)` are called per agent-loop iteration / per
+      dispatched outcome's `steps_used`. On reaching the terminal Boulder Badge
+      beat, `update` finalizes and writes the report once
+      (`makeBenchmarkReport` — pure; `isValidBenchmarkReport` validates lines
+      for a future loader so a corrupt report can't misread); on SIGINT/SIGTERM
+      the shutdown handler calls `close()` which writes a report even if the
+      terminal milestone was never reached. The report carries schema_version
+      (`eval/1.0`), run_id/model, start/finish wall-clock + frame (and derived
+      `elapsed_ms` / `frames`), turns, steps, `reached_milestone`, `terminal`,
+      `progress` (0..1), and an ordered `milestones[]` with each beat's
+      crossing time/turn/frame — the numbers a model swap or harness change
+      moves ("did model X reach Brock faster, in fewer turns, with fewer
+      failed outcomes?").
+    - Wired into [`agent.js`](agent.js): an `EvalHarness` is constructed at
+      boot (`CHECKPOINT_DIR` / `EVAL_REPORT_PATH` env-overridable, defaults
+      `checkpoints/<runId>/` + `eval/benchmark-<runId>.json`, both git-ignored/
+      regenerable, same convention as D3's traces), `start()`ed, `update()` is
+      called after each B1 snapshot (try/catch so it never breaks the loop),
+      `markTurn()`/`markSteps()` after each model turn, and `close()` is in
+      the SIGINT/SIGTERM handler alongside the D3 trace flush. Offline test
+      [`skills/evalHarness.test.js`](skills/evalHarness.test.js) (94 checks,
+      all green) covers: the flag-name set's completeness, `readFlagSet`
+      error isolation, full story sequencing (6 savestates, in order, once
+      each, idempotent on re-poll), any-mode starter variants, all-mode,
+      item-tracked parcel, optional-beat checkpoints, out-of-order DAG gating
+      (badge set without prereqs does NOT checkpoint the terminal), savestate
+      write-failure swallow + retry, benchmark timing/turns/steps/crossings/
+      elapsed, report builder + validator + JSON round-trip, closed-harness
+      drop, benchmark-only mode (no savestates, crossings still tracked), and
+      the transport URL builders' path/slot/flags.
+    - *Note:* like D2/D3, live end-to-end play against a running emulator +
+      OpenRouter key is not exercised here — the checkpoint decision logic,
+      report shape, transport, and agent.js wiring are all covered offline.
+      `avoid_trainers` on `goto` is still a no-op (no A2 sightline ray-cast
+      yet), so trainer-induced HP-low interrupts can still cost a run turns —
+      the benchmark measures that cost rather than assuming it away.
 
 ## Workstream E — Finetuning (after D2 is stable)
 

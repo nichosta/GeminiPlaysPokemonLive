@@ -17,3 +17,7 @@ package-lock.json
 # D3 trace logs (regenerable from a live run; one JSONL per run)
 /traces/
 trace.jsonl
+# D4 eval harness output (regenerable from a live run): per-milestone savestate
+# checkpoints (one dir per run) + the benchmark report JSON
+/checkpoints/
+/eval/

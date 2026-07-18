@@ -47,6 +47,7 @@ import {
     makeRunId,
     summarizeState,
 } from "./llminteract/traceLogger.js";
+import { EvalHarness } from "./skills/evalHarness.js";
 
 import { OpenAI } from "openai";
 
@@ -77,6 +78,28 @@ traceLogger.ensureDir().then((ok) => {
     if (ok) console.log(`[trace] logging model calls to ${TRACE_FILE_PATH} (run ${RUN_ID})`);
     else console.warn(`[trace] could not create trace dir ${TRACE_FILE_PATH}; traces will be skipped`);
 });
+
+// --- D4 eval harness ---
+// Milestone savestate checkpoints (one .ss per story beat, branched-from by E3
+// for distillation coverage) + a timed run-to-Brock benchmark report (the
+// number a model/harness change moves). Checkpoint dir + report path are
+// configurable via env (regenerable, git-ignored). Like the trace logger, this
+// only reads RAM + writes files at macro boundaries — never throws into the
+// loop; a missing checkpoint / report is preferable to crashing a live run.
+const CHECKPOINT_DIR = process.env.CHECKPOINT_DIR
+    || path.join(process.cwd(), 'checkpoints', RUN_ID);
+const EVAL_REPORT_PATH = process.env.EVAL_REPORT_PATH
+    || path.join(process.cwd(), 'eval', `benchmark-${RUN_ID}.json`);
+const evalHarness = new EvalHarness({
+    checkpointDir: CHECKPOINT_DIR,
+    reportPath: EVAL_REPORT_PATH,
+});
+evalHarness.ensureCheckpointDir().then((ok) => {
+    if (ok) console.log(`[eval] checkpoints -> ${CHECKPOINT_DIR}, report -> ${EVAL_REPORT_PATH} (run ${RUN_ID})`);
+    else console.warn(`[eval] could not create checkpoint dir ${CHECKPOINT_DIR}; checkpoints will be skipped`);
+});
+// Start the benchmark timer at boot (start wall-clock + emulator frame).
+evalHarness.start({ runId: RUN_ID, model: CONFIGS.OPENROUTER_MODEL_NAME });
 
 if (!OPENROUTER_API_KEY) {
     console.error("Error: OPENROUTER_API_KEY environment variable not set.");
@@ -339,6 +362,21 @@ async function runGameLoop() {
                 continue;
             }
 
+            // D4: poll milestone flags + checkpoint any newly-complete beat,
+            // and record crossing times for the benchmark. Reads the story
+            // flags by their resolved bit-offsets (A4), not B1's snapshot
+            // (which only knows the 8 badge flags). Swallows failures — never
+            // throws into the loop. On the terminal Boulder Badge beat it
+            // finalizes + writes the benchmark report.
+            try {
+                const evalResult = await evalHarness.update(state);
+                if (evalResult.newCheckpoints.length) {
+                    console.log(`[eval] checkpointed: ${evalResult.newCheckpoints.map((c) => c.id).join(", ")}`);
+                }
+            } catch (e) {
+                console.warn("[eval] update failed (non-fatal):", e?.message ?? e);
+            }
+
             // 2. Pure-text prompt from the snapshot — no screenshot, no vision.
             const currentPromptText = buildStatePrompt(state);
 
@@ -444,6 +482,7 @@ async function runGameLoop() {
                     content: "You did not issue a tool call. You MUST issue exactly one tool call (goto, set_battle_strategy, heal, use_item, or press) next turn.",
                 });
                 turnCounter++;
+                evalHarness.markTurn(); // D4: count the (no-tool) model turn.
                 await saveHistoryToFile(chatHistory, HISTORY_FILE_PATH);
                 broadcastOverlay(state, parsedResponseCommentary, null, null, turnCounter);
                 continue;
@@ -493,6 +532,10 @@ async function runGameLoop() {
                 content: renderOutcomeText(outcome),
             });
             turnCounter++;
+            // D4: account this model turn + the tool's consumed step budget so
+            // the benchmark report reflects turns-to-Brock and step efficiency.
+            evalHarness.markTurn();
+            evalHarness.markSteps(Number(outcome?.steps_used) || 0);
             await saveHistoryToFile(chatHistory, HISTORY_FILE_PATH);
         } catch (error) {
             console.error("Error during game loop iteration:", error);
@@ -542,8 +585,10 @@ function broadcastOverlay(state, commentary, toolName, outcome, turnCounter) {
 
 runGameLoop();
 
-// --- Graceful shutdown: flush the D3 trace file before exit -------------------
+// --- Graceful shutdown: flush D3 trace + write D4 benchmark report -----------
 // The loop runs forever; on SIGINT/SIGTERM, await the trace logger's write queue
+// and finalize the eval harness's benchmark report (stamps finish time + writes
+// the report even if the terminal Boulder Badge milestone was never reached)
 // so the last few records land on disk before the process dies.
 async function shutdown(signal) {
     console.log(`\n[${signal}] shutting down — flushing trace file ${TRACE_FILE_PATH}...`);
@@ -551,6 +596,12 @@ async function shutdown(signal) {
         await traceLogger.close();
     } catch (e) {
         console.error("Error flushing trace file on shutdown:", e?.message ?? e);
+    }
+    try {
+        const report = await evalHarness.close();
+        console.log(`[eval] benchmark report written to ${EVAL_REPORT_PATH} (reached: ${report.reached_milestone ?? "none"}, turns: ${report.turns})`);
+    } catch (e) {
+        console.error("Error writing benchmark report on shutdown:", e?.message ?? e);
     }
     process.exit(0);
 }
