@@ -29,9 +29,15 @@ Scope: everything up to and including the Pewter City gym.
 
 ## Workstream B — Runtime state layer (emulator; no static data needed)
 
-- **B1. Unified `getState()` snapshot** — consolidate the existing RAM readers
-  (`gamestate/`) into one call: player pos/map, party, battle state,
-  script/dialog flags, menu state. Mostly reorganizing code that exists.
+- **B1. Unified `getState()` snapshot** — ✅ **DONE.** One call consolidating
+  the existing RAM readers (`gamestate/`) into a structured, serializable
+  snapshot: player pos/map/movement/money/badges, party (+ HP aggregates),
+  battle state, script/dialog lock, menu state. Pure aggregation (no new memory
+  addresses); per-section error isolation so a single bad read can't blank a
+  poll; heavy map/bag reads gated behind options for B2's fast poll. Source of
+  truth: [`gamestate/getState.js`](gamestate/getState.js); shape + field→
+  `STOP_REASON` map in [`docs/state-snapshot.md`](docs/state-snapshot.md).
+  B2 polls it, D2 prompts from it, D3 logs it as `state_before`.
 - **B2. Interrupt detector** — fast polling loop with an explicit enum of stop
   conditions: battle started, dialog/cutscene (controls locked), warp completed,
   HP below threshold, unexpected menu, script running. This is the crux —
