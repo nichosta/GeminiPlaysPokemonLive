@@ -84,7 +84,10 @@ specific `errors` keys) when a field looks wrong.
 
 ## Fields → STOP_REASON
 
-How B2 reads stop conditions off the snapshot:
+How B2 reads stop conditions off the snapshot. Implemented in
+[`gamestate/interruptDetector.js`](../gamestate/interruptDetector.js):
+`classifyInterrupt(state, options)` is the pure per-snapshot classifier below;
+`watchForInterrupt(options)` wraps it in the actual fast polling loop.
 
 | snapshot field | STOP_REASON |
 |----------------|-------------|
@@ -92,8 +95,10 @@ How B2 reads stop conditions off the snapshot:
 | `progress.controlsLocked` becomes true | `dialog` |
 | `player.map.{bank,number}` changed | `warp_completed` |
 | `party.lowestHpFraction` below threshold | `hp_low` |
-| `party.pokemon[i].fainted` / very low lead HP | `about_to_faint` |
 | `menu.partyMenuOpen` / unexpected `menu.*` | `unexpected_menu` |
 
-`choice_required` (a surfaced yes/no) is **not** derivable from the current
-readers — it needs the C5 dialog handler and is out of scope for B1.
+`choice_required` (a surfaced yes/no), `about_to_faint`, and `out_of_pp` are
+**not** classified by `classifyInterrupt` — they need context this snapshot
+doesn't carry (a surfaced prompt, or battle move/matchup data to judge whether
+the active battler survives the next hit) and are the C5 dialog handler's and
+C3 battle engine's job respectively, not B2's.

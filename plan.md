@@ -98,10 +98,27 @@ Scope: everything up to and including the Pewter City gym.
   truth: [`gamestate/getState.js`](gamestate/getState.js); shape + field→
   `STOP_REASON` map in [`docs/state-snapshot.md`](docs/state-snapshot.md).
   B2 polls it, D2 prompts from it, D3 logs it as `state_before`.
-- **B2. Interrupt detector** — fast polling loop with an explicit enum of stop
-  conditions: battle started, dialog/cutscene (controls locked), warp completed,
-  HP below threshold, unexpected menu, script running. This is the crux —
-  invest here.
+- **B2. Interrupt detector** — ✅ **DONE.**
+  [`gamestate/interruptDetector.js`](gamestate/interruptDetector.js): pure
+  `classifyInterrupt(state, options)` reads B1's snapshot fields against the
+  documented field→`STOP_REASON` table (`docs/state-snapshot.md`) — battle
+  started, dialog/cutscene/script (`progress.controlsLocked` covers all three
+  under one signal, `SCRIPT_LOCK_FIELD_CONTROLS`), warp completed (diffed
+  against a caller-supplied baseline map, so callers where a map change is
+  expected progress — C2's `goto` — can opt out and never see it), HP below
+  threshold, and unexpected menu; falls back to `UNKNOWN_STATE` when the
+  player position/map itself can't be read. `watchForInterrupt(options)` wraps
+  it in the actual fast polling loop (baseline poll, then re-poll on an
+  interval until a stop condition, timeout, or abort). `choice_required`,
+  `out_of_pp`, `about_to_faint`, and pathing `blocked` are deliberately left
+  to C5/C3/C2 — they need context (a surfaced prompt, battle move data, live
+  NPC positions) this detector doesn't have.
+  [`gamestate/interruptDetector.test.js`](gamestate/interruptDetector.test.js)
+  covers every STOP_REASON, the priority order between them, the
+  baseline/expectWarp/expectMenu opt-outs, and the polling loop against a
+  fake `pollState` (24 checks, all green). C2's `crossMapRouter.js` (built
+  before this landed, using its own inline placeholder) now imports this
+  module directly instead.
 - **B3. Input executor upgrade** — reliable button queue with frame-accurate
   timing, plus a dialog-advance primitive (mash A/B until controls unlock or a
   choice appears).
