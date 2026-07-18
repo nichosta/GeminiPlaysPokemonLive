@@ -478,8 +478,52 @@ Scope: everything up to and including the Pewter City gym.
   cache hits. CLI: `--limit`, `--source`, `--model`, `--concurrency`,
   `--out`, `--dry-run` (chunk + manifest, no API key needed).
 
-- **E2. State→intent pairs from walkthroughs** — needs A5 + D1; can start
-  before the harness works.
+- **E2. State→intent pairs from walkthroughs** — ✅ **DONE.**
+  [`staticdata/extractStateIntent.js`](staticdata/extractStateIntent.js) generates
+  a slim SFT dataset mapping a recent game STATE (a sliding window of A5's
+  transcript frame-description text) to a high-level INTENT — one teacher-
+  generated tool call against the frozen D1 interface (`goto` /
+  `set_battle_strategy` / `heal` / `use_item` / `press`). Mirrors E1's pipeline
+  (load `corpus/index.json` → filter `type==="transcript"` → per-item work →
+  Cerebras `gemma-4-31b`, temperature 0, OpenAI-compatible client → brace-counted
+  JSON parse → sha1 per-window cache (model folded into key) → dedup → gitignored
+  `.jsonl` + tracked `_index.json`, ids `frlg-intent-0001`). The teacher only
+  *generates* the intent label from the depicted gameplay (grounded, not a
+  distillation of the walkthrough player's actions — E3's job), consistent with
+  [[sft-data-is-grounded-not-distilled]]. Per the plan E2 needs A5 + D1 (not
+  B1/D2), so the "state" side is the transcript's frame-description text, not a
+  B1 RAM snapshot — D2/D3 reconcile the runtime state serialization later.
+  Windowing is the new design choice vs. E1 (transcripts have no MediaWiki `==`
+  sections): a sliding event window of the last `--window` events (default 6)
+  advanced by `--stride` (default 3, 50% overlap); the intent is for the LATEST
+  event in each window. Transcript 03 mixes frame descriptions with first-person
+  narrator commentary; since the cleaned `.txt` doesn't mark which is which, the
+  system prompt instructs the teacher to base intent on depicted gameplay and
+  ignore narrator commentary (recovering `isComment` from the raw source would
+  touch A5 — out of scope). The system prompt's tool list is rendered directly
+  from `TOOLS`/`TOOLS_BY_NAME` so it auto-tracks D1, and every emitted intent is
+  validated against the D1 schemas (`validateIntent`: name ∈ the 5 tools,
+  required args present, `strategy`/`method`/`buttons` enums honored, `goto`
+  `destination` is a proper `{location}`|`{x,y}` object) — invalid labels go to
+  `failures[]` and never enter the SFT set. Pure-function self-test
+  [`staticdata/extractStateIntent.test.js`](staticdata/extractStateIntent.test.js)
+  covers `buildWindows` (size/stride/overlap/tail-clip) and `validateIntent`
+  (all 5 tools' accept+reject cases) offline (44 checks, all green). Full run:
+  3 transcripts → 981 windows → 981 pairs, 0 failures, ~10 min (longer prompt +
+  Cerebras load); re-run is all cache hits, identical output. Distribution:
+  `set_battle_strategy` 480, `press` 310, `goto` 151, `heal` 23, `use_item` 17.
+  CLI: `--out`, `--limit`, `--source`, `--model`, `--concurrency`, `--window`,
+  `--stride`, `--dry-run`.
+    - *Found:* the D2 CONFIGS rework that moved the live agent to OpenRouter
+      (`google/gemini-3.5-flash`) also dropped `CONFIGS.CEREBRAS_MODEL_NAME`
+      entirely — so E1's `cli.model || CONFIGS.CEREBRAS_MODEL_NAME` (and this
+      script's first draft) resolved to `undefined`, producing 0 pairs. E2
+      resolves the teacher model as `--model || process.env.CEREBRAS_MODEL_NAME
+      || "gemma-4-31b"` without importing CONFIGS; the `.env` still carries
+      `CEREBRAS_API_KEY`, so the SFT-prep lane keeps its Cerebras teacher. **E1
+      is currently broken against the working-tree CONFIGS** for the same reason
+      and needs the same one-line fix — left for a separate E1 touch-up, not
+      done here to keep this commit scoped to E2.
 - **E3. Distillation trace collection** — big-model runs on the finished
   harness, branched from savestates for coverage.
 - **E4. SFT + RL on FreeSolo** — using milestone flags from A4/D4 as reward

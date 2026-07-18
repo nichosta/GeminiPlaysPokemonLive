@@ -1,0 +1,41 @@
+{
+  "note": "Pre-Brock state→intent SFT pairs (slim). State = a sliding window of A5 transcript frame-description text; intent = a teacher-generated D1 tool call grounded in the depicted gameplay (NOT distilled from the walkthrough player's actions). Feeds E4 SFT+RL; labels share D1's shape so E3 distillation traces compose. The state_intent.jsonl body is git-ignored/regenerable; this manifest is tracked.",
+  "generatedAt": "2026-07-18T20:55:44.144Z",
+  "model": "gemma-4-31b",
+  "temperature": 0,
+  "promptHash": "37157e2386648a28",
+  "toolInterfaceVersion": "1.0.0",
+  "grounding": "STRICT — intent must be a tool call against the frozen D1 interface and grounded in the window's depicted gameplay; teacher ignores narrator commentary and does not invent tools/args.",
+  "windowSize": 6,
+  "stride": 3,
+  "transcriptsUsed": 3,
+  "perTranscript": [
+    {
+      "source": "01_100pct_no_commentary",
+      "events": 734,
+      "windows": 245
+    },
+    {
+      "source": "02_full_game_walkthrough",
+      "events": 776,
+      "windows": 259
+    },
+    {
+      "source": "03_switch2_gameplay_walkthrough",
+      "events": 1430,
+      "windows": 477
+    }
+  ],
+  "windows": 981,
+  "windowsAsked": 0,
+  "windowsFromCache": 981,
+  "totalPairs": 981,
+  "duplicatesDropped": 0,
+  "pairsBySource": {
+    "01_100pct_no_commentary": 245,
+    "02_full_game_walkthrough": 259,
+    "03_switch2_gameplay_walkthrough": 477
+  },
+  "failures": [],
+  "output": "state_intent.jsonl"
+}

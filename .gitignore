@@ -11,6 +11,9 @@ package-lock.json
 # E1 wiki-QA generator output (regenerable; the index manifest is tracked)
 /staticdata/frlg/wiki_qa.jsonl
 /staticdata/frlg/.wiki_qa_cache.json
+# E2 state→intent generator output (regenerable; the index manifest is tracked)
+/staticdata/frlg/state_intent.jsonl
+/staticdata/frlg/.state_intent_cache.json
 # D3 trace logs (regenerable from a live run; one JSONL per run)
 /traces/
 trace.jsonl
