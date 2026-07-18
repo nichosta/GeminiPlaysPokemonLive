@@ -41,6 +41,12 @@ import { getState } from "./gamestate/getState.js";
 import { toOpenAITools } from "./llminteract/toolInterface.js";
 import { buildStatePrompt, renderOutcomeText } from "./llminteract/buildStatePrompt.js";
 import { dispatchTool } from "./llminteract/toolDispatcher.js";
+import {
+    TraceLogger,
+    makeTraceRecord,
+    makeRunId,
+    summarizeState,
+} from "./llminteract/traceLogger.js";
 
 import { OpenAI } from "openai";
 
@@ -53,6 +59,24 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const SUMMARY_HISTORY_FILE_PATH = path.join(process.cwd(), 'summary_history.json');
 const HUMAN_READABLE_PROMPT_FILE_PATH = path.join(process.cwd(), 'human_readable_prompt_details.txt');
 const HISTORY_FILE_PATH = path.join(process.cwd(), 'chat_history.json');
+
+// --- D3 trace logger ---
+// Every model call is recorded as a (state_before, tool_call, outcome) tuple in
+// the shape E3's distillation trace collection will consume. One JSONL file per
+// run; path/configurable via env (regenerable, git-ignored). Writes never throw
+// into the loop — a trace gap is preferable to crashing a live run.
+const TRACE_FILE_PATH = process.env.TRACE_FILE_PATH
+    || path.join(process.cwd(), 'traces', `trace-${makeRunId(Date.now())}.jsonl`);
+const RUN_ID = makeRunId(Date.now());
+const traceLogger = new TraceLogger({
+    filePath: TRACE_FILE_PATH,
+    runId: RUN_ID,
+    model: CONFIGS.OPENROUTER_MODEL_NAME,
+});
+traceLogger.ensureDir().then((ok) => {
+    if (ok) console.log(`[trace] logging model calls to ${TRACE_FILE_PATH} (run ${RUN_ID})`);
+    else console.warn(`[trace] could not create trace dir ${TRACE_FILE_PATH}; traces will be skipped`);
+});
 
 if (!OPENROUTER_API_KEY) {
     console.error("Error: OPENROUTER_API_KEY environment variable not set.");
@@ -396,6 +420,20 @@ async function runGameLoop() {
                 // No tool call: nudge the model to issue one rather than spin.
                 console.warn("Warning: No tool call in model response. Nudging.");
                 console.log("Full model response:", JSON.stringify(responseMessage, null, 2));
+                // D3: still record the call (tool_call=null, outcome=null) so the
+                // trace is a complete log of every model invocation — E3 can filter
+                // these out as non-distillable rather than wonder where the turn went.
+                traceLogger.append(makeTraceRecord({
+                    runId: RUN_ID,
+                    turn: turnCounter,
+                    model: CONFIGS.OPENROUTER_MODEL_NAME,
+                    stateBefore: currentPromptText,
+                    toolCall: null,
+                    commentary: parsedResponseCommentary,
+                    outcome: null,
+                    stateSummary: summarizeState(state),
+                    extra: { usage: result?.usage ?? null, no_tool_call: true },
+                }));
                 chatHistory.push(userMessage);
                 chatHistory.push({
                     role: "assistant",
@@ -418,6 +456,21 @@ async function runGameLoop() {
             // 4. Dispatch the tool call → outcome envelope.
             outcome = await dispatchTool(toolCall.name, toolCall.args);
             console.log(`Tool outcome: ${renderOutcomeText(outcome)}`);
+
+            // D3: record the (state_before, tool_call, outcome) tuple for this
+            // model call, in the exact shape E3 distillation will consume. The
+            // press escape hatch is flagged is_escape_hatch inside makeTraceRecord.
+            traceLogger.append(makeTraceRecord({
+                runId: RUN_ID,
+                turn: turnCounter,
+                model: CONFIGS.OPENROUTER_MODEL_NAME,
+                stateBefore: currentPromptText,
+                toolCall,
+                commentary: parsedResponseCommentary,
+                outcome,
+                stateSummary: summarizeState(state),
+                extra: { usage: result?.usage ?? null },
+            }));
 
             // 5. Record the turn in history: the user state prompt, the assistant
             //    tool_call, and the tool outcome message the model reads next.
@@ -488,3 +541,18 @@ function broadcastOverlay(state, commentary, toolName, outcome, turnCounter) {
 }
 
 runGameLoop();
+
+// --- Graceful shutdown: flush the D3 trace file before exit -------------------
+// The loop runs forever; on SIGINT/SIGTERM, await the trace logger's write queue
+// so the last few records land on disk before the process dies.
+async function shutdown(signal) {
+    console.log(`\n[${signal}] shutting down — flushing trace file ${TRACE_FILE_PATH}...`);
+    try {
+        await traceLogger.close();
+    } catch (e) {
+        console.error("Error flushing trace file on shutdown:", e?.message ?? e);
+    }
+    process.exit(0);
+}
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));

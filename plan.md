@@ -358,8 +358,52 @@ Scope: everything up to and including the Pewter City gym.
       history plumbing are all covered offline. `avoid_trainers` on `goto` is
       accepted but a no-op until A2's sightline tiles are ray-cast (downstream,
       per A2's note).
-- **D3. Trace logging** — every model call recorded as
-  (state, tool call, outcome) in exactly the format E3 will consume.
+- **D3. Trace logging** — ✅ **DONE.** Every model call is recorded as a
+  `(state_before, tool_call, outcome)` tuple in exactly the shape E3's
+  distillation trace collection will consume. Source of truth:
+  [`llminteract/traceLogger.js`](llminteract/traceLogger.js) — a pure
+  `makeTraceRecord({...})` builder (separated from file I/O so the shape is
+  unit-testable offline) plus a file-backed `TraceLogger` that appends one JSON
+  object per line to a per-run JSONL file (serialized through one promise chain
+  so concurrent appends from the async loop never interleave partial lines;
+  writes never throw into the loop — a trace gap is preferable to crashing a
+  live run). Each record carries: `schema_version` (`trace/1.0`, independent of
+  the tool interface), the frozen `tool_interface_version` stamped verbatim
+  (so a trace collected under v1.0.0 can never be silently replayed against a
+  bumped interface), `run_id`/`turn`/`model`, `state_before` = the rendered
+  pure-text prompt the model actually read (the SLM trains on exactly that text
+  → the `tool_call` it maps to), a compact `state_summary` (map/pos/in-battle/
+  controls-locked/badges/party-count/money) for cheap E3/E4 filtering without
+  re-parsing the prompt, `tool_call` `{name,args}` or `null` (a no-tool nudge
+  turn is still logged so the trace is a complete log of every model
+  invocation — E3 filters those out as non-distillable rather than wondering
+  where the turn went), `is_escape_hatch` (true for `press`, per D1: every
+  press is a candidate for a missing macro), the verbatim `outcome` envelope
+  (so E4 can score positive `ok`/`interrupted` samples vs negative
+  `failed`/`blocked` ones), and a free-form `metadata` (usage tokens, etc.).
+  `summarizeState()` derives the compact summary from a B1 snapshot;
+  `isValidTraceRecord()` validates lines for E3's future loader so one corrupt
+  line can't abort a whole dataset; `makeRunId()` shares the run-id format
+  across agent.js and any ad-hoc runner. Wired into
+  [`agent.js`](agent.js): a logger is constructed at boot (path configurable
+  via `TRACE_FILE_PATH`, default `traces/trace-<runId>.jsonl`, git-ignored/
+  regenerable), and `append(makeTraceRecord(...))` is called at the two macro-
+  boundary completion points — after the dispatch resolves an outcome AND in
+  the no-tool-call nudge branch (tool_call=null/outcome=null). A SIGINT/SIGTERM
+  handler flushes the write queue so the last records land on disk before the
+  process exits. Offline test
+  [`llminteract/traceLogger.test.js`](llminteract/traceLogger.test.js): record
+  shape + version stamps, the press escape-hatch flag, the no-tool-call turn,
+  `summarizeState` edge cases, JSONL line integrity + ordering under concurrent
+  appends, `append(raw)` build+stamp path, failure isolation on a bad path,
+  closed-logger drops, `isValidTraceRecord` rejecting corrupt shapes, and an
+  E3-readiness assertion that the (state_before → tool_call) distillation unit
+  + an E4-scoreable outcome round-trip through JSON (50 checks, all green).
+    - *Note:* the trace is written from the live `agent.js` runtime, which needs
+      an emulator + OpenRouter key to actually drive the loop; the record shape,
+      writer, and wiring are covered offline. E3's distillation collection will
+      read these JSONL files back (via `isValidTraceRecord`) and branch from
+      D4's savestate checkpoints for coverage.
 - **D4. Eval harness** — savestate checkpoints at each milestone, timed
   run-to-Brock benchmark, so harness and model changes are measurable.
 
