@@ -1,106 +1,30 @@
-// Target URL for the mGBA HTTP control endpoint.
-const TARGET_URL = 'http://localhost:5000/mgba-http/button/tap';
+// =============================================================================
+// BUTTON TAP WRAPPER (legacy facade over the B3 input executor)
+// =============================================================================
+//
+// `pressButtons` is the original tap entry point the agent loop and C2's
+// gotoLive call. As of B3 it is a thin facade over `executeQueue`
+// (tools/inputExecutor.js): same signature, but the per-press pacing is now
+// frame-accurate (gated on the emulator's own frame counter) and presses are
+// serialized + retried through the one shared input path instead of a
+// wall-clock setTimeout(500) sleep. See inputExecutor.js for the rationale.
+// =============================================================================
 
-// Define the exact button names expected by the mGBA API.
-const API_BUTTON_CASING = {
-  a: 'A',
-  b: 'B',
-  l: 'L',
-  r: 'R',
-  start: 'Start',
-  select: 'Select',
-  up: 'Up',
-  left: 'Left',
-  down: 'Down',
-  right: 'Right'
-};
-
-// Create a set of valid lowercase button names for quick lookup.
-const VALID_LOWERCASE_BUTTONS = new Set(Object.keys(API_BUTTON_CASING));
+import { executeQueue } from "./inputExecutor.js";
 
 /**
- * Sends a button tap command to the mGBA HTTP endpoint.
- * Accepts button names case-insensitively.
+ * Sends a sequence of button taps to mGBA. Accepts a single button name or an
+ * array of button names (case-insensitive: 'A', 'a', 'Start', 'start', …).
  *
- * @param {string} buttonName - The name of the GBA button (e.g., 'A', 'a', 'Start', 'start').
- * @returns {Promise<void>} A promise that resolves if the command is sent successfully,
- * and rejects if there's an error (invalid button, network issue, server error).
- * @throws {Error} If the button name is invalid.
- */
-async function sendButtonTap(buttonName) {
-  if (typeof buttonName !== 'string' || !buttonName) {
-    throw new Error('Invalid input: Button name must be a non-empty string.');
-  }
-
-  const lowerCaseButton = buttonName.toLowerCase();
-
-  // Validate and get the correct casing for the API call.
-  if (!VALID_LOWERCASE_BUTTONS.has(lowerCaseButton)) {
-    const validButtonsList = Object.values(API_BUTTON_CASING).join(', ');
-    throw new Error(`Invalid button name "${buttonName}". Valid buttons are: ${validButtonsList}`);
-  }
-
-  // Get the correctly cased button name for the API.
-  const buttonToSend = API_BUTTON_CASING[lowerCaseButton];
-
-  try {
-    // Send the POST request with the button name as a query parameter.
-    const response = await fetch(`${TARGET_URL}?key=${encodeURIComponent(buttonToSend)}`, {
-      method: 'POST',
-    });
-
-    // Check if the request was successful (HTTP status 2xx).
-    if (response.ok) {
-      return; // Indicate success
-    } else {
-      // Handle HTTP errors (e.g., 404 Not Found, 400 Bad Request, 500 Internal Server Error).
-      let errorBody = '';
-      try {
-        errorBody = await response.text();
-      } catch (e) {
-        // Ignore error reading body if it fails
-      }
-      const errorMessage = `Error sending command. Server responded with status: ${response.status} ${response.statusText}. ${errorBody ? 'Response: ' + errorBody : ''}`;
-      console.error(errorMessage);
-      // Reject the promise with an error object.
-      throw new Error(errorMessage);
-    }
-  } catch (error) {
-    // Handle network errors or errors thrown from the response check.
-    console.error('Network or fetch error:', error.message);
-    if (error.cause && error.cause.code === 'ECONNREFUSED') {
-      console.error(`Connection refused. Is mGBA running and the HTTP server enabled at ${TARGET_URL}?`);
-    }
-    // Re-throw the error to reject the promise.
-    throw error;
-  }
-}
-
-/**
- * Sends a sequence of button presses to the mGBA HTTP endpoint.
- * Accepts a single button name or an array of button names.
+ * Delegates to executeQueue, so presses are validated against the closed
+ * button enum, paced to whole emulator frames, and retried on transient
+ * network errors.
  *
- * @param {string|string[]} buttons - The name of the GBA button or an array of button names (e.g., 'A', 'a', 'Start', 'start', ['Up', 'A']).
- * @returns {Promise<void>} A promise that resolves if the command is sent successfully,
- * and rejects if there's an error (invalid button, network issue, server error).
- * @throws {Error} If the button name is invalid.
+ * @param {string|string[]} buttons
+ * @returns {Promise<{completed:boolean, stepsUsed:number, error?:string}>}
+ * @throws {Error} if a button name is invalid (via executeQueue's validation).
  */
 export async function pressButtons(buttons) {
-  if (Array.isArray(buttons)) {
-    for (const button of buttons) {
-      await sendButtonTap(button);
-      await delay(500);
-    }
-  } else {
-    await sendButtonTap(buttons);
-  }
-}
-
-/**
- * @description Delays execution for a specified number of milliseconds.
- * @param {number} ms Time to delay in milliseconds.
- * @returns {Promise<void>}
- */
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+    const list = Array.isArray(buttons) ? buttons : [buttons];
+    return executeQueue(list);
 }

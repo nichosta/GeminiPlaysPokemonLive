@@ -153,9 +153,38 @@ Scope: everything up to and including the Pewter City gym.
   fake `pollState` (24 checks, all green). C2's `crossMapRouter.js` (built
   before this landed, using its own inline placeholder) now imports this
   module directly instead.
-- **B3. Input executor upgrade** — reliable button queue with frame-accurate
-  timing, plus a dialog-advance primitive (mash A/B until controls unlock or a
-  choice appears).
+- **B3. Input executor upgrade** — ✅ **DONE.**
+  [`tools/inputExecutor.js`](tools/inputExecutor.js) is now the single low-level
+  input path: `executeQueue` runs a button sequence through one module-level
+  promise chain (so a concurrent `goto` leg and a dialog-advance can never
+  interleave their presses on the socket), validates against the closed button
+  enum, retries transient network errors (ECONNREFUSED / 5xx) with backoff, and
+  gates every press on the emulator's OWN frame counter (`/core/currentFrame`)
+  instead of a wall-clock `setTimeout(500)` — that 500ms sleep was ~30 frames
+  between taps, slow AND decoupled from what the game is doing. A wall-clock cap
+  keeps a paused/frozen emulator from hanging the queue. `advanceDialog` is the
+  dialog-advance primitive: mashes A (optionally alternating with B) until the
+  overworld controls unlock or a choice/interrupt surfaces, polling B1's
+  `getState` + B2's `classifyInterrupt` and speaking the same `STOP_REASON`
+  vocabulary (unlock → `NONE`; battle/menu/HP mid-mash → that reason verbatim;
+  still locked after `maxPresses` → `CHOICE_REQUIRED`, the runtime-layer
+  detection B2 deliberately leaves to C5). `awaitFrames` (tap settle / hold
+  confirm) and the transport are injectable, so
+  [`tools/inputExecutor.test.js`](tools/inputExecutor.test.js) exercises it
+  offline with a fake `io`/`pollState`: validation, tap-vs-hold dispatch,
+  onStep abort, `AbortSignal`, concurrent-queue serialization, the
+  unreadable-frame-counter fallback, and every `advanceDialog` stop branch
+  (41 checks, all green). The legacy [`tools/buttonPress.js`](tools/buttonPress.js)
+  / [`tools/buttonHold.js`](tools/buttonHold.js) are now thin facades over the
+  executor (same signatures) so the agent loop and C2's `gotoLive` get
+  frame-accurate + reliable timing transparently; the stale `/hold?key=` query
+  is corrected to `/hold?button=&duration=` per the current mGBA-http ButtonApi.
+    - *Note:* mGBA-http's README is explicit that it is not built for
+      frame-PERFECT (sub-frame / TAS) manipulation — there is network latency
+      on every call. "Frame-accurate" here means "paced to whole emulator
+      frames," which is what an AI/Twitch-plays harness needs; it is not a
+      claim of sub-frame determinism. Live end-to-end pacing against a running
+      emulator is deferred to D2's rewired loop.
 
 ## Workstream C — Skills/macros (needs A1–A3 + B1–B3)
 
