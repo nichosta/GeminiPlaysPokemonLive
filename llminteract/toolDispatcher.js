@@ -10,11 +10,17 @@
 //
 // What is wired vs. what is stubbed tracks the plan's critical path
 // (A1→C1→C2→D2): only the macros whose implementations have landed are live.
-//   - `goto`            → C2's gotoLive (returns an outcome envelope already).
+//   - `goto`            → C2's gotoLive. C5 (advanceDialogLive) and C3
+//                          (runBattleLive) are wired INTO gotoLive: a DIALOG
+//                          or BATTLE_STARTED interrupt mid-route is auto-
+//                          cleared / auto-fought rather than surfaced, so
+//                          dialog and battles never reach the model except as
+//                          an escalation (choice_required / out_of_pp / …).
 //   - `press`           → B3's executeQueue, polled for interrupts per press.
-//   - `set_battle_strategy` → records the standing policy in memory (C3's
-//                             engine isn't built yet; the stored policy is
-//                             what C3 will consume when it lands).
+//   - `set_battle_strategy` → records the standing policy in memory; gotoLive
+//                          reads it via getBattlePolicy() when a battle
+//                          interrupts, so the policy set here is what C3
+//                          consumes each fight.
 //   - `heal`            → C4's healLive (pokecenter nurse / bag items / auto).
 //   - `use_item`        → C4's useItemLive (bag → item → party target).
 //
@@ -44,8 +50,9 @@ const PRESS_BUTTONS = Object.freeze(
 );
 
 // --- Standing battle policy (set_battle_strategy) ---------------------------
-// C3's engine isn't implemented yet; this just holds whatever the model sets
-// so C3 can read it when it lands. Defaults mirror D1's documented defaults.
+// Holds whatever the model sets so gotoLive can pass it to C3's runBattleLive
+// when a battle interrupts a goto (the policy is the per-fight decision input
+// C3 consumes each turn). Defaults mirror D1's documented defaults.
 let battlePolicy = Object.freeze({
     strategy: "default",
     lead: null,
@@ -101,6 +108,13 @@ async function dispatchGoto(args, deps) {
         // A2's sightline tiles aren't computed yet (downstream per plan.md),
         // so avoid_trainers is accepted but currently a no-op flag.
         avoidTiles: undefined,
+        // Standing policies so gotoLive can auto-drive the interrupts the
+        // harness owns: C5 clears DIALOG, C3 fights BATTLE_STARTED, each
+        // using the policy the model last set via set_battle_strategy (and
+        // the default dialog choice). Surfacing to the model happens only on
+        // a sub-handler escalation (choice_required / out_of_pp / …).
+        battlePolicy: getBattlePolicy(),
+        dialogPolicy: { choice: "ask" },
     };
     try {
         return await deps.gotoLive(destination, options);
@@ -249,7 +263,7 @@ async function dispatchSetBattleStrategy(args) {
     });
     return makeOutcome(OUTCOME_STATUS.OK, {
         stepsUsed: 0,
-        message: `battle policy set: strategy=${strategy} lead=${battlePolicy.lead ?? "-"} catch_wild=${battlePolicy.catch_wild} (C3 engine not yet wired; policy stored)`,
+        message: `battle policy set: strategy=${strategy} lead=${battlePolicy.lead ?? "-"} catch_wild=${battlePolicy.catch_wild} (consumed by runBattleLive when a battle interrupts goto)`,
     });
 }
 

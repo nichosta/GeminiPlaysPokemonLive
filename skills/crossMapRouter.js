@@ -34,6 +34,8 @@ import { getStaticMap, getStaticMapById } from "./staticMap.js";
 import { mapRoute, resolveDestination, edgeKey } from "./locationGraph.js";
 import { makeOutcome, OUTCOME_STATUS, STOP_REASON } from "../llminteract/toolInterface.js";
 import { classifyInterrupt } from "../gamestate/interruptDetector.js";
+import { advanceDialogLive } from "./dialogHandler.js";
+import { runBattleLive } from "./battlePolicy.js";
 
 /**
  * Resolves the exact border-tile pair for a connection edge between two maps,
@@ -294,8 +296,27 @@ export function resolveGotoTarget(destination, current) {
  * position, then repeatedly builds and executes ONE map leg at a time (via
  * `buildMapLeg`, re-fetching live NPCs fresh for whichever map the player is
  * currently on) until the goal map is reached, an interrupt fires, or the
- * step budget runs out. Returns a D1 outcome envelope so this can back the
- * `goto` tool directly once D2 wires it in.
+ * step budget runs out. Returns a D1 outcome envelope so this backs the `goto`
+ * tool directly.
+ *
+ * AUTO-CLEARED INTERRUPTS (C5 / C3 wiring): the harness owns dialog and
+ * battles — they are not model tools (see docs/tool-interface.md, "What is
+ * intentionally NOT a tool"). So when B2 surfaces a `dialog` or
+ * `battle_started` interrupt mid-route, gotoLive does NOT hand it to the
+ * model. Instead it auto-clears dialog via C5's `advanceDialogLive` and
+ * auto-fights the battle via C3's `runBattleLive` (consuming the standing
+ * `battlePolicy` set by `set_battle_strategy`), then re-derives the next leg
+ * from wherever the player landed — the same way a warp re-derives. Only when
+ * a sub-handler ESCALATES (choice_required / out_of_pp / about_to_faint /
+ * unknown_state / budget_exhausted) does control return to the model, in the
+ * shared STOP_REASON vocabulary. Other interrupts (warp_completed /
+ * hp_low / unexpected_menu / unknown_state) surface verbatim as before.
+ *
+ * Routing presses (`stepsUsed`) and sub-handler presses (`extraSteps`) are
+ * accounted separately: a battle legitimately consumes many turns and must
+ * NOT eat the routing `max_steps` budget, but the total harness effort is
+ * still reported in the returned envelope's `steps_used` for D3 tracing /
+ * D4 benchmark accounting.
  *
  * @param {{location?:string, map?:string, x?:number, y?:number}} destination
  * @param {object} [options]
@@ -304,10 +325,44 @@ export function resolveGotoTarget(destination, current) {
  * @param {boolean} [options.stopAdjacent=false] Stop next to the destination
  *        tile instead of on it (e.g. to interact with something there).
  * @param {Iterable<{x:number,y:number}>} [options.avoidTiles] Extra static blockers.
+ * @param {object} [options.battlePolicy] Standing policy for C3's runBattleLive
+ *        (passed in by the dispatcher from `set_battle_strategy`). Defaults to
+ *        the D1 default strategy.
+ * @param {object} [options.dialogPolicy] Standing policy for C5's
+ *        advanceDialogLive (`{choice}`; default `{choice:"ask"}`).
+ * @param {object} [options.io] Injectable transport forwarded to the sub-handlers.
+ * @param {AbortSignal} [options.signal]
+ * @param {() => Promise<object>} [options.pollState] Snapshot source override
+ *        (test hook; defaults to B1's fast poll).
+ * @param {() => Promise<{group,num,x,y}>} [options.readCurrent] Position reader
+ *        override (test hook; defaults to the live playerData/mapEvents readers).
+ * @param {(button:string) => Promise} [options.press] Single-button press
+ *        override (test hook; defaults to buttonPress.pressButtons).
+ * @param {function} [options.advanceDialog] Override for C5's advanceDialogLive
+ *        (test hook).
+ * @param {function} [options.runBattle] Override for C3's runBattleLive
+ *        (test hook).
+ * @param {() => Promise<Array<{x:number,y:number}>>} [options.getNpcs] Override
+ *        for the live NPC reader (test hook; defaults to getCurrentMapNpcs).
  * @returns {Promise<object>} A `makeOutcome(...)` envelope (see toolInterface.js).
  */
 export async function gotoLive(destination, options = {}) {
-    const { maxSteps = 400, hpThreshold = 0.2, stopAdjacent = false, avoidTiles } = options;
+    const {
+        maxSteps = 400,
+        hpThreshold = 0.2,
+        stopAdjacent = false,
+        avoidTiles,
+        battlePolicy = { strategy: "default", lead: null, catch_wild: false },
+        dialogPolicy = { choice: "ask" },
+        io,
+        signal,
+        pollState: pollStateOpt,
+        readCurrent: readCurrentOpt,
+        press: pressOpt,
+        advanceDialog,
+        runBattle,
+        getNpcs: getNpcsOpt,
+    } = options;
 
     const [{ getCurrentMapBank, getCurrentMapNumber, getPlayerPosition }, { getCurrentMapNpcs }, { getState }, { pressButtons }] =
         await Promise.all([
@@ -317,18 +372,55 @@ export async function gotoLive(destination, options = {}) {
             import("../tools/buttonPress.js"),
         ]);
 
-    const readCurrent = async () => {
+    const readCurrent = readCurrentOpt ?? (async () => {
         const [group, num, pos] = await Promise.all([getCurrentMapBank(), getCurrentMapNumber(), getPlayerPosition()]);
         return { group, num, x: pos[0], y: pos[1] };
-    };
-    const poll = () => getState({ includeMap: false, includeBag: false });
+    });
+    const getNpcs = getNpcsOpt ?? getCurrentMapNpcs;
+    const poll = pollStateOpt ?? (() => getState({ includeMap: false, includeBag: false }));
+    const press = pressOpt ?? pressButtons;
+    // C5/C3 sub-handlers (defaults to the imported live adapters; overridable
+    // for offline testing of the handoff itself).
+    const dialog = advanceDialog ?? advanceDialogLive;
+    const battle = runBattle ?? runBattleLive;
 
+    // Routing presses (tile moves). Sub-handler presses (dialog/battle) are
+    // accounted separately so a battle doesn't eat the routing budget, but
+    // the total harness effort is still reported for D3 tracing / D4.
     let stepsUsed = 0;
+    let extraSteps = 0;
+
+    // C5/C3 auto-clear. Given a DIALOG or BATTLE_STARTED interrupt, drive the
+    // matching sub-handler against the shared fast poll, fold its step count
+    // into `extraSteps`, and return its outcome envelope (caller surfaces it
+    // unless it's OK, in which case the caller re-derives the leg). For any
+    // other interrupt, return null so the caller surfaces it verbatim with
+    // position context (the original goto behavior).
+    const autoClearInterrupt = async (interrupt) => {
+        let sub;
+        if (interrupt === STOP_REASON.DIALOG) {
+            sub = await dialog(dialogPolicy, { maxSteps: 60, hpThreshold, pollState: poll, io, signal });
+        } else if (interrupt === STOP_REASON.BATTLE_STARTED) {
+            sub = await battle(battlePolicy, { maxSteps: 200, hpThreshold, pollState: poll, io, signal });
+        } else {
+            return null;
+        }
+        extraSteps += sub.steps_used || 0;
+        return sub;
+    };
 
     const startState = await poll();
     const startInterrupt = classifyInterrupt(startState, { hpThreshold });
     if (startInterrupt) {
-        return makeOutcome(OUTCOME_STATUS.INTERRUPTED, { stopReason: startInterrupt, stepsUsed, message: "interrupted before goto started" });
+        const sub = await autoClearInterrupt(startInterrupt);
+        if (sub === null) {
+            return makeOutcome(OUTCOME_STATUS.INTERRUPTED, { stopReason: startInterrupt, stepsUsed: stepsUsed + extraSteps, message: "interrupted before goto started" });
+        }
+        if (sub.status !== OUTCOME_STATUS.OK) {
+            return { ...sub, steps_used: stepsUsed + extraSteps };
+        }
+        // Cleared before goto started (e.g. an entry dialog or a battle the
+        // route was called inside); fall through and route normally.
     }
 
     const current0 = await readCurrent();
@@ -343,19 +435,19 @@ export async function gotoLive(destination, options = {}) {
     for (;;) {
         const current = await readCurrent();
         if (current.group == null || current.num == null || current.x == null || current.y == null) {
-            return makeOutcome(OUTCOME_STATUS.FAILED, { stopReason: STOP_REASON.UNKNOWN_STATE, stepsUsed, message: "could not read current position" });
+            return makeOutcome(OUTCOME_STATUS.FAILED, { stopReason: STOP_REASON.UNKNOWN_STATE, stepsUsed: stepsUsed + extraSteps, message: "could not read current position" });
         }
 
         const map = getStaticMap(current.group, current.num);
         if (!map) {
             return makeOutcome(OUTCOME_STATUS.FAILED, {
                 stopReason: STOP_REASON.UNKNOWN_STATE,
-                stepsUsed,
+                stepsUsed: stepsUsed + extraSteps,
                 message: `current map ${current.group}:${current.num} out of static-data scope`,
             });
         }
 
-        const npcs = await getCurrentMapNpcs();
+        const npcs = await getNpcs();
         const blocked = new Set(npcs.map((n) => `${n.x},${n.y}`));
         if (avoidTiles) for (const t of avoidTiles) blocked.add(`${t.x},${t.y}`);
 
@@ -393,45 +485,61 @@ export async function gotoLive(destination, options = {}) {
                 leg = null;
             }
             if (!leg) {
-                return makeOutcome(OUTCOME_STATUS.FAILED, { stopReason: STOP_REASON.BLOCKED, stepsUsed, message: `blocked on ${current.group}:${current.num}: ${lastReason}` });
+                return makeOutcome(OUTCOME_STATUS.FAILED, { stopReason: STOP_REASON.BLOCKED, stepsUsed: stepsUsed + extraSteps, message: `blocked on ${current.group}:${current.num}: ${lastReason}` });
             }
         }
 
         if (!leg.found) {
             return makeOutcome(OUTCOME_STATUS.FAILED, {
                 stopReason: STOP_REASON.BLOCKED,
-                stepsUsed,
+                stepsUsed: stepsUsed + extraSteps,
                 message: `blocked on ${current.group}:${current.num}: ${leg.reason}`,
             });
         }
 
         const presses = leg.crossing ? [...leg.directions, leg.crossing.press] : leg.directions;
+        let legDone = true; // false once an auto-cleared interrupt breaks the press loop
         for (const button of presses) {
             if (stepsUsed >= maxSteps) {
-                return makeOutcome(OUTCOME_STATUS.BUDGET_EXHAUSTED, { stopReason: STOP_REASON.BUDGET_EXHAUSTED, stepsUsed, message: "max_steps exhausted mid-route" });
+                return makeOutcome(OUTCOME_STATUS.BUDGET_EXHAUSTED, { stopReason: STOP_REASON.BUDGET_EXHAUSTED, stepsUsed: stepsUsed + extraSteps, message: "max_steps exhausted mid-route" });
             }
-            await pressButtons(button);
+            await press(button);
             stepsUsed++;
 
             const state = await poll();
             const interrupt = classifyInterrupt(state, { hpThreshold });
             if (interrupt) {
-                return makeOutcome(OUTCOME_STATUS.INTERRUPTED, {
-                    stopReason: interrupt,
-                    stepsUsed,
-                    message: "interrupted mid-route",
-                    stateDelta: { map: { group: current.group, num: current.num }, position: state.player?.position },
-                });
+                const sub = await autoClearInterrupt(interrupt);
+                if (sub === null) {
+                    // Not auto-clearable (warp/hp/menu/unknown): surface verbatim.
+                    return makeOutcome(OUTCOME_STATUS.INTERRUPTED, {
+                        stopReason: interrupt,
+                        stepsUsed: stepsUsed + extraSteps,
+                        message: "interrupted mid-route",
+                        stateDelta: { map: { group: current.group, num: current.num }, position: state.player?.position },
+                    });
+                }
+                if (sub.status !== OUTCOME_STATUS.OK) {
+                    // C5/C3 escalated (choice_required / out_of_pp / ...): surface it.
+                    return { ...sub, steps_used: stepsUsed + extraSteps };
+                }
+                // Auto-cleared dialog/battle: re-derive the next leg from
+                // wherever the player landed (a cutscene/battle may have moved
+                // them), the same way a warp re-derives.
+                legDone = false;
+                break;
             }
         }
 
-        if (!leg.crossing) {
+        if (legDone && !leg.crossing) {
             return makeOutcome(OUTCOME_STATUS.OK, {
-                stepsUsed,
+                stepsUsed: stepsUsed + extraSteps,
                 message: `reached destination (${target.group}:${target.num} @ ${target.x},${target.y})`,
             });
         }
-        // Map changed; loop back and re-derive the next leg from wherever we
-        // actually landed rather than trusting the pure plan past this point.
+        // Either a crossing leg completed (map changed) or an auto-cleared
+        // interrupt broke the press loop: loop back and re-derive the next
+        // leg from wherever we actually landed rather than trusting the pure
+        // plan past this point.
     }
 }

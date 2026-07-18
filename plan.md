@@ -394,14 +394,19 @@ Scope: everything up to and including the Pewter City gym.
       B-work (the plan's C5 only needs A1–A3 + B1–B3; no such reader is in B1's
       snapshot). The pure core + envelope contract are fully exercised offline
       regardless.
-    - *Note:* like C3's `runBattleLive`, this skill is built + tested but not
-      yet wired into a dispatch path. Its natural consumer is `gotoLive` (on a
-      `dialog` interrupt from B2, call `advanceDialogLive` to clear it and only
-      surface if it returns `choice_required`/other) — currently `gotoLive`
-      surfaces `dialog` straight to the model. Rewiring C2 to auto-clear dialog
-      is a behavior change to a DONE skill's 94-check suite and is deferred so
-      it lands deliberately, matching how C3's engine is also unwired pending
-      the loop integration.
+    - *Note:* ✅ **WIRED.** `advanceDialogLive` is now the C5 consumer inside
+      `gotoLive`: on a `dialog` interrupt from B2 mid-route, `gotoLive` calls
+      `advanceDialogLive` to auto-clear it and re-derives the next leg from
+      wherever the player landed (the same way a warp re-derives) — surfacing
+      to the model only when C5 escalates (`choice_required`/other). The same
+      handoff drives `battle_started` interrupts through C3's `runBattleLive`
+      (consuming the standing `battlePolicy` the dispatcher passes in from
+      `set_battle_strategy`). The injection seams (`pollState`/`readCurrent`/
+      `press`/`getNpcs`/`advanceDialog`/`runBattle`) added to `gotoLive` make
+      the handoff testable offline; `crossMapRouter.test.js` grew a 29-check
+      `gotoLive` wiring suite (dialog clear/escalate, battle fight/escalate,
+      non-auto-clearable `hp_low` surfacing verbatim, start-of-call battle, and
+      a plain-route regression) on top of C2's existing 94.
 
 ## Workstream D — Agent framework
 
@@ -427,10 +432,15 @@ Scope: everything up to and including the Pewter City gym.
   `getGameImagesBase64`/`parseDataURI`, no `CEREBRAS_API_KEY`; the model reads
   ONLY the text state prompt (RAM location/flags/party/bag + the on-screen
   collision grid, warps, NPCs). The dispatcher wires the tools whose
-  implementations have landed (per the critical path): `goto` → C2's `gotoLive`,
-  `press` → B3's `executeQueue` polled for interrupts per press,
-  `set_battle_strategy` → records the standing policy in memory (C3 pending —
-  the stored policy is what C3 will consume). `heal` → C4's `healLive`,
+  implementations have landed (per the critical path): `goto` → C2's `gotoLive`
+  (which now auto-drives the interrupts the harness owns — a `dialog` interrupt
+  is cleared by C5's `advanceDialogLive`, a `battle_started` interrupt is fought
+  by C3's `runBattleLive` consuming the standing policy; only escalations
+  `choice_required`/`out_of_pp`/… surface to the model), `press` → B3's
+  `executeQueue` polled for interrupts per press, `set_battle_strategy` →
+  records the standing policy in memory (read by `gotoLive` via
+  `getBattlePolicy()` when a battle interrupts, so the policy set here is what
+  C3 consumes each fight). `heal` → C4's `healLive`,
   `use_item` → C4's `useItemLive` (both wired once C4 landed; see C4). `press`'s interrupt policy
   is deliberately narrower than `goto`'s: because the model is manually driving
   the escape hatch, a dialog/script lock or open menu is *expected*, not an

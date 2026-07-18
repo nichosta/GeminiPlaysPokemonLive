@@ -384,6 +384,17 @@ export async function runBattleLive(policy = {}, options = {}) {
     const { executeQueue } = await import("../tools/inputExecutor.js");
     const { classifyInterrupt } = await import("../gamestate/interruptDetector.js");
 
+    // Normalize the standing policy shape. The D1 tool arg + the dispatcher
+    // store `catch_wild` (snake), while `decideAction` reads `catchWild`
+    // (camel). Accept both so the dispatcher's `getBattlePolicy()` flows in
+    // unchanged and direct callers (tests, runBattleLive's own docstring
+    // examples) keep using camelCase.
+    const pol = {
+        strategy: policy?.strategy,
+        lead: policy?.lead ?? null,
+        catchWild: !!(policy?.catchWild ?? policy?.catch_wild),
+    };
+
     let stepsUsed = 0;
     const startState = await pollState();
     if (!startState?.battle?.active) {
@@ -397,7 +408,7 @@ export async function runBattleLive(policy = {}, options = {}) {
     // silently fighting or wasting presses on a Run that may be disabled. The
     // pure engine's flee path is exercised by tests; live-driving it needs the
     // enemy-side RAM read (deferred B-work, see module docstring).
-    if ((policy.strategy ?? "default") === "flee") {
+    if ((pol.strategy ?? "default") === "flee") {
         return makeOutcome(OUTCOME_STATUS.INTERRUPTED, {
             stopReason: STOP_REASON.CHOICE_REQUIRED,
             stepsUsed,
@@ -457,7 +468,7 @@ export async function runBattleLive(policy = {}, options = {}) {
             enemy: null, // enemy-side RAM read is deferred B-work (see docstring)
         };
 
-        const decision = decideAction(battleState, policy, { hpThreshold });
+        const decision = decideAction(battleState, pol, { hpThreshold });
 
         if (decision.kind === "escalate") {
             return makeOutcome(OUTCOME_STATUS.INTERRUPTED, {

@@ -15,7 +15,8 @@
 
 import { getStaticMap, getStaticMapById } from "./staticMap.js";
 import { getMapGraph, resolveLocation } from "./locationGraph.js";
-import { resolveConnectionCrossing, planCrossMapRoute, resolveGotoTarget } from "./crossMapRouter.js";
+import { resolveConnectionCrossing, planCrossMapRoute, resolveGotoTarget, gotoLive } from "./crossMapRouter.js";
+import { makeOutcome, OUTCOME_STATUS, STOP_REASON } from "../llminteract/toolInterface.js";
 
 let passed = 0;
 let failed = 0;
@@ -341,6 +342,202 @@ function borderRowOrCol(map, direction) {
         !plan.found,
         JSON.stringify(plan.reason)
     );
+}
+
+// =============================================================================
+// gotoLive — C5/C3 auto-clear handoff (offline, injected fakes)
+// =============================================================================
+//
+// gotoLive is the live adapter and the only one of C1-C5 that touches RAM at
+// runtime, so its wiring of the C5 (advanceDialogLive) and C3 (runBattleLive)
+// sub-handlers is exercised here through the injection seams (pollState,
+// readCurrent, press, advanceDialog, runBattle) rather than a real emulator.
+// Verifies the contract in the module docstring: a DIALOG or BATTLE_STARTED
+// interrupt mid-route is auto-cleared / auto-fought rather than surfaced, and
+// only a sub-handler escalation (or a non-auto-clearable interrupt) returns
+// control to the model. The route fixture is one tile (Pallet Town (5,19) ->
+// (5,18) = ["up"]); fakes don't move the position, so gotoLive trusts findPath
+// + its presses the way it does live.
+// =============================================================================
+
+/** A B1-shaped overworld snapshot. `extra` overrides fields for interrupt cases. */
+function snap(x, y, extra = {}) {
+    return {
+        player: { position: { x, y }, map: { bank: 3, number: 0 } },
+        battle: { active: false },
+        progress: { controlsLocked: false },
+        menu: { partyMenuOpen: false },
+        party: { lowestHpFraction: 1.0, pokemon: [] },
+        ...extra,
+    };
+}
+const POS0 = { group: 3, num: 0, x: 5, y: 19 };
+const GOAL_TILE = { x: 5, y: 18 };
+const DIALOG_SNAP = snap(5, 19, { progress: { controlsLocked: true } });
+const BATTLE_SNAP = snap(5, 19, { battle: { active: true } });
+const HPLOW_SNAP = snap(5, 19, { party: { lowestHpFraction: 0.1, pokemon: [] } });
+
+/** Build an injectable transport bundle from scripted queues + sub-handler fakes. */
+function makeGotoDeps({
+    polls,
+    positions,
+    advanceDialogImpl,
+    runBattleImpl,
+    pressLog = [],
+}) {
+    let pollIdx = 0;
+    let posIdx = 0;
+    let dialogCalls = 0;
+    let battleCalls = 0;
+    let dialogArg = null;
+    let battleArg = null;
+    return {
+        deps: {
+            pollState: async () => polls[Math.min(pollIdx++, polls.length - 1)],
+            readCurrent: async () => positions[Math.min(posIdx++, positions.length - 1)],
+            press: async (button) => { pressLog.push(button); },
+            getNpcs: async () => [],
+            advanceDialog: async (policy, opts) => {
+                dialogCalls++;
+                dialogArg = { policy, opts };
+                return advanceDialogImpl;
+            },
+            runBattle: async (policy, opts) => {
+                battleCalls++;
+                battleArg = { policy, opts };
+                return runBattleImpl;
+            },
+        },
+        counts: () => ({ dialogCalls, battleCalls, dialogArg, battleArg }),
+    };
+}
+
+// A. DIALOG mid-route -> C5 clears it -> route continues -> OK
+{
+    const pressLog = [];
+    const harness = makeGotoDeps({
+        polls: [snap(5, 19), DIALOG_SNAP, snap(5, 19)],
+        positions: [POS0, POS0, POS0],
+        advanceDialogImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 3, message: "dialog cleared" }),
+        runBattleImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+        pressLog,
+    });
+    const out = await gotoLive(
+        { location: null, x: GOAL_TILE.x, y: GOAL_TILE.y },
+        { ...harness.deps, battlePolicy: { strategy: "default" }, dialogPolicy: { choice: "yes" } }
+    );
+    const c = harness.counts();
+    check("gotoLive(dialog): status ok after auto-clear", out.status === OUTCOME_STATUS.OK, JSON.stringify(out));
+    check("gotoLive(dialog): advanceDialog called once", c.dialogCalls === 1, String(c.dialogCalls));
+    check("gotoLive(dialog): runBattle NOT called", c.battleCalls === 0, String(c.battleCalls));
+    check("gotoLive(dialog): dialogPolicy passed to C5", c.dialogArg?.policy?.choice === "yes", JSON.stringify(c.dialogArg?.policy));
+    check("gotoLive(dialog): routing + dialog steps accounted", out.steps_used === 5, String(out.steps_used));
+}
+
+// B. DIALOG mid-route -> C5 escalates (choice_required) -> surface verbatim
+{
+    const harness = makeGotoDeps({
+        polls: [snap(5, 19), DIALOG_SNAP],
+        positions: [POS0, POS0],
+        advanceDialogImpl: makeOutcome(OUTCOME_STATUS.INTERRUPTED, {
+            stopReason: STOP_REASON.CHOICE_REQUIRED, stepsUsed: 5, message: "stuck",
+        }),
+        runBattleImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+    });
+    const out = await gotoLive({ x: GOAL_TILE.x, y: GOAL_TILE.y }, { ...harness.deps, dialogPolicy: { choice: "ask" } });
+    const c = harness.counts();
+    check("gotoLive(dialog-escalate): status interrupted", out.status === OUTCOME_STATUS.INTERRUPTED, JSON.stringify(out));
+    check("gotoLive(dialog-escalate): stop_reason choice_required", out.stop_reason === STOP_REASON.CHOICE_REQUIRED, out.stop_reason);
+    check("gotoLive(dialog-escalate): steps = routing + dialog", out.steps_used === 6, String(out.steps_used));
+    check("gotoLive(dialog-escalate): C5 called once", c.dialogCalls === 1, String(c.dialogCalls));
+}
+
+// C. BATTLE_STARTED mid-route -> C3 fights it -> route continues -> OK
+{
+    const pressLog = [];
+    const battlePolicy = { strategy: "type_effective", lead: "Charmander", catch_wild: false };
+    const harness = makeGotoDeps({
+        polls: [snap(5, 19), BATTLE_SNAP, snap(5, 19)],
+        positions: [POS0, POS0, POS0],
+        advanceDialogImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+        runBattleImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 10, message: "battle won" }),
+        pressLog,
+    });
+    const out = await gotoLive({ x: GOAL_TILE.x, y: GOAL_TILE.y }, { ...harness.deps, battlePolicy });
+    const c = harness.counts();
+    check("gotoLive(battle): status ok after auto-fight", out.status === OUTCOME_STATUS.OK, JSON.stringify(out));
+    check("gotoLive(battle): runBattle called once", c.battleCalls === 1, String(c.battleCalls));
+    check("gotoLive(battle): advanceDialog NOT called", c.dialogCalls === 0, String(c.dialogCalls));
+    check("gotoLive(battle): battlePolicy passed to C3", c.battleArg?.policy?.strategy === "type_effective", JSON.stringify(c.battleArg?.policy));
+    check("gotoLive(battle): routing + battle steps accounted", out.steps_used === 12, String(out.steps_used));
+}
+
+// D. BATTLE_STARTED mid-route -> C3 escalates (out_of_pp) -> surface verbatim
+{
+    const harness = makeGotoDeps({
+        polls: [snap(5, 19), BATTLE_SNAP],
+        positions: [POS0, POS0],
+        advanceDialogImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+        runBattleImpl: makeOutcome(OUTCOME_STATUS.INTERRUPTED, {
+            stopReason: STOP_REASON.OUT_OF_PP, stepsUsed: 4, message: "no pp",
+        }),
+    });
+    const out = await gotoLive({ x: GOAL_TILE.x, y: GOAL_TILE.y }, { ...harness.deps });
+    check("gotoLive(battle-escalate): status interrupted", out.status === OUTCOME_STATUS.INTERRUPTED, JSON.stringify(out));
+    check("gotoLive(battle-escalate): stop_reason out_of_pp", out.stop_reason === STOP_REASON.OUT_OF_PP, out.stop_reason);
+    check("gotoLive(battle-escalate): steps = routing + battle", out.steps_used === 5, String(out.steps_used));
+}
+
+// E. Non-auto-clearable interrupt (hp_low) -> surface verbatim, no sub-handler
+{
+    const harness = makeGotoDeps({
+        polls: [snap(5, 19), HPLOW_SNAP],
+        positions: [POS0, POS0],
+        advanceDialogImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+        runBattleImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+    });
+    const out = await gotoLive({ x: GOAL_TILE.x, y: GOAL_TILE.y }, { ...harness.deps });
+    const c = harness.counts();
+    check("gotoLive(hp_low): status interrupted", out.status === OUTCOME_STATUS.INTERRUPTED, JSON.stringify(out));
+    check("gotoLive(hp_low): stop_reason hp_low", out.stop_reason === STOP_REASON.HP_LOW, out.stop_reason);
+    check("gotoLive(hp_low): no sub-handler called", c.dialogCalls === 0 && c.battleCalls === 0, JSON.stringify(c));
+    check("gotoLive(hp_low): steps = routing only", out.steps_used === 1, String(out.steps_used));
+}
+
+// F. BATTLE already active at goto start -> C3 fights first, then routes -> OK
+{
+    const battlePolicy = { strategy: "flee", lead: null, catch_wild: true };
+    const harness = makeGotoDeps({
+        polls: [BATTLE_SNAP, snap(5, 19)],
+        positions: [POS0, POS0],
+        advanceDialogImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+        runBattleImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 7, message: "battle won" }),
+    });
+    const out = await gotoLive({ x: GOAL_TILE.x, y: GOAL_TILE.y }, { ...harness.deps, battlePolicy });
+    const c = harness.counts();
+    check("gotoLive(start-battle): status ok", out.status === OUTCOME_STATUS.OK, JSON.stringify(out));
+    check("gotoLive(start-battle): runBattle called at start", c.battleCalls === 1, String(c.battleCalls));
+    check("gotoLive(start-battle): battlePolicy flows (flee+catch_wild)", c.battleArg?.policy?.strategy === "flee" && c.battleArg?.policy?.catch_wild === true, JSON.stringify(c.battleArg?.policy));
+    check("gotoLive(start-battle): steps = routing + battle", out.steps_used === 8, String(out.steps_used));
+}
+
+// G. Plain route, no interrupt -> reaches destination (regression: the
+//    auto-clear wiring must not change the no-interrupt path)
+{
+    const pressLog = [];
+    const harness = makeGotoDeps({
+        polls: [snap(5, 19), snap(5, 19)],
+        positions: [POS0, POS0],
+        advanceDialogImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+        runBattleImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+        pressLog,
+    });
+    const out = await gotoLive({ x: GOAL_TILE.x, y: GOAL_TILE.y }, { ...harness.deps });
+    const c = harness.counts();
+    check("gotoLive(plain): status ok", out.status === OUTCOME_STATUS.OK, JSON.stringify(out));
+    check("gotoLive(plain): no sub-handler called", c.dialogCalls === 0 && c.battleCalls === 0, JSON.stringify(c));
+    check("gotoLive(plain): one routing press", pressLog.length === 1 && pressLog[0] === "up", JSON.stringify(pressLog));
+    check("gotoLive(plain): steps = 1", out.steps_used === 1, String(out.steps_used));
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);
