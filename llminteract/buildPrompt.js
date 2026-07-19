@@ -99,22 +99,16 @@ export async function getGameInfoText(visibleMapState) {
 /**
  * @description Saves a human-readable version of the prompt data to a file.
  * @param {object} gameInfoObject The game state information object (which includes mapData).
- * @param {object} imageParts The parsed image data URI parts.
- * @param {string} twitchChatContent The raw content from Twitch chat for the current turn.
+ * @param {string} screenshotDescription The Cerebras-generated text description of the current screenshot.
  * @param {string} filePath The path to the file where the prompt should be saved.
  * @returns {Promise<void>}
  */
-export async function saveHumanReadablePromptToFile(gameInfoObject, imageParts, twitchChatContent, filePath) {
+export async function saveHumanReadablePromptToFile(gameInfoObject, screenshotDescription, filePath) {
     try {
         let humanReadableString = "--- Human-Readable Prompt Details ---\n\n";
 
-        humanReadableString += "== Current Game Screenshot ==\n";
-        if (imageParts && imageParts.data) {
-            humanReadableString += `MIME Type: ${imageParts.mimeType}\n`;
-            humanReadableString += `Data (first 100 chars): ${imageParts.data.substring(0, 100)}...\n\n`;
-        } else {
-            humanReadableString += "No image data available.\n\n";
-        }
+        humanReadableString += "== Current Game Screenshot Description (Cerebras) ==\n";
+        humanReadableString += (screenshotDescription || "No screenshot description available.") + "\n\n";
 
         humanReadableString += "== Current Game State (RAM Data) ==\n";
         humanReadableString += JSON.stringify(gameInfoObject, null, 2) + "\n\n";
@@ -142,9 +136,6 @@ export async function saveHumanReadablePromptToFile(gameInfoObject, imageParts, 
             }
             humanReadableString += "\n";
         }
-
-        humanReadableString += "== Twitch Chat Messages (Current Turn) ==\n";
-        humanReadableString += twitchChatContent + "\n\n";
 
         await fs.writeFile(filePath, humanReadableString, 'utf8');
     } catch (error) {

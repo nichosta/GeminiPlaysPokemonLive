@@ -4,6 +4,15 @@ import {
     readRange,
 } from "../emulatorInteraction/httpMemoryReader.js";
 import * as CONSTANTS from "../constant/constants.js";
+import { getEventObjectName } from "../../constant/event_object_map.js";
+
+// Object-event graphics ids that are live gObjectEvents but never actually
+// block movement — a visible field item is walked ONTO (triggering pickup),
+// not collided with. Routing callers (findPathLive, gotoLive) want these
+// excluded from blockedTiles; state-description callers (mapStateRetriever)
+// still want them listed as NPCs, so the filtering lives in a separate export
+// rather than in `getCurrentMapNpcs` itself.
+const NON_BLOCKING_EVENT_NAMES = new Set(["ITEM_BALL"]);
 
 /**
  * Gets the base address of the MapEvents structure for the current map.
@@ -159,4 +168,18 @@ export async function getCurrentMapNpcs() {
         console.error("Error fetching current map NPCs from Object Events:", error);
         return []; // Return empty array on error
     }
+}
+
+/**
+ * `getCurrentMapNpcs`, minus object events that don't actually block movement
+ * (currently just visible field items — `ITEM_BALL` — which you walk onto to
+ * collect rather than collide with). For routing (`findPathLive`/`gotoLive`'s
+ * `blockedTiles`): treating an item as a wall can, at a single-tile map
+ * chokepoint, falsely sever an otherwise-open route and force a much worse
+ * (or actively harmful, e.g. through unnecessary tall grass) detour.
+ * @returns {Promise<Array>} Same shape as `getCurrentMapNpcs`.
+ */
+export async function getBlockingMapNpcs() {
+    const npcs = await getCurrentMapNpcs();
+    return npcs.filter((n) => !NON_BLOCKING_EVENT_NAMES.has(getEventObjectName(n.graphicsId)));
 }

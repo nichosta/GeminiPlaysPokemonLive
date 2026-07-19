@@ -1,19 +1,19 @@
 {
   "note": "Pre-Brock wiki QA SFT pairs (slim). Grounded in A5's wiki corpus; the teacher only generates Q/A from the passage text (no invented facts). Feeds E4 SFT+RL. The wiki_qa.jsonl body is git-ignored/regenerable; this manifest is tracked.",
-  "generatedAt": "2026-07-18T20:15:16.603Z",
+  "generatedAt": "2026-07-19T04:05:43.518Z",
   "model": "gemma-4-31b",
   "temperature": 0,
-  "promptHash": "ebb9be6a31ce89a1",
+  "promptHash": "b3d639d40d4ab18f",
   "grounding": "STRICT — pairs must use only facts stated in the source passage; teacher does not distill its own knowledge.",
-  "wikiItemsUsed": 10,
-  "passages": 49,
-  "passagesAsked": 43,
-  "passagesFromCache": 6,
-  "totalPairs": 201,
-  "duplicatesDropped": 0,
+  "wikiItemsUsed": 26,
+  "passages": 134,
+  "passagesAsked": 83,
+  "passagesFromCache": 51,
+  "totalPairs": 558,
+  "duplicatesDropped": 2,
   "pairsBySource": {
-    "bulbapedia": 104,
-    "strategywiki": 97
+    "bulbapedia": 203,
+    "strategywiki": 355
   },
   "failures": [],
   "output": "wiki_qa.jsonl"

@@ -336,7 +336,7 @@ export function executeQueue(actions, options = {}) {
 // docs/state-snapshot.md). While it's true, classifyInterrupt() reports
 // STOP_REASON.DIALOG and we keep mashing. The loop returns when:
 //   - controls unlock (reason === null) -> NONE (dialog cleared).
-//   - any other interrupt surfaces (battle / unexpected menu / HP low) -> that
+//   - any other interrupt surfaces (battle / unexpected menu) -> that
 //     STOP_REASON, verbatim, for the caller (C5 / the model) to handle.
 //   - maxPresses exhausted while still locked -> CHOICE_REQUIRED: we couldn't
 //     blast through, so a yes/no or selection prompt the snapshot can't read
@@ -355,7 +355,6 @@ export function executeQueue(actions, options = {}) {
  *           press lands before the next box is ready.
  * @property {() => Promise<object>} [pollState] Snapshot source (defaults to
  *           B1's fast poll).
- * @property {number} [hpThreshold=0.2]
  * @property {boolean} [expectMenu=false] Forwarded to classifyInterrupt.
  * @property {object} [io=defaultIo] Injectable transport (test hook).
  * @property {AbortSignal} [signal]
@@ -376,7 +375,6 @@ export async function advanceDialog(options = {}) {
         maxPresses = 60,
         pressSettleFrames = 4,
         pollState = () => getState({ includeMap: false, includeBag: false }),
-        hpThreshold = 0.2,
         expectMenu = false,
         io = defaultIo,
         signal,
@@ -387,7 +385,7 @@ export async function advanceDialog(options = {}) {
     const mainButton = canonicalButton(button);
     const altButton = alternate ? canonicalButton(alternate) : null;
 
-    const classifyOpts = { hpThreshold, expectMenu, baselineMap: null };
+    const classifyOpts = { expectMenu, baselineMap: null };
     let state = await pollState();
     let baselineReason = classifyInterrupt(state, classifyOpts);
 
@@ -395,8 +393,8 @@ export async function advanceDialog(options = {}) {
     if (baselineReason === null) {
         return { completed: true, stopReason: STOP_REASON.NONE, state, pressesUsed: 0 };
     }
-    // Started mid-interrupt that isn't dialog (battle already active, menu open,
-    // HP already low) — surface it; the caller owns that.
+    // Started mid-interrupt that isn't dialog (battle already active, menu
+    // open) — surface it; the caller owns that.
     if (baselineReason !== STOP_REASON.DIALOG) {
         return { completed: false, stopReason: baselineReason, state, pressesUsed: 0 };
     }

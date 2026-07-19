@@ -14,6 +14,11 @@ package-lock.json
 # E2 state→intent generator output (regenerable; the index manifest is tracked)
 /staticdata/frlg/state_intent.jsonl
 /staticdata/frlg/.state_intent_cache.json
+# E3 agent-trace generator output (regenerable from traces/; the index manifest is tracked)
+/staticdata/frlg/agent_traces.jsonl
+# E3 dataset split output (regenerable via finetune-agent/buildAgentDataset.js; the index manifest is tracked)
+/finetune-agent/dataset/train.jsonl
+/finetune-agent/dataset/eval.jsonl
 # D3 trace logs (regenerable from a live run; one JSONL per run)
 /traces/
 trace.jsonl
@@ -21,3 +26,6 @@ trace.jsonl
 # checkpoints (one dir per run) + the benchmark report JSON
 /checkpoints/
 /eval/
+
+# E4 reframed-eval generator cache (regenerable; the index manifest is tracked)
+/finetune/dataset/.eval_reframed_cache.json

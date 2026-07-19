@@ -127,6 +127,30 @@ function makeDeps({ gotoLiveImpl, states }) {
         JSON.stringify(out));
 }
 
+// 4b. goto tolerates common malformed-but-recoverable destination shapes a
+// small model sends instead of the documented {location} / {map?,x,y} object
+// (observed live: bare location string, "x,y", "map,x,y").
+{
+    let captured = null;
+    const deps = makeDeps({
+        gotoLiveImpl: async (destination) => { captured = destination; return makeOutcome(OUTCOME_STATUS.OK); },
+    });
+
+    captured = null;
+    await dispatchTool("goto", { destination: "Pallet Town" }, deps);
+    check("goto coerces bare string -> {location}", captured?.location === "Pallet Town", JSON.stringify(captured));
+
+    captured = null;
+    await dispatchTool("goto", { destination: "12,11" }, deps);
+    check("goto coerces \"x,y\" string -> {x,y}", captured?.x === 12 && captured?.y === 11, JSON.stringify(captured));
+
+    captured = null;
+    await dispatchTool("goto", { destination: "MAP_PALLET_TOWN,12,11" }, deps);
+    check("goto coerces \"map,x,y\" string -> {map,x,y}",
+        captured?.map === "MAP_PALLET_TOWN" && captured?.x === 12 && captured?.y === 11,
+        JSON.stringify(captured));
+}
+
 // 5. goto throws -> failed (not a crash)
 {
     const deps = makeDeps({ gotoLiveImpl: async () => { throw new Error("boom"); } });
@@ -191,13 +215,14 @@ function makeDeps({ gotoLiveImpl, states }) {
         JSON.stringify(out));
 }
 
-// 12. press stops on hp_low
+// 12. press does NOT stop on low HP (it would deadlock the walk to a
+//     Pokécenter — HP is surfaced as plain text in the state prompt instead).
 {
-    const states = [snap({ hp: 1.0 }), snap({ hp: 0.1 })];
+    const states = [snap({ hp: 0.1 }), snap({ hp: 0.1 })];
     const deps = makeDeps({ states });
     const out = await dispatchTool("press", { buttons: ["a", "a"] }, deps);
-    check("press stops on hp_low",
-        out.status === OUTCOME_STATUS.INTERRUPTED && out.stop_reason === STOP_REASON.HP_LOW,
+    check("press ignores low HP",
+        out.status === OUTCOME_STATUS.OK && out.stop_reason === STOP_REASON.NONE,
         JSON.stringify(out));
 }
 
@@ -214,12 +239,12 @@ function makeDeps({ gotoLiveImpl, states }) {
 
 // 14. set_battle_strategy valid -> OK + stored
 {
-    const out = await dispatchTool("set_battle_strategy", { strategy: "type_effective", lead: "Charmander", catch_wild: true });
+    const out = await dispatchTool("set_battle_strategy", { strategy: "type_effective", lead: "Charmander", catch_all_pokemon: true });
     check("set_battle_strategy valid -> ok", out.status === OUTCOME_STATUS.OK, JSON.stringify(out));
     const policy = getBattlePolicy();
     check("policy stored strategy", policy.strategy === "type_effective", JSON.stringify(policy));
     check("policy stored lead", policy.lead === "Charmander", JSON.stringify(policy));
-    check("policy stored catch_wild", policy.catch_wild === true, JSON.stringify(policy));
+    check("policy stored catch_all_pokemon", policy.catch_all_pokemon === true, JSON.stringify(policy));
 }
 
 // 15. set_battle_strategy invalid enum
@@ -266,7 +291,7 @@ function makeDeps({ gotoLiveImpl, states }) {
     deps.useItemLive = async (args) => { captured = args; return makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 9, message: "used" }); };
     const out = await dispatchTool("use_item", { item: "Potion", target_slot: 1, quantity: 2 }, deps);
     check("use_item delegates item", captured?.item === "Potion", JSON.stringify(captured));
-    check("use_item passes target_slot", captured?.target_slot === 1, JSON.stringify(captured));
+    check("use_item passes targetSlot", captured?.targetSlot === 1, JSON.stringify(captured));
     check("use_item passes quantity", captured?.quantity === 2, JSON.stringify(captured));
     check("use_item returns adapter outcome", out.status === OUTCOME_STATUS.OK && out.steps_used === 9, JSON.stringify(out));
 
@@ -289,6 +314,49 @@ function makeDeps({ gotoLiveImpl, states }) {
     deps.useItemLive = async () => { throw new Error("boom"); };
     const thrown = await dispatchTool("use_item", { item: "Potion" }, deps);
     check("use_item exception -> failed/unknown_state",
+        thrown.status === OUTCOME_STATUS.FAILED && thrown.stop_reason === STOP_REASON.UNKNOWN_STATE && /boom/.test(thrown.message),
+        JSON.stringify(thrown));
+}
+
+// 12. fight_battle — hands the active battle to C3's runBattleLive
+{
+    let captured = null;
+    const deps = makeDeps({ gotoLiveImpl: async () => makeOutcome(OUTCOME_STATUS.OK) });
+    deps.healLive = async () => makeOutcome(OUTCOME_STATUS.OK);
+    deps.useItemLive = async () => makeOutcome(OUTCOME_STATUS.OK);
+    deps.runBattleLive = async (policy, opts) => {
+        captured = { policy, opts };
+        return makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 14, message: "battle ended" });
+    };
+
+    // Uses the standing policy set via set_battle_strategy.
+    await dispatchTool("set_battle_strategy", { strategy: "type_effective" });
+    const out = await dispatchTool("fight_battle", {}, deps);
+    check("fight_battle uses standing policy", captured?.policy?.strategy === "type_effective", JSON.stringify(captured?.policy));
+    check("fight_battle default maxSteps 200", captured?.opts?.maxSteps === 200, JSON.stringify(captured?.opts));
+    check("fight_battle returns engine outcome", out.status === OUTCOME_STATUS.OK && out.steps_used === 14, JSON.stringify(out));
+
+    // One-off strategy override does not mutate the standing policy.
+    await dispatchTool("fight_battle", { strategy: "conserve_pp", max_steps: 77 }, deps);
+    check("fight_battle strategy override is one-off", captured?.policy?.strategy === "conserve_pp", JSON.stringify(captured?.policy));
+    check("fight_battle passes max_steps", captured?.opts?.maxSteps === 77, JSON.stringify(captured?.opts));
+    check("fight_battle override leaves standing policy intact", getBattlePolicy().strategy === "type_effective", JSON.stringify(getBattlePolicy()));
+
+    // Invalid override strategy -> invalid_args.
+    const bad = await dispatchTool("fight_battle", { strategy: "yolo" }, deps);
+    check("fight_battle bad strategy -> failed/invalid_args",
+        bad.status === OUTCOME_STATUS.FAILED && bad.stop_reason === STOP_REASON.INVALID_ARGS, JSON.stringify(bad));
+
+    // No active battle -> precondition_failed (not a misleading OK).
+    deps.runBattleLive = async () => makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0, message: "no active battle" });
+    const none = await dispatchTool("fight_battle", {}, deps);
+    check("fight_battle without a battle -> failed/precondition_failed",
+        none.status === OUTCOME_STATUS.FAILED && none.stop_reason === STOP_REASON.PRECONDITION_FAILED, JSON.stringify(none));
+
+    // Engine throw -> failed (not a crash).
+    deps.runBattleLive = async () => { throw new Error("boom"); };
+    const thrown = await dispatchTool("fight_battle", {}, deps);
+    check("fight_battle exception -> failed/unknown_state",
         thrown.status === OUTCOME_STATUS.FAILED && thrown.stop_reason === STOP_REASON.UNKNOWN_STATE && /boom/.test(thrown.message),
         JSON.stringify(thrown));
 }

@@ -1,0 +1,67 @@
+{
+  "note": "E3 distillation trace pairs. state = the exact D2 buildStatePrompt() text the LIVE gemini-3.5-flash model read (llminteract/traceLogger.js state_before); tool_call = the tool call it actually issued. This IS the model's real behavior (unlike E1/E2's grounded, non-distilled labels) — feeds E4 SFT/OPD to distill gemini's play into qwen3.5-9b. Manual-movement fallback presses (goto abandoned for free walking after a prior goto failure — directional press while in_battle===false and controls_locked===false) are EXCLUDED regardless of outcome status: see isManualMovementFallback().",
+  "toolInterfaceVersion": "1.1.0",
+  "allowedStatuses": [
+    "ok"
+  ],
+  "sourceFiles": [
+    "traces/trace-run-tie7wn-3342.jsonl",
+    "traces/trace-run-tie90s-b402.jsonl",
+    "traces/trace-run-tieb82-dae9.jsonl",
+    "traces/trace-run-tieb9k-6df9.jsonl",
+    "traces/trace-run-tiebc1-3f8c.jsonl",
+    "traces/trace-run-tiefa3-c7df.jsonl",
+    "traces/trace-run-tiehnu-9b2a.jsonl",
+    "traces/trace-run-tiejir-3bcc.jsonl",
+    "traces/trace-run-tieo6c-3764.jsonl",
+    "traces/trace-run-tieovz-35a4.jsonl",
+    "traces/trace-run-tieqvy-4bd9.jsonl",
+    "traces/trace-run-tierqe-5efc.jsonl",
+    "traces/trace-run-tiet09-b631.jsonl",
+    "traces/trace-run-tieuyo-611d.jsonl",
+    "traces/trace-run-tievrk-ea72.jsonl",
+    "traces/trace-run-tievs3-a4ea.jsonl",
+    "traces/trace-run-tiexlu-f7ef.jsonl",
+    "traces/trace-run-tiez6s-90fb.jsonl",
+    "traces/trace-run-tiez9z-1ed8.jsonl",
+    "traces/trace-run-tif15v-33f1.jsonl"
+  ],
+  "totalRawLines": 1047,
+  "rawStatusMix": {
+    "ok": 645,
+    "failed": 57,
+    "interrupted": 314,
+    "budget_exhausted": 10,
+    "no_tool_call": 21
+  },
+  "manualMovementFallbackDropped": 262,
+  "distillableCandidates": 513,
+  "totalPairs": 326,
+  "dupesDropped": 187,
+  "pairsByTool": {
+    "press": 231,
+    "set_battle_strategy": 41,
+    "goto": 42,
+    "heal": 9,
+    "fight_battle": 3
+  },
+  "pairsBySource": {
+    "run-tie7wn-e660": 2,
+    "run-tie90s-c4df": 21,
+    "run-tieb9k-8c7f": 5,
+    "run-tiebc1-8ee6": 75,
+    "run-tiefa3-2115": 85,
+    "run-tiehnu-36ec": 26,
+    "run-tiejir-8649": 15,
+    "run-tieo6c-fd8c": 1,
+    "run-tieovz-d230": 25,
+    "run-tieqvy-fb5f": 7,
+    "run-tierqe-94a9": 10,
+    "run-tiet09-9548": 1,
+    "run-tieuyo-3b21": 9,
+    "run-tievs3-b59a": 26,
+    "run-tiez9z-cf3e": 2,
+    "run-tif15v-1eb1": 16
+  },
+  "generatedAtMs": 1784454971355
+}

@@ -125,7 +125,7 @@ function renderToolReference() {
     }).join("\n");
 }
 
-const SYSTEM_PROMPT = `You generate a supervised fine-tuning dataset for a slim Pokémon FireRed agent.
+export const SYSTEM_PROMPT = `You generate a supervised fine-tuning dataset for a slim Pokémon FireRed agent.
 
 You are given a WINDOW of recent gameplay — a chronological list of frame-by-frame descriptions from a FireRed playthrough, each prefixed with its timestamp. The LAST frame is the current game state. Decide the SINGLE next high-level intent an agent should issue from the current state.
 
@@ -260,7 +260,7 @@ export function validateIntent(intent) {
 
 // Extract the teacher's `{intent, rationale}` object via brace counting (gemma
 // sometimes prepends a sentence or trails commentary). Strips code fences first.
-function parseIntentObj(content) {
+export function parseIntentObj(content) {
     if (!content) return null;
     let s = content.trim();
     s = s.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");

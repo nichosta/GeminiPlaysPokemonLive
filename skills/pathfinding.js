@@ -180,7 +180,18 @@ function neighbors(x, y, map, passable) {
 export function findPath(map, start, goal, options = {}) {
     if (!map || !map.grid) return { found: false, reason: "no-map" };
     const { stopAdjacent = false } = options;
-    const blocked = toBlockedSet(options.blockedTiles);
+    const callerBlocked = toBlockedSet(options.blockedTiles);
+    // Fold in the map's permanent HM-gated obstacles (cut trees / Strength
+    // boulders). These are object events, not collision-grid terrain, so the
+    // static grid — and A3's component graph built from it — treats their tiles
+    // as passable; without this a route gets planned straight through a cut tree
+    // it can't actually pass (see staticMap.getObstacleTiles / extractObstacles).
+    // Copy so a caller-owned Set is never mutated.
+    let blocked = callerBlocked;
+    if (Array.isArray(map.obstacles) && map.obstacles.length > 0) {
+        blocked = new Set(callerBlocked);
+        for (const o of map.obstacles) blocked.add(key(o.x, o.y));
+    }
     const passable = makePassable(map, blocked);
 
     // A dynamically-blocked start (e.g. an NPC read onto the player's own tile)
@@ -278,7 +289,7 @@ function reconstruct(cameFrom, endKey, endNode, cost, facing) {
  *          current map is outside the static-data scope or state is unreadable.
  */
 export async function findPathLive(goal, options = {}) {
-    const [{ getCurrentMapBank, getCurrentMapNumber, getPlayerPosition }, { getCurrentMapNpcs }] =
+    const [{ getCurrentMapBank, getCurrentMapNumber, getPlayerPosition }, { getBlockingMapNpcs }] =
         await Promise.all([
             import("../gamestate/overworld/playerData.js"),
             import("../gamestate/overworld/mapEvents.js"),
@@ -293,7 +304,7 @@ export async function findPathLive(goal, options = {}) {
     const map = getStaticMap(group, num);
     if (!map) return { found: false, reason: "map-out-of-scope" };
 
-    const npcs = await getCurrentMapNpcs();
+    const npcs = await getBlockingMapNpcs();
     const blocked = toBlockedSet(options.blockedTiles);
     for (const npc of npcs) blocked.add(key(npc.x, npc.y));
 

@@ -7,9 +7,9 @@
 // data generation, NOT distillation of the model's own behavior/knowledge.
 // (Behavior distillation is E3's job, later.)
 //
-// Teacher: Cerebras `gemma-4-31b` (`CONFIGS.CEREBRAS_MODEL_NAME`) — the OpenAI-
-// compatible chat-completions client already used in `agent.js`. Cheap and fast
-// for this simple grounded-QA task. temperature 0 for reproducibility.
+// Teacher: Cerebras `gemma-4-31b` (--model / CEREBRAS_MODEL_NAME env / default) —
+// the OpenAI-compatible chat-completions client. Cheap and fast for this simple
+// grounded-QA task. temperature 0 for reproducibility.
 //
 // Transcripts are E2's domain; this script reads wiki items only (the wiki
 // entries in `staticdata/corpus/index.json`).
@@ -38,7 +38,6 @@ import path from "path";
 import crypto from "crypto";
 import { fileURLToPath } from "url";
 import OpenAI from "openai";
-import * as CONFIGS from "../CONFIGS.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CORPUS_DIR = path.resolve(__dirname, "corpus");
@@ -69,19 +68,26 @@ function parseArgs(argv) {
 
 const cli = parseArgs(process.argv);
 const OUT_DIR = path.resolve(__dirname, cli.out || "frlg");
-const MODEL = cli.model || CONFIGS.CEREBRAS_MODEL_NAME;
-const MAX_PAIRS_PER_PASSAGE = 6;
+const MODEL = cli.model || process.env.CEREBRAS_MODEL_NAME || "gemma-4-31b";
+const MAX_PAIRS_PER_PASSAGE = 10;
 const PASSAGE_CHAR_BUDGET = 2000; // split long sections into ~this-sized batches
 
-const SYSTEM_PROMPT = `You generate a supervised fine-tuning dataset for a slim Pokémon FireRed/LeafGreen gameplay assistant.
+const SYSTEM_PROMPT = `You generate a supervised fine-tuning dataset for a Pokémon FireRed/LeafGreen gameplay assistant.
 
 From the passage below, produce up to ${MAX_PAIRS_PER_PASSAGE} question/answer pairs.
 
 STRICT GROUNDING RULES:
 - Use ONLY facts stated in the passage. Do NOT invent, assume, or import knowledge from outside the passage (even if you know it as Pokémon fact).
 - If the passage does not cover a topic, do not produce a question about it.
-- Questions should be things a player or a gameplay agent would plausibly need to know: where to go next, what to do, what an NPC or item does, type matchups, the sequence of events, battle strategy the passage states.
-- Answers: 1–3 sentences, instructive, in the voice of a walkthrough guide. Paraphrase the passage; do not add detail it does not contain.
+
+QUESTIONS:
+- Ask the things a player or a gameplay agent would plausibly need to know: where to go next, what to do, what an NPC or item does, type matchups, the sequence of events, battle strategy the passage states.
+- Vary difficulty: mix direct factual lookups with "what should I do / where do I go / in what order" procedural questions.
+
+ANSWERS (important):
+- 2–4 complete, specific sentences in the voice of a walkthrough guide. Paraphrase the passage; do not add detail it does not contain.
+- Be substantive: spell out the sequence of steps, name the specific NPCs/items/buttons/locations, and explain the reason where the passage gives one.
+- NEVER merely restate or echo the question. If the passage does not actually state a specific answer, do not produce that question.
 
 Return ONLY a JSON object, no prose, no code fences:
 {"pairs":[{"question":"...","answer":"..."}]}`;
@@ -265,7 +271,9 @@ function saveCache(cachePath, cache) {
 }
 
 function passageKey(passage) {
-    return crypto.createHash("sha1").update(`${MODEL}\n${passage.body}`).digest("hex");
+    // Fold the prompt hash into the cache key so a SYSTEM_PROMPT change
+    // auto-invalidates old cached pairs (the key previously ignored the prompt).
+    return crypto.createHash("sha1").update(`${MODEL}\n${PROMPT_HASH}\n${passage.body}`).digest("hex");
 }
 
 // --- Dedup -------------------------------------------------------------------

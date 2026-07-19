@@ -99,19 +99,18 @@ console.log("\n== decideDialogAction: non-dialog interrupts escalate verbatim ==
     const battle = decideDialogAction(snap({ locked: true, inBattle: true }), {}, { pressesUsed: 0, maxPresses: 60 });
     check("battle active -> battle_started", battle.kind === "escalate" && battle.stopReason === STOP_REASON.BATTLE_STARTED, JSON.stringify(battle));
 
-    // HP_LOW / UNEXPECTED_MENU only surface when controls are UNlocked: B2's
-    // classifyInterrupt priority is battle > dialog > warp > hp > menu, so a
-    // locked-controls snapshot reports DIALOG and never reaches the hp/menu
-    // checks. (HP can't drop during dialog anyway — there's no battle.)
-    const hp = decideDialogAction(snap({ locked: false, hp: 0.1 }), {}, { pressesUsed: 0, maxPresses: 60, hpThreshold: 0.2 });
-    check("hp low (unlocked) -> hp_low", hp.kind === "escalate" && hp.stopReason === STOP_REASON.HP_LOW, JSON.stringify(hp));
+    // Low HP is NOT an interrupt (it would deadlock the walk to a Pokécenter);
+    // it surfaces as plain text in the D2 state prompt instead. So an unlocked
+    // snapshot whose only flag is low HP classifies to null -> done.
+    const hp = decideDialogAction(snap({ locked: false, hp: 0.1 }), {}, { pressesUsed: 0, maxPresses: 60 });
+    check("hp low (unlocked) -> done (not an interrupt)", hp.kind === "done", JSON.stringify(hp));
 
     const menu = decideDialogAction(snap({ locked: false, menuOpen: true }), {}, { pressesUsed: 0, maxPresses: 60 });
     check("menu open (unlocked) -> unexpected_menu", menu.kind === "escalate" && menu.stopReason === STOP_REASON.UNEXPECTED_MENU, JSON.stringify(menu));
 
-    // And while locked, DIALOG correctly wins over a concurrent low-HP flag.
-    const lockedLow = decideDialogAction(snap({ locked: true, hp: 0.1 }), {}, { pressesUsed: 0, maxPresses: 60, hpThreshold: 0.2 });
-    check("locked trumps low HP -> press (dialog)", lockedLow.kind === "press" && lockedLow.button === "a", JSON.stringify(lockedLow));
+    // And while locked, DIALOG wins regardless of a concurrent low-HP flag.
+    const lockedLow = decideDialogAction(snap({ locked: true, hp: 0.1 }), {}, { pressesUsed: 0, maxPresses: 60 });
+    check("locked + low HP -> press (dialog)", lockedLow.kind === "press" && lockedLow.button === "a", JSON.stringify(lockedLow));
 
     const unreadable = decideDialogAction(snap({ locked: true, readable: false }), {}, { pressesUsed: 0, maxPresses: 60 });
     check("unreadable -> unknown_state", unreadable.kind === "escalate" && unreadable.stopReason === STOP_REASON.UNKNOWN_STATE, JSON.stringify(unreadable));
@@ -211,17 +210,18 @@ console.log("\n== advanceDialogLive: battle already active at start -> escalate,
     check("battle at start -> 0 presses", io.tapLog.length === 0, JSON.stringify(io.tapLog));
 }
 
-console.log("\n== advanceDialogLive: hp low mid-mash -> HP_LOW ==");
+console.log("\n== advanceDialogLive: hp low mid-mash -> OK (not an interrupt) ==");
 {
-    // Locked first (mash A), then the dialog clears but HP is low — HP_LOW
-    // surfaces once controls unlock (B2's dialog-over-hp priority relaxes).
+    // Locked first (mash A), then the dialog clears while HP is low. Low HP is
+    // NOT an interrupt, so once controls unlock the handler returns OK — the
+    // model is free to walk to a Pokécenter (HP is surfaced as prompt text).
     const seq = [snap({ locked: true, hp: 1.0 }), snap({ locked: false, hp: 0.1 })];
     let i = 0;
     const pollState = async () => seq[Math.min(i++, seq.length - 1)];
     const io = new FakeIo();
-    const res = await advanceDialogLive({}, { pollState, io, maxSteps: 60, hpThreshold: 0.2 });
-    check("hp low mid-mash -> interrupted", res.status === "interrupted", JSON.stringify(res));
-    check("hp low mid-mash -> hp_low", res.stop_reason === STOP_REASON.HP_LOW, JSON.stringify(res));
+    const res = await advanceDialogLive({}, { pollState, io, maxSteps: 60 });
+    check("hp low mid-mash -> ok (not interrupted)", res.status === "ok", JSON.stringify(res));
+    check("hp low mid-mash -> stop_reason none", res.stop_reason === STOP_REASON.NONE, JSON.stringify(res));
 }
 
 console.log("\n== advanceDialogLive: AbortSignal -> interrupted (none) ==");

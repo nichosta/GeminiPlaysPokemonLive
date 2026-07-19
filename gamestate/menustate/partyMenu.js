@@ -21,6 +21,28 @@ export async function isPartyMenuOpen() {
 }
 
 /**
+ * Whether the party menu handler has ever been allocated this boot. The
+ * pointer at PARTY_MENU_INTERNAL_ADDR is set the first time the party menu
+ * opens and never cleared again (see isPartyMenuOpen's docstring) — useless
+ * as a live open/closed signal, but a reliable "has this menu ever been used
+ * this session" latch. Needed because getPartyMenuSlotId's backing byte is
+ * zero-initialized at boot (slot 0, not the documented closed value 7) until
+ * the game's own ClosePartyMenu code writes a real closed value, so slot-only
+ * detection false-positives as "open" on a fresh save that hasn't opened the
+ * party menu yet.
+ * @returns {Promise<boolean>}
+ */
+export async function isPartyMenuHandlerAllocated() {
+    try {
+        const internalPointer = await readUint32(CONSTANTS.PARTY_MENU_INTERNAL_ADDR);
+        return internalPointer !== 0;
+    } catch (error) {
+        console.error("Error checking party menu handler allocation:", error);
+        return false; // Assume never-allocated (closed) on error
+    }
+}
+
+/**
  * Reads the current party menu slot ID.
  * 7 indicates either the menu is closed or the Exit button is selected
  * Yes, it's inconsistent and sucks, I know it's disappointing.

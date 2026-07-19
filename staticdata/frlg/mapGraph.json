@@ -1,247 +1,617 @@
 {
-  "generatedAt": "2026-07-18T18:51:36.779Z",
+  "generatedAt": "2026-07-19T05:05:30.777Z",
   "source": "derived from staticdata/frlg/index.json + maps/*.json (A1)",
-  "note": "Graph of the 30 pre-Brock maps joined by warps (concrete tiles both ends) and overworld connections (direction+offset; C2 resolves exact border tiles at execution time from live map dimensions). `boundaryEdges` are real warps/connections whose destination falls outside the pre-Brock extraction scope (e.g. Route 1 -> Route 21, Pewter City -> Route 3) — kept so consumers see a documented scope wall rather than an edge that silently vanished.",
+  "note": "Graph of the 30 pre-Brock maps joined by warps (concrete tiles both ends) and overworld connections (direction+offset; C2 resolves exact border tiles at execution time from live map dimensions). Nodes are per CONNECTED COMPONENT, not per map: a map bisected by an impassable line (Route 2's Cut-tree wall, Pewter Museum's ticket gate) gets one node per 4-connected passable region, and every edge carries `from.component`/`to.component` so BFS can re-enter the same map at a different region (the Pallet -> Pewter detour through Viridian Forest). Component indices match components.json 1:1. `boundaryEdges` are real warps/connections whose destination falls outside the pre-Brock extraction scope (e.g. Route 1 -> Route 21, Pewter City -> Route 3) — kept so consumers see a documented scope wall rather than an edge that silently vanished.",
   "nodes": [
     {
       "id": "MAP_PALLET_TOWN",
       "name": "PalletTown",
       "group": 3,
       "num": 0,
+      "component": 0,
       "type": "city",
-      "mapType": "MAP_TYPE_TOWN"
+      "mapType": "MAP_TYPE_TOWN",
+      "tileCount": 282
     },
     {
       "id": "MAP_PALLET_TOWN_PLAYERS_HOUSE_1F",
       "name": "PalletTown_PlayersHouse_1F",
       "group": 4,
       "num": 0,
+      "component": 0,
       "type": "house",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 76
     },
     {
       "id": "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F",
       "name": "PalletTown_PlayersHouse_2F",
       "group": 4,
       "num": 1,
+      "component": 0,
       "type": "house",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 70
     },
     {
       "id": "MAP_PALLET_TOWN_RIVALS_HOUSE",
       "name": "PalletTown_RivalsHouse",
       "group": 4,
       "num": 2,
+      "component": 0,
       "type": "house",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 85
     },
     {
       "id": "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB",
       "name": "PalletTown_ProfessorOaksLab",
       "group": 4,
       "num": 3,
+      "component": 0,
       "type": "lab",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 122
     },
     {
       "id": "MAP_ROUTE1",
       "name": "Route1",
       "group": 3,
       "num": 19,
+      "component": 0,
       "type": "route",
-      "mapType": "MAP_TYPE_ROUTE"
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 558
+    },
+    {
+      "id": "MAP_ROUTE1",
+      "name": "Route1",
+      "group": 3,
+      "num": 19,
+      "component": 1,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 24
+    },
+    {
+      "id": "MAP_ROUTE1",
+      "name": "Route1",
+      "group": 3,
+      "num": 19,
+      "component": 2,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 9
+    },
+    {
+      "id": "MAP_ROUTE1",
+      "name": "Route1",
+      "group": 3,
+      "num": 19,
+      "component": 3,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 7
     },
     {
       "id": "MAP_VIRIDIAN_CITY",
       "name": "ViridianCity",
       "group": 3,
       "num": 1,
+      "component": 0,
       "type": "city",
-      "mapType": "MAP_TYPE_TOWN"
+      "mapType": "MAP_TYPE_TOWN",
+      "tileCount": 871
     },
     {
       "id": "MAP_VIRIDIAN_CITY_HOUSE",
       "name": "ViridianCity_House",
       "group": 5,
       "num": 0,
+      "component": 0,
       "type": "house",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 60
     },
     {
       "id": "MAP_VIRIDIAN_CITY_GYM",
       "name": "ViridianCity_Gym",
       "group": 5,
       "num": 1,
+      "component": 0,
       "type": "gym",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 274
     },
     {
       "id": "MAP_VIRIDIAN_CITY_SCHOOL",
       "name": "ViridianCity_School",
       "group": 5,
       "num": 2,
+      "component": 0,
       "type": "school",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 54
     },
     {
       "id": "MAP_VIRIDIAN_CITY_MART",
       "name": "ViridianCity_Mart",
       "group": 5,
       "num": 3,
+      "component": 0,
       "type": "mart",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 4
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_MART",
+      "name": "ViridianCity_Mart",
+      "group": 5,
+      "num": 3,
+      "component": 1,
+      "type": "mart",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 42
     },
     {
       "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F",
       "name": "ViridianCity_PokemonCenter_1F",
       "group": 5,
       "num": 4,
+      "component": 0,
       "type": "pokecenter",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 1
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F",
+      "name": "ViridianCity_PokemonCenter_1F",
+      "group": 5,
+      "num": 4,
+      "component": 1,
+      "type": "pokecenter",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 86
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F",
+      "name": "ViridianCity_PokemonCenter_1F",
+      "group": 5,
+      "num": 4,
+      "component": 2,
+      "type": "pokecenter",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 2
     },
     {
       "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_2F",
       "name": "ViridianCity_PokemonCenter_2F",
       "group": 5,
       "num": 5,
+      "component": 0,
       "type": "pokecenter_upstairs",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 3
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_2F",
+      "name": "ViridianCity_PokemonCenter_2F",
+      "group": 5,
+      "num": 5,
+      "component": 1,
+      "type": "pokecenter_upstairs",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 4
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_2F",
+      "name": "ViridianCity_PokemonCenter_2F",
+      "group": 5,
+      "num": 5,
+      "component": 2,
+      "type": "pokecenter_upstairs",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 3
+    },
+    {
+      "id": "MAP_VIRIDIAN_CITY_POKEMON_CENTER_2F",
+      "name": "ViridianCity_PokemonCenter_2F",
+      "group": 5,
+      "num": 5,
+      "component": 3,
+      "type": "pokecenter_upstairs",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 74
     },
     {
       "id": "MAP_ROUTE22",
       "name": "Route22",
       "group": 3,
       "num": 41,
+      "component": 0,
       "type": "route",
-      "mapType": "MAP_TYPE_ROUTE"
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 7
+    },
+    {
+      "id": "MAP_ROUTE22",
+      "name": "Route22",
+      "group": 3,
+      "num": 41,
+      "component": 1,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 10
+    },
+    {
+      "id": "MAP_ROUTE22",
+      "name": "Route22",
+      "group": 3,
+      "num": 41,
+      "component": 2,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 474
     },
     {
       "id": "MAP_ROUTE22_NORTH_ENTRANCE",
       "name": "Route22_NorthEntrance",
       "group": 28,
       "num": 0,
+      "component": 0,
       "type": "gate",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 122
     },
     {
       "id": "MAP_ROUTE2",
       "name": "Route2",
       "group": 3,
       "num": 20,
+      "component": 0,
       "type": "route",
-      "mapType": "MAP_TYPE_ROUTE"
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 122
+    },
+    {
+      "id": "MAP_ROUTE2",
+      "name": "Route2",
+      "group": 3,
+      "num": 20,
+      "component": 1,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 140
+    },
+    {
+      "id": "MAP_ROUTE2",
+      "name": "Route2",
+      "group": 3,
+      "num": 20,
+      "component": 2,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 78
+    },
+    {
+      "id": "MAP_ROUTE2",
+      "name": "Route2",
+      "group": 3,
+      "num": 20,
+      "component": 3,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 8
+    },
+    {
+      "id": "MAP_ROUTE2",
+      "name": "Route2",
+      "group": 3,
+      "num": 20,
+      "component": 4,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 170
+    },
+    {
+      "id": "MAP_ROUTE2",
+      "name": "Route2",
+      "group": 3,
+      "num": 20,
+      "component": 5,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 1
+    },
+    {
+      "id": "MAP_ROUTE2",
+      "name": "Route2",
+      "group": 3,
+      "num": 20,
+      "component": 6,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 1
+    },
+    {
+      "id": "MAP_ROUTE2",
+      "name": "Route2",
+      "group": 3,
+      "num": 20,
+      "component": 7,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 259
     },
     {
       "id": "MAP_ROUTE2_VIRIDIAN_FOREST_SOUTH_ENTRANCE",
       "name": "Route2_ViridianForest_SouthEntrance",
       "group": 15,
       "num": 0,
+      "component": 0,
       "type": "gate",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 102
     },
     {
       "id": "MAP_ROUTE2_VIRIDIAN_FOREST_NORTH_ENTRANCE",
       "name": "Route2_ViridianForest_NorthEntrance",
       "group": 15,
       "num": 3,
+      "component": 0,
       "type": "gate",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 102
     },
     {
       "id": "MAP_ROUTE2_HOUSE",
       "name": "Route2_House",
       "group": 15,
       "num": 1,
+      "component": 0,
       "type": "house",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 60
     },
     {
       "id": "MAP_ROUTE2_EAST_BUILDING",
       "name": "Route2_EastBuilding",
       "group": 15,
       "num": 2,
+      "component": 0,
       "type": "building",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 102
     },
     {
       "id": "MAP_VIRIDIAN_FOREST",
       "name": "ViridianForest",
       "group": 1,
       "num": 0,
+      "component": 0,
       "type": "route",
-      "mapType": "MAP_TYPE_ROUTE"
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 1600
+    },
+    {
+      "id": "MAP_VIRIDIAN_FOREST",
+      "name": "ViridianForest",
+      "group": 1,
+      "num": 0,
+      "component": 1,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 2
+    },
+    {
+      "id": "MAP_VIRIDIAN_FOREST",
+      "name": "ViridianForest",
+      "group": 1,
+      "num": 0,
+      "component": 2,
+      "type": "route",
+      "mapType": "MAP_TYPE_ROUTE",
+      "tileCount": 2
     },
     {
       "id": "MAP_PEWTER_CITY",
       "name": "PewterCity",
       "group": 3,
       "num": 2,
+      "component": 0,
       "type": "city",
-      "mapType": "MAP_TYPE_TOWN"
+      "mapType": "MAP_TYPE_TOWN",
+      "tileCount": 4
+    },
+    {
+      "id": "MAP_PEWTER_CITY",
+      "name": "PewterCity",
+      "group": 3,
+      "num": 2,
+      "component": 1,
+      "type": "city",
+      "mapType": "MAP_TYPE_TOWN",
+      "tileCount": 893
+    },
+    {
+      "id": "MAP_PEWTER_CITY",
+      "name": "PewterCity",
+      "group": 3,
+      "num": 2,
+      "component": 2,
+      "type": "city",
+      "mapType": "MAP_TYPE_TOWN",
+      "tileCount": 9
+    },
+    {
+      "id": "MAP_PEWTER_CITY",
+      "name": "PewterCity",
+      "group": 3,
+      "num": 2,
+      "component": 3,
+      "type": "city",
+      "mapType": "MAP_TYPE_TOWN",
+      "tileCount": 1
     },
     {
       "id": "MAP_PEWTER_CITY_MUSEUM_1F",
       "name": "PewterCity_Museum_1F",
       "group": 6,
       "num": 0,
+      "component": 0,
       "type": "museum",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 104
+    },
+    {
+      "id": "MAP_PEWTER_CITY_MUSEUM_1F",
+      "name": "PewterCity_Museum_1F",
+      "group": 6,
+      "num": 0,
+      "component": 1,
+      "type": "museum",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 83
     },
     {
       "id": "MAP_PEWTER_CITY_MUSEUM_2F",
       "name": "PewterCity_Museum_2F",
       "group": 6,
       "num": 1,
+      "component": 0,
       "type": "museum",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 124
     },
     {
       "id": "MAP_PEWTER_CITY_GYM",
       "name": "PewterCity_Gym",
       "group": 6,
       "num": 2,
+      "component": 0,
       "type": "gym",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 5
+    },
+    {
+      "id": "MAP_PEWTER_CITY_GYM",
+      "name": "PewterCity_Gym",
+      "group": 6,
+      "num": 2,
+      "component": 1,
+      "type": "gym",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 116
     },
     {
       "id": "MAP_PEWTER_CITY_MART",
       "name": "PewterCity_Mart",
       "group": 6,
       "num": 3,
+      "component": 0,
       "type": "mart",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 4
+    },
+    {
+      "id": "MAP_PEWTER_CITY_MART",
+      "name": "PewterCity_Mart",
+      "group": 6,
+      "num": 3,
+      "component": 1,
+      "type": "mart",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 42
     },
     {
       "id": "MAP_PEWTER_CITY_HOUSE1",
       "name": "PewterCity_House1",
       "group": 6,
       "num": 4,
+      "component": 0,
       "type": "house",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 60
     },
     {
       "id": "MAP_PEWTER_CITY_HOUSE2",
       "name": "PewterCity_House2",
       "group": 6,
       "num": 7,
+      "component": 0,
       "type": "house",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 60
     },
     {
       "id": "MAP_PEWTER_CITY_POKEMON_CENTER_1F",
       "name": "PewterCity_PokemonCenter_1F",
       "group": 6,
       "num": 5,
+      "component": 0,
       "type": "pokecenter",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 1
+    },
+    {
+      "id": "MAP_PEWTER_CITY_POKEMON_CENTER_1F",
+      "name": "PewterCity_PokemonCenter_1F",
+      "group": 6,
+      "num": 5,
+      "component": 1,
+      "type": "pokecenter",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 86
+    },
+    {
+      "id": "MAP_PEWTER_CITY_POKEMON_CENTER_1F",
+      "name": "PewterCity_PokemonCenter_1F",
+      "group": 6,
+      "num": 5,
+      "component": 2,
+      "type": "pokecenter",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 2
     },
     {
       "id": "MAP_PEWTER_CITY_POKEMON_CENTER_2F",
       "name": "PewterCity_PokemonCenter_2F",
       "group": 6,
       "num": 6,
+      "component": 0,
       "type": "pokecenter_upstairs",
-      "mapType": "MAP_TYPE_INDOOR"
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 3
+    },
+    {
+      "id": "MAP_PEWTER_CITY_POKEMON_CENTER_2F",
+      "name": "PewterCity_PokemonCenter_2F",
+      "group": 6,
+      "num": 6,
+      "component": 1,
+      "type": "pokecenter_upstairs",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 4
+    },
+    {
+      "id": "MAP_PEWTER_CITY_POKEMON_CENTER_2F",
+      "name": "PewterCity_PokemonCenter_2F",
+      "group": 6,
+      "num": 6,
+      "component": 2,
+      "type": "pokecenter_upstairs",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 3
+    },
+    {
+      "id": "MAP_PEWTER_CITY_POKEMON_CENTER_2F",
+      "name": "PewterCity_PokemonCenter_2F",
+      "group": 6,
+      "num": 6,
+      "component": 3,
+      "type": "pokecenter_upstairs",
+      "mapType": "MAP_TYPE_INDOOR",
+      "tileCount": 74
     }
   ],
   "edges": [
@@ -249,7 +619,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 6,
@@ -257,7 +628,8 @@
       },
       "to": {
         "group": 4,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 4,
@@ -268,7 +640,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 15,
@@ -276,7 +649,8 @@
       },
       "to": {
         "group": 4,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "toTile": {
         "x": 4,
@@ -287,7 +661,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 16,
@@ -295,7 +670,8 @@
       },
       "to": {
         "group": 4,
-        "num": 3
+        "num": 3,
+        "component": 0
       },
       "toTile": {
         "x": 6,
@@ -306,20 +682,23 @@
       "kind": "connection",
       "from": {
         "group": 3,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
-      "direction": "up",
-      "offset": 0,
       "to": {
         "group": 3,
-        "num": 19
-      }
+        "num": 19,
+        "component": 0
+      },
+      "direction": "up",
+      "offset": 0
     },
     {
       "kind": "warp",
       "from": {
         "group": 4,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 5,
@@ -327,7 +706,8 @@
       },
       "to": {
         "group": 3,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 6,
@@ -338,7 +718,8 @@
       "kind": "warp",
       "from": {
         "group": 4,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 4,
@@ -346,7 +727,8 @@
       },
       "to": {
         "group": 3,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 6,
@@ -357,7 +739,8 @@
       "kind": "warp",
       "from": {
         "group": 4,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 10,
@@ -365,7 +748,8 @@
       },
       "to": {
         "group": 4,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 10,
@@ -376,7 +760,8 @@
       "kind": "warp",
       "from": {
         "group": 4,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 3,
@@ -384,7 +769,8 @@
       },
       "to": {
         "group": 3,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 6,
@@ -395,7 +781,8 @@
       "kind": "warp",
       "from": {
         "group": 4,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "fromTile": {
         "x": 10,
@@ -403,7 +790,8 @@
       },
       "to": {
         "group": 4,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 10,
@@ -414,7 +802,8 @@
       "kind": "warp",
       "from": {
         "group": 4,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "fromTile": {
         "x": 4,
@@ -422,7 +811,8 @@
       },
       "to": {
         "group": 3,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 15,
@@ -433,7 +823,8 @@
       "kind": "warp",
       "from": {
         "group": 4,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "fromTile": {
         "x": 5,
@@ -441,7 +832,8 @@
       },
       "to": {
         "group": 3,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 15,
@@ -452,7 +844,8 @@
       "kind": "warp",
       "from": {
         "group": 4,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "fromTile": {
         "x": 3,
@@ -460,7 +853,8 @@
       },
       "to": {
         "group": 3,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 15,
@@ -471,7 +865,8 @@
       "kind": "warp",
       "from": {
         "group": 4,
-        "num": 3
+        "num": 3,
+        "component": 0
       },
       "fromTile": {
         "x": 6,
@@ -479,7 +874,8 @@
       },
       "to": {
         "group": 3,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 16,
@@ -490,7 +886,8 @@
       "kind": "warp",
       "from": {
         "group": 4,
-        "num": 3
+        "num": 3,
+        "component": 0
       },
       "fromTile": {
         "x": 7,
@@ -498,7 +895,8 @@
       },
       "to": {
         "group": 3,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 16,
@@ -509,7 +907,8 @@
       "kind": "warp",
       "from": {
         "group": 4,
-        "num": 3
+        "num": 3,
+        "component": 0
       },
       "fromTile": {
         "x": 5,
@@ -517,7 +916,8 @@
       },
       "to": {
         "group": 3,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 16,
@@ -528,33 +928,38 @@
       "kind": "connection",
       "from": {
         "group": 3,
-        "num": 19
+        "num": 19,
+        "component": 0
       },
-      "direction": "up",
-      "offset": -12,
       "to": {
         "group": 3,
-        "num": 1
-      }
+        "num": 1,
+        "component": 0
+      },
+      "direction": "up",
+      "offset": -12
     },
     {
       "kind": "connection",
       "from": {
         "group": 3,
-        "num": 19
+        "num": 19,
+        "component": 0
       },
-      "direction": "down",
-      "offset": 0,
       "to": {
         "group": 3,
-        "num": 0
-      }
+        "num": 0,
+        "component": 0
+      },
+      "direction": "down",
+      "offset": 0
     },
     {
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "fromTile": {
         "x": 26,
@@ -562,7 +967,8 @@
       },
       "to": {
         "group": 5,
-        "num": 4
+        "num": 4,
+        "component": 1
       },
       "toTile": {
         "x": 7,
@@ -573,7 +979,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "fromTile": {
         "x": 25,
@@ -581,7 +988,8 @@
       },
       "to": {
         "group": 5,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 4,
@@ -592,7 +1000,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "fromTile": {
         "x": 36,
@@ -600,7 +1009,8 @@
       },
       "to": {
         "group": 5,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 17,
@@ -611,7 +1021,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "fromTile": {
         "x": 25,
@@ -619,7 +1030,8 @@
       },
       "to": {
         "group": 5,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "toTile": {
         "x": 4,
@@ -630,7 +1042,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "fromTile": {
         "x": 36,
@@ -638,7 +1051,8 @@
       },
       "to": {
         "group": 5,
-        "num": 3
+        "num": 3,
+        "component": 1
       },
       "toTile": {
         "x": 4,
@@ -649,46 +1063,53 @@
       "kind": "connection",
       "from": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
+      },
+      "to": {
+        "group": 3,
+        "num": 20,
+        "component": 7
       },
       "direction": "up",
-      "offset": 12,
-      "to": {
-        "group": 3,
-        "num": 20
-      }
+      "offset": 12
     },
     {
       "kind": "connection",
       "from": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
+      },
+      "to": {
+        "group": 3,
+        "num": 19,
+        "component": 0
       },
       "direction": "down",
-      "offset": 12,
-      "to": {
-        "group": 3,
-        "num": 19
-      }
+      "offset": 12
     },
     {
       "kind": "connection",
       "from": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
-      "direction": "left",
-      "offset": 10,
       "to": {
         "group": 3,
-        "num": 41
-      }
+        "num": 41,
+        "component": 2
+      },
+      "direction": "left",
+      "offset": 10
     },
     {
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 3,
@@ -696,7 +1117,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 25,
@@ -707,7 +1129,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 4,
@@ -715,7 +1138,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 25,
@@ -726,7 +1150,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 5,
@@ -734,7 +1159,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 25,
@@ -745,7 +1171,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "fromTile": {
         "x": 16,
@@ -753,7 +1180,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 36,
@@ -764,7 +1192,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "fromTile": {
         "x": 17,
@@ -772,7 +1201,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 36,
@@ -783,7 +1213,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "fromTile": {
         "x": 18,
@@ -791,7 +1222,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 36,
@@ -802,7 +1234,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "fromTile": {
         "x": 3,
@@ -810,7 +1243,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 25,
@@ -821,7 +1255,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "fromTile": {
         "x": 4,
@@ -829,7 +1264,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 25,
@@ -840,7 +1276,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "fromTile": {
         "x": 5,
@@ -848,7 +1285,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 25,
@@ -859,7 +1297,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 3
+        "num": 3,
+        "component": 1
       },
       "fromTile": {
         "x": 3,
@@ -867,7 +1306,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 36,
@@ -878,7 +1318,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 3
+        "num": 3,
+        "component": 1
       },
       "fromTile": {
         "x": 4,
@@ -886,7 +1327,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 36,
@@ -897,7 +1339,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 3
+        "num": 3,
+        "component": 1
       },
       "fromTile": {
         "x": 5,
@@ -905,7 +1348,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 36,
@@ -916,7 +1360,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 4
+        "num": 4,
+        "component": 1
       },
       "fromTile": {
         "x": 6,
@@ -924,7 +1369,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 26,
@@ -935,7 +1381,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 4
+        "num": 4,
+        "component": 1
       },
       "fromTile": {
         "x": 7,
@@ -943,7 +1390,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 26,
@@ -954,7 +1402,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 4
+        "num": 4,
+        "component": 1
       },
       "fromTile": {
         "x": 8,
@@ -962,7 +1411,8 @@
       },
       "to": {
         "group": 3,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 26,
@@ -973,7 +1423,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 4
+        "num": 4,
+        "component": 1
       },
       "fromTile": {
         "x": 1,
@@ -981,7 +1432,8 @@
       },
       "to": {
         "group": 5,
-        "num": 5
+        "num": 5,
+        "component": 3
       },
       "toTile": {
         "x": 1,
@@ -992,7 +1444,8 @@
       "kind": "warp",
       "from": {
         "group": 5,
-        "num": 5
+        "num": 5,
+        "component": 3
       },
       "fromTile": {
         "x": 1,
@@ -1000,7 +1453,8 @@
       },
       "to": {
         "group": 5,
-        "num": 4
+        "num": 4,
+        "component": 1
       },
       "toTile": {
         "x": 1,
@@ -1011,7 +1465,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 41
+        "num": 41,
+        "component": 2
       },
       "fromTile": {
         "x": 8,
@@ -1019,7 +1474,8 @@
       },
       "to": {
         "group": 28,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1030,7 +1486,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 41
+        "num": 41,
+        "component": 2
       },
       "fromTile": {
         "x": 9,
@@ -1038,7 +1495,8 @@
       },
       "to": {
         "group": 28,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1049,20 +1507,23 @@
       "kind": "connection",
       "from": {
         "group": 3,
-        "num": 41
+        "num": 41,
+        "component": 2
       },
-      "direction": "right",
-      "offset": -10,
       "to": {
         "group": 3,
-        "num": 1
-      }
+        "num": 1,
+        "component": 0
+      },
+      "direction": "right",
+      "offset": -10
     },
     {
       "kind": "warp",
       "from": {
         "group": 28,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 6,
@@ -1070,7 +1531,8 @@
       },
       "to": {
         "group": 3,
-        "num": 41
+        "num": 41,
+        "component": 2
       },
       "toTile": {
         "x": 8,
@@ -1081,7 +1543,8 @@
       "kind": "warp",
       "from": {
         "group": 28,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 7,
@@ -1089,7 +1552,8 @@
       },
       "to": {
         "group": 3,
-        "num": 41
+        "num": 41,
+        "component": 2
       },
       "toTile": {
         "x": 8,
@@ -1100,7 +1564,8 @@
       "kind": "warp",
       "from": {
         "group": 28,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 8,
@@ -1108,7 +1573,8 @@
       },
       "to": {
         "group": 3,
-        "num": 41
+        "num": 41,
+        "component": 2
       },
       "toTile": {
         "x": 8,
@@ -1119,7 +1585,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 0
       },
       "fromTile": {
         "x": 5,
@@ -1127,7 +1594,8 @@
       },
       "to": {
         "group": 15,
-        "num": 3
+        "num": 3,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1138,7 +1606,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 0
       },
       "fromTile": {
         "x": 6,
@@ -1146,7 +1615,8 @@
       },
       "to": {
         "group": 15,
-        "num": 3
+        "num": 3,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1157,7 +1627,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 7
       },
       "fromTile": {
         "x": 5,
@@ -1165,7 +1636,8 @@
       },
       "to": {
         "group": 15,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1176,7 +1648,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 1
       },
       "fromTile": {
         "x": 17,
@@ -1184,7 +1657,8 @@
       },
       "to": {
         "group": 15,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 4,
@@ -1195,7 +1669,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 4
       },
       "fromTile": {
         "x": 18,
@@ -1203,7 +1678,8 @@
       },
       "to": {
         "group": 15,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1214,7 +1690,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 2
       },
       "fromTile": {
         "x": 18,
@@ -1222,7 +1699,8 @@
       },
       "to": {
         "group": 15,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1233,7 +1711,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 2
       },
       "fromTile": {
         "x": 19,
@@ -1241,7 +1720,8 @@
       },
       "to": {
         "group": 15,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1252,7 +1732,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 4
       },
       "fromTile": {
         "x": 19,
@@ -1260,7 +1741,8 @@
       },
       "to": {
         "group": 15,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1271,7 +1753,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 7
       },
       "fromTile": {
         "x": 6,
@@ -1279,7 +1762,8 @@
       },
       "to": {
         "group": 15,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1290,33 +1774,38 @@
       "kind": "connection",
       "from": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 0
+      },
+      "to": {
+        "group": 3,
+        "num": 2,
+        "component": 1
       },
       "direction": "up",
-      "offset": -12,
-      "to": {
-        "group": 3,
-        "num": 2
-      }
+      "offset": -12
     },
     {
       "kind": "connection",
       "from": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 7
       },
-      "direction": "down",
-      "offset": -12,
       "to": {
         "group": 3,
-        "num": 1
-      }
+        "num": 1,
+        "component": 0
+      },
+      "direction": "down",
+      "offset": -12
     },
     {
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 6,
@@ -1324,7 +1813,8 @@
       },
       "to": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 7
       },
       "toTile": {
         "x": 5,
@@ -1335,7 +1825,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 7,
@@ -1343,7 +1834,8 @@
       },
       "to": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 7
       },
       "toTile": {
         "x": 5,
@@ -1354,7 +1846,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 8,
@@ -1362,7 +1855,8 @@
       },
       "to": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 7
       },
       "toTile": {
         "x": 5,
@@ -1373,7 +1867,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 7,
@@ -1381,7 +1876,8 @@
       },
       "to": {
         "group": 1,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 29,
@@ -1392,7 +1888,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 3
+        "num": 3,
+        "component": 0
       },
       "fromTile": {
         "x": 6,
@@ -1400,7 +1897,8 @@
       },
       "to": {
         "group": 1,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 5,
@@ -1411,7 +1909,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 3
+        "num": 3,
+        "component": 0
       },
       "fromTile": {
         "x": 7,
@@ -1419,7 +1918,8 @@
       },
       "to": {
         "group": 1,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 5,
@@ -1430,7 +1930,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 3
+        "num": 3,
+        "component": 0
       },
       "fromTile": {
         "x": 8,
@@ -1438,7 +1939,8 @@
       },
       "to": {
         "group": 1,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 5,
@@ -1449,7 +1951,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 3
+        "num": 3,
+        "component": 0
       },
       "fromTile": {
         "x": 7,
@@ -1457,7 +1960,8 @@
       },
       "to": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 0
       },
       "toTile": {
         "x": 5,
@@ -1468,7 +1972,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "fromTile": {
         "x": 3,
@@ -1476,7 +1981,8 @@
       },
       "to": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 1
       },
       "toTile": {
         "x": 17,
@@ -1487,7 +1993,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "fromTile": {
         "x": 4,
@@ -1495,7 +2002,8 @@
       },
       "to": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 1
       },
       "toTile": {
         "x": 17,
@@ -1506,7 +2014,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "fromTile": {
         "x": 5,
@@ -1514,7 +2023,8 @@
       },
       "to": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 1
       },
       "toTile": {
         "x": 17,
@@ -1525,7 +2035,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "fromTile": {
         "x": 6,
@@ -1533,7 +2044,8 @@
       },
       "to": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 4
       },
       "toTile": {
         "x": 18,
@@ -1544,7 +2056,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "fromTile": {
         "x": 7,
@@ -1552,7 +2065,8 @@
       },
       "to": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 4
       },
       "toTile": {
         "x": 18,
@@ -1563,7 +2077,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "fromTile": {
         "x": 8,
@@ -1571,7 +2086,8 @@
       },
       "to": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 4
       },
       "toTile": {
         "x": 18,
@@ -1582,7 +2098,8 @@
       "kind": "warp",
       "from": {
         "group": 15,
-        "num": 2
+        "num": 2,
+        "component": 0
       },
       "fromTile": {
         "x": 7,
@@ -1590,7 +2107,8 @@
       },
       "to": {
         "group": 3,
-        "num": 20
+        "num": 20,
+        "component": 2
       },
       "toTile": {
         "x": 18,
@@ -1601,7 +2119,8 @@
       "kind": "warp",
       "from": {
         "group": 1,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 29,
@@ -1609,7 +2128,8 @@
       },
       "to": {
         "group": 15,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1620,7 +2140,8 @@
       "kind": "warp",
       "from": {
         "group": 1,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 28,
@@ -1628,7 +2149,8 @@
       },
       "to": {
         "group": 15,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1639,7 +2161,8 @@
       "kind": "warp",
       "from": {
         "group": 1,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 5,
@@ -1647,7 +2170,8 @@
       },
       "to": {
         "group": 15,
-        "num": 3
+        "num": 3,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1658,7 +2182,8 @@
       "kind": "warp",
       "from": {
         "group": 1,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 6,
@@ -1666,7 +2191,8 @@
       },
       "to": {
         "group": 15,
-        "num": 3
+        "num": 3,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1677,7 +2203,8 @@
       "kind": "warp",
       "from": {
         "group": 1,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 30,
@@ -1685,7 +2212,8 @@
       },
       "to": {
         "group": 15,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1696,7 +2224,8 @@
       "kind": "warp",
       "from": {
         "group": 1,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 4,
@@ -1704,7 +2233,8 @@
       },
       "to": {
         "group": 15,
-        "num": 3
+        "num": 3,
+        "component": 0
       },
       "toTile": {
         "x": 7,
@@ -1715,7 +2245,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "fromTile": {
         "x": 17,
@@ -1723,7 +2254,8 @@
       },
       "to": {
         "group": 6,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 14,
@@ -1734,7 +2266,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 2
       },
       "fromTile": {
         "x": 25,
@@ -1742,7 +2275,8 @@
       },
       "to": {
         "group": 6,
-        "num": 0
+        "num": 0,
+        "component": 1
       },
       "toTile": {
         "x": 21,
@@ -1753,7 +2287,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "fromTile": {
         "x": 15,
@@ -1761,7 +2296,8 @@
       },
       "to": {
         "group": 6,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 6,
@@ -1772,7 +2308,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "fromTile": {
         "x": 28,
@@ -1780,7 +2317,8 @@
       },
       "to": {
         "group": 6,
-        "num": 3
+        "num": 3,
+        "component": 1
       },
       "toTile": {
         "x": 4,
@@ -1791,7 +2329,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "fromTile": {
         "x": 33,
@@ -1799,7 +2338,8 @@
       },
       "to": {
         "group": 6,
-        "num": 4
+        "num": 4,
+        "component": 0
       },
       "toTile": {
         "x": 4,
@@ -1810,7 +2350,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "fromTile": {
         "x": 17,
@@ -1818,7 +2359,8 @@
       },
       "to": {
         "group": 6,
-        "num": 5
+        "num": 5,
+        "component": 1
       },
       "toTile": {
         "x": 7,
@@ -1829,7 +2371,8 @@
       "kind": "warp",
       "from": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "fromTile": {
         "x": 9,
@@ -1837,7 +2380,8 @@
       },
       "to": {
         "group": 6,
-        "num": 7
+        "num": 7,
+        "component": 0
       },
       "toTile": {
         "x": 4,
@@ -1848,20 +2392,23 @@
       "kind": "connection",
       "from": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
-      "direction": "down",
-      "offset": 12,
       "to": {
         "group": 3,
-        "num": 20
-      }
+        "num": 20,
+        "component": 0
+      },
+      "direction": "down",
+      "offset": 12
     },
     {
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 13,
@@ -1869,7 +2416,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 17,
@@ -1880,7 +2428,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 14,
@@ -1888,7 +2437,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 17,
@@ -1899,7 +2449,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 15,
@@ -1907,7 +2458,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 17,
@@ -1918,7 +2470,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 0
+        "num": 0,
+        "component": 1
       },
       "fromTile": {
         "x": 21,
@@ -1926,7 +2479,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 2
       },
       "toTile": {
         "x": 25,
@@ -1937,7 +2491,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 0
+        "num": 0,
+        "component": 1
       },
       "fromTile": {
         "x": 22,
@@ -1945,7 +2500,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 2
       },
       "toTile": {
         "x": 25,
@@ -1956,7 +2512,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "fromTile": {
         "x": 8,
@@ -1964,7 +2521,8 @@
       },
       "to": {
         "group": 6,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "toTile": {
         "x": 11,
@@ -1975,7 +2533,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 1
+        "num": 1,
+        "component": 0
       },
       "fromTile": {
         "x": 11,
@@ -1983,7 +2542,8 @@
       },
       "to": {
         "group": 6,
-        "num": 0
+        "num": 0,
+        "component": 0
       },
       "toTile": {
         "x": 8,
@@ -1994,7 +2554,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "fromTile": {
         "x": 5,
@@ -2002,7 +2563,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 15,
@@ -2013,7 +2575,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "fromTile": {
         "x": 6,
@@ -2021,7 +2584,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 15,
@@ -2032,7 +2596,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "fromTile": {
         "x": 7,
@@ -2040,7 +2605,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 15,
@@ -2051,7 +2617,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 3
+        "num": 3,
+        "component": 1
       },
       "fromTile": {
         "x": 3,
@@ -2059,7 +2626,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 28,
@@ -2070,7 +2638,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 3
+        "num": 3,
+        "component": 1
       },
       "fromTile": {
         "x": 4,
@@ -2078,7 +2647,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 28,
@@ -2089,7 +2659,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 3
+        "num": 3,
+        "component": 1
       },
       "fromTile": {
         "x": 5,
@@ -2097,7 +2668,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 28,
@@ -2108,7 +2680,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 4
+        "num": 4,
+        "component": 0
       },
       "fromTile": {
         "x": 3,
@@ -2116,7 +2689,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 33,
@@ -2127,7 +2701,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 4
+        "num": 4,
+        "component": 0
       },
       "fromTile": {
         "x": 4,
@@ -2135,7 +2710,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 33,
@@ -2146,7 +2722,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 4
+        "num": 4,
+        "component": 0
       },
       "fromTile": {
         "x": 5,
@@ -2154,7 +2731,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 33,
@@ -2165,7 +2743,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 7
+        "num": 7,
+        "component": 0
       },
       "fromTile": {
         "x": 3,
@@ -2173,7 +2752,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 9,
@@ -2184,7 +2764,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 7
+        "num": 7,
+        "component": 0
       },
       "fromTile": {
         "x": 4,
@@ -2192,7 +2773,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 9,
@@ -2203,7 +2785,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 7
+        "num": 7,
+        "component": 0
       },
       "fromTile": {
         "x": 5,
@@ -2211,7 +2794,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 9,
@@ -2222,7 +2806,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 5
+        "num": 5,
+        "component": 1
       },
       "fromTile": {
         "x": 6,
@@ -2230,7 +2815,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 17,
@@ -2241,7 +2827,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 5
+        "num": 5,
+        "component": 1
       },
       "fromTile": {
         "x": 7,
@@ -2249,7 +2836,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 17,
@@ -2260,7 +2848,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 5
+        "num": 5,
+        "component": 1
       },
       "fromTile": {
         "x": 8,
@@ -2268,7 +2857,8 @@
       },
       "to": {
         "group": 3,
-        "num": 2
+        "num": 2,
+        "component": 1
       },
       "toTile": {
         "x": 17,
@@ -2279,7 +2869,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 5
+        "num": 5,
+        "component": 1
       },
       "fromTile": {
         "x": 1,
@@ -2287,7 +2878,8 @@
       },
       "to": {
         "group": 6,
-        "num": 6
+        "num": 6,
+        "component": 3
       },
       "toTile": {
         "x": 1,
@@ -2298,7 +2890,8 @@
       "kind": "warp",
       "from": {
         "group": 6,
-        "num": 6
+        "num": 6,
+        "component": 3
       },
       "fromTile": {
         "x": 1,
@@ -2306,7 +2899,8 @@
       },
       "to": {
         "group": 6,
-        "num": 5
+        "num": 5,
+        "component": 1
       },
       "toTile": {
         "x": 1,

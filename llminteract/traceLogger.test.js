@@ -42,7 +42,7 @@ function check(name, cond, detail = "") {
 
 const STATE_PROMPT = "=== CURRENT GAME STATE ===\nLocation: Pallet Town\nIn battle: false";
 
-function fakeState({ inBattle = false, locked = false, badges = [] } = {}) {
+function fakeState({ inBattle = false, locked = false, badges = [], quest = null } = {}) {
     return {
         player: {
             map: { name: "Pallet Town", bank: 4, number: 3 },
@@ -54,8 +54,17 @@ function fakeState({ inBattle = false, locked = false, badges = [] } = {}) {
         battle: { active: inBattle },
         progress: { controlsLocked: locked },
         party: { count: 1, pokemon: [{ slot: 0, species: "CHARMANDER" }] },
+        quest,
     };
 }
+
+const POKEDEX_QUEST = {
+    reached: { id: "got_pokedex", name: "Delivered Parcel / Received Pokédex", order: 4 },
+    next: { id: "defeated_brock", name: "Defeated Brock", order: 7 },
+    availableOptional: [],
+    progress: 0.5,
+    total: 8,
+};
 
 function gotoOutcome() {
     return makeOutcome(OUTCOME_STATUS.OK, {
@@ -140,6 +149,17 @@ function gotoOutcome() {
     check("summary controls_locked", s.controls_locked === true, JSON.stringify(s));
     check("summary badges array", Array.isArray(s.badges) && s.badges[0] === "Boulder", JSON.stringify(s));
     check("summary position", s.position.x === 7 && s.position.y === 5, JSON.stringify(s));
+    // quest absent -> milestone fields null (no crash)
+    check("summary milestone null when quest absent", s.reached_milestone === null && s.next_milestone === null && s.story_progress === null, JSON.stringify(s));
+}
+
+// --- summarizeState surfaces the A4 milestone graph (D3 trace + D4 final_state) ---
+{
+    const s = summarizeState(fakeState({ quest: POKEDEX_QUEST }));
+    check("summary reached_milestone id", s.reached_milestone === "got_pokedex", JSON.stringify(s));
+    check("summary reached_milestone_order", s.reached_milestone_order === 4, JSON.stringify(s));
+    check("summary next_milestone", s.next_milestone === "defeated_brock", JSON.stringify(s));
+    check("summary story_progress", s.story_progress === 0.5, JSON.stringify(s));
 }
 
 // --- makeRunId --------------------------------------------------------------

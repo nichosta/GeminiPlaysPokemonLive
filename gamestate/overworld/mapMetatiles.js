@@ -103,7 +103,7 @@ export async function getMainMapMetatileBehaviors() {
         if (secondaryTilesetAddress) {
             // Secondary tileset also defines attributes for 0x200 metatiles.
             // These correspond to metatile IDs 0x200-0x3FF.
-            const secondaryBehaviors = await readMetatileBehaviorsFromTileset(secondaryTilesetAddress, CONSTANTS.PRIMARY_TILESET_METATILE_COUNT);
+            const secondaryBehaviors = await readMetatileBehaviorsFromTileset(secondaryTilesetAddress, CONSTANTS.SECONDARY_TILESET_METATILE_COUNT);
             if (secondaryBehaviors) {
                 allBehaviors = allBehaviors.concat(secondaryBehaviors);
             }
@@ -152,7 +152,7 @@ export async function getBackupMapMetatileBehaviors() {
         }
 
         if (secondaryTilesetAddress) {
-            const secondaryBehaviors = await readMetatileBehaviorsFromTileset(secondaryTilesetAddress, CONSTANTS.PRIMARY_TILESET_METATILE_COUNT);
+            const secondaryBehaviors = await readMetatileBehaviorsFromTileset(secondaryTilesetAddress, CONSTANTS.SECONDARY_TILESET_METATILE_COUNT);
             if (secondaryBehaviors) {
                 allBehaviors = allBehaviors.concat(secondaryBehaviors);
             }

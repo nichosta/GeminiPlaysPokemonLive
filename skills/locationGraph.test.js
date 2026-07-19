@@ -50,10 +50,15 @@ function check(name, cond, detail = "") {
 {
     const graph = getMapGraph();
     const { locations } = getLocationRegistry();
-    check("graph: 30 nodes", graph.nodes.length === 30, `got ${graph.nodes.length}`);
-    const nodeKeys = new Set(graph.nodes.map((n) => `${n.group}:${n.num}`));
+    check("graph: 61 component-nodes", graph.nodes.length === 61, `got ${graph.nodes.length}`);
+    // Every node belongs to a map that is in the location registry (a split map
+    // like Route 2 has several nodes but still one location entry).
+    const nodeMapKeys = new Set(graph.nodes.map((n) => `${n.group}:${n.num}`));
     const locKeys = new Set(locations.map((l) => `${l.group}:${l.num}`));
-    check("graph nodes == location maps", nodeKeys.size === locKeys.size && [...nodeKeys].every((k) => locKeys.has(k)));
+    check("graph nodes' maps == location maps", nodeMapKeys.size === locKeys.size && [...nodeMapKeys].every((k) => locKeys.has(k)));
+    // Component index is unique within a map and matches components.json 1:1.
+    const compOk = graph.nodes.every((n) => typeof n.component === "number");
+    check("graph nodes carry a component index", compOk);
 }
 
 // --- 3. Every warp edge's toTile is actually a warp landing on the dest map -
@@ -108,6 +113,16 @@ function check(name, cond, detail = "") {
         check(`resolveLocation("${query}")`, res && res.id === id, JSON.stringify(res));
     }
     check("resolveLocation: unknown -> null", resolveLocation("Cinnabar Island") === null);
+
+    // Canonical MAP_* ids resolve too (models sometimes pass these instead of
+    // the friendly name), case-insensitively.
+    for (const [query, id] of [
+        ["MAP_ROUTE1", "MAP_ROUTE1"],
+        ["map_pallet_town", "MAP_PALLET_TOWN"],
+    ]) {
+        const res = resolveLocation(query);
+        check(`resolveLocation("${query}") by id`, res && res.id === id, JSON.stringify(res));
+    }
 }
 
 // --- 6. Tag + nearest resolution --------------------------------------------
@@ -121,7 +136,7 @@ function check(name, cond, detail = "") {
     check("nearestLocation(pokecenter) from Pallet Town found", !!nearest, JSON.stringify(nearest));
     if (nearest) {
         check("nearest pokecenter really is one", nearest.type === "pokecenter");
-        const dist = mapDistance(pallet.group, pallet.num, nearest.group, nearest.num);
+        const dist = mapDistance({ group: pallet.group, num: pallet.num }, { group: nearest.group, num: nearest.num });
         check("nearest pokecenter is reachable", typeof dist === "number" && dist >= 0);
     }
 
@@ -136,7 +151,7 @@ function check(name, cond, detail = "") {
 {
     const pallet = { group: 3, num: 0 };
     const pewterGym = resolveLocation("Pewter Gym");
-    const route = mapRoute(pallet.group, pallet.num, pewterGym.group, pewterGym.num);
+    const route = mapRoute({ group: pallet.group, num: pallet.num }, { group: pewterGym.group, num: pewterGym.num });
     check("mapRoute: Pallet Town -> Pewter Gym found", route.found, JSON.stringify(route));
     if (route.found) {
         check("mapRoute: nonzero hops", route.hops.length > 0);
@@ -156,9 +171,9 @@ function check(name, cond, detail = "") {
 
 // --- 8. Same-map route is trivially empty; self-distance is zero -----------
 {
-    const route = mapRoute(3, 0, 3, 0);
+    const route = mapRoute({ group: 3, num: 0 }, { group: 3, num: 0 });
     check("mapRoute: same map -> found, 0 hops", route.found && route.hops.length === 0);
-    check("mapDistance: same map -> 0", mapDistance(3, 0, 3, 0) === 0);
+    check("mapDistance: same map -> 0", mapDistance({ group: 3, num: 0 }, { group: 3, num: 0 }) === 0);
 }
 
 // --- 9. Boundary edges are recorded, not silently dropped -------------------
@@ -176,12 +191,12 @@ function check(name, cond, detail = "") {
     check("excludeEdges fixture: Route 2 -> Pewter connection exists", !!directEdge);
 
     if (directEdge) {
-        const withoutExclusion = mapRoute(3, 0, 3, 2);
+        const withoutExclusion = mapRoute({ group: 3, num: 0 }, { group: 3, num: 2 });
         const usesDirectEdge = withoutExclusion.found && withoutExclusion.hops.some((e) => edgeKey(e) === edgeKey(directEdge));
         check("mapRoute: shortest route to Pewter City uses the direct Route 2 edge", usesDirectEdge);
 
         const excluded = new Set([edgeKey(directEdge)]);
-        const withExclusion = mapRoute(3, 0, 3, 2, excluded);
+        const withExclusion = mapRoute({ group: 3, num: 0 }, { group: 3, num: 2 }, excluded);
         check(
             "mapRoute: excludeEdges removes that edge from consideration",
             !withExclusion.found || !withExclusion.hops.some((e) => edgeKey(e) === edgeKey(directEdge))

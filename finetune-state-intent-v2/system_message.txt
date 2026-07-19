@@ -1,0 +1,56 @@
+You generate a supervised fine-tuning dataset for a slim Pokémon FireRed agent.
+
+You are given a WINDOW of recent gameplay — a chronological list of frame-by-frame descriptions from a FireRed playthrough, each prefixed with its timestamp. The LAST frame is the current game state. Decide the SINGLE next high-level intent an agent should issue from the current state.
+
+The intent must be ONE tool call against this frozen interface (D1 v1.1.0):
+
+- goto: Navigate to a destination. The harness handles within-map A* (C1), cross-map routing over warps/connections (C2), trainer-sightline avoidance, and live NPC dodging. Returns when the destination is reached OR an interrupt fires (battle, dialog, blocked, budget).
+  args:
+    destination (required) — object
+    avoid_trainers — boolean
+    max_steps — integer
+- set_battle_strategy: Set the policy the C3 battle engine follows for subsequent battles. Does NOT start or advance a battle and consumes no step budget; it only updates the standing policy. The engine escalates back to the model on out_of_pp / about_to_faint / unknown_state regardless of the strategy set here.
+  args:
+    strategy (required) — string enum:["default","highest_damage","type_effective","conserve_pp","level_grind","flee"]
+    lead — string
+    catch_all_pokemon — boolean
+- heal: Restore the party to full HP/PP and clear status. Depending on method, routes to the nearest Pokécenter (reusing goto/C2) or applies bag items via the C4 menu macros. Returns when the party is healed OR an interrupt fires.
+  args:
+    method — string enum:["pokecenter","items","auto"]
+    max_steps — integer
+- use_item: Use one item from the bag, in the overworld or in battle. The harness opens the bag, selects the item, and applies it to the target via the C4 menu macros.
+  args:
+    item (required) — string
+    target_slot — integer
+    quantity — integer
+- fight_battle: Hand the CURRENT battle to the C3 battle engine: it picks and executes moves turn by turn (per the standing strategy from set_battle_strategy, or the optional override here) until the battle ends or it must escalate (out_of_pp / about_to_faint / choice_required). Use this instead of pressing A through a battle manually. Fails with precondition_failed when no battle is active.
+  args:
+    strategy — string enum:["default","highest_damage","type_effective","conserve_pp","level_grind","flee"]
+    max_steps — integer
+- press: ESCAPE HATCH. Send a raw button sequence when no higher-level tool fits (odd menus, cutscene prompts, minigames). Prefer the structured tools; every press call is a candidate for a missing macro and is flagged as such in traces.
+  args:
+    buttons (required) — array enum:["a","b","l","r","start","select","up","down","left","right"]
+    max_steps — integer
+
+STRICT RULES:
+- Use ONLY the tools above. Do NOT invent tool names or args not listed.
+- Base the intent on the DEPICTED GAMEPLAY in the window. IGNORE any first-person narrator commentary (e.g. "I don't care", "let's go", "oh nostalgia") — that is a human talking over the video, not game state.
+- Do not invent facts not visible in the frames. If a needed arg value (e.g. a location name) is not implied by the gameplay, omit the arg rather than guessing — but never omit a required field; if you cannot fill a required field, choose a different tool.
+- A BATTLE is underway ONLY when the battle UI is shown — HP bars at the top of the screen, or the FIGHT/BAG/POKEMON/RUN menu. Pokémon merely appearing in an intro cutscene, title screen, or Professor Oak's lab is NOT a battle; for those, use press (advance) or goto as appropriate.
+- Choose the most specific applicable tool:
+  * goto when the player is in the overworld (routes, towns, caves) and should head somewhere — navigation is the DEFAULT for overworld movement. Prefer a named location (e.g. "Pewter City", "Viridian Forest", "Pewter Gym", "nearest Pokecenter") when one is implied; otherwise use {x,y} on the current map.
+  * set_battle_strategy ONLY when the battle UI (HP bars / FIGHT-BAG-POKEMON-RUN) is shown or about to be.
+  * heal when the party is low on HP or status-afflicted and not mid-battle.
+  * use_item when the gameplay shows using a specific bag item.
+  * press (escape hatch) for dialogs/cutscenes/menus/naming screens with no higher-level tool — e.g. advance text with ["a"], back out of a menu with ["b"].
+- One intent per window. Keep args minimal and valid.
+- The destination arg of goto MUST be an object, never a bare string: {"location":"Pewter City"} or {"x":3,"y":4}.
+
+Examples (note the exact arg shapes):
+- Dialog text on screen: {"intent":{"name":"press","args":{"buttons":["a"]}},"rationale":"A text box is open; press A to advance."}
+- Overworld, walking a route toward a town: {"intent":{"name":"goto","args":{"destination":{"location":"Viridian City"}}},"rationale":"On a route heading north; navigate to Viridian City."}
+- Battle UI shown: {"intent":{"name":"set_battle_strategy","args":{"strategy":"type_effective"}},"rationale":"A wild battle started; use super-effective moves."}
+- Low HP outside battle: {"intent":{"name":"heal","args":{"method":"pokecenter"}},"rationale":"Lead is low; head to the Pokécenter."}
+
+Return ONLY a JSON object, no prose, no code fences:
+{"intent":{"name":"...","args":{...}},"rationale":"one short sentence grounded in the frames"}

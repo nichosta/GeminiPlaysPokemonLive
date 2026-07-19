@@ -29,7 +29,7 @@ export const SAVESTATE_OBJECT_POINTER_ADDR =
   selectedConstants.SAVESTATE_OBJECT_POINTER;
 export const SAVESTATE_PLAYER_X_OFFSET = 0x000; // Offset to player X coordinate (u16) within savestate object
 export const SAVESTATE_PLAYER_Y_OFFSET = 0x002; // Offset to player Y coordinate (u16) within savestate object
-export const SAVESTATE_MONEY_OFFSET = 0x490; // Offset to player money (u32) within savestate object
+export const SAVESTATE_MONEY_OFFSET = selectedConstants.SAVESTATE_MONEY_OFFSET; // Offset to player money (u32, XOR-encrypted with the security key) within SaveBlock1 — game-specific (FRLG 0x290, Emerald 0x490); was hardcoded 0x490, which read the wrong field on FRLG
 export const SAVESTATE_FLAGS_OFFSET = selectedConstants.SAVESTATE_FLAGS_OFFSET; // Offset to player flags (u8[]) within savestate object
 
 // --- Player Avatar ---
@@ -52,11 +52,16 @@ export const POCKET_COUNT = 5; // Total number of pockets
 export const POCKETS = selectedConstants.POCKETS;
 export const POCKET_NAMES = selectedConstants.POCKET_NAMES;
 
+// undefined on games without a live-verified address (see GAMESTATE_CONSTANTS_FRLG.js) —
+// callers must handle that by falling back to gap-limited navigation.
+export const BAG_ITEMS_POCKET_CURSOR_ADDR = selectedConstants.BAG_ITEMS_POCKET_CURSOR_ADDR;
+
 // --- Party Pokémon ---
 export const IN_BATTLE_BIT_ADDR = selectedConstants.IN_BATTLE_BIT_ADDR;
 export const IN_BATTLE_BITMASK = 0x02; // Bitmask to determine if the player is in battle
 
 export const PARTY_BASE_ADDR = selectedConstants.PARTY_BASE_ADDR;
+export const ENEMY_PARTY_BASE_ADDR = selectedConstants.ENEMY_PARTY_BASE_ADDR; // gEnemyParty — opponent's party during battles (lead = slot 0)
 export const POKEMON_DATA_SIZE = 100; // Size of each Pokémon structure
 // Offsets within the 100-byte Pokémon structure (Unencrypted part)
 
@@ -180,10 +185,15 @@ export const MAPGRID_COLLISION_MASK = 0x0c00; // The part of the mapgrid info th
 export const MAPGRID_ELEVATION_MASK = 0xf000; // The part of the mapgrid info that holds the elevation info
 
 // --- Tileset ---
-export const TILESET_METATILE_ATTRIBUTES_POINTER_OFFSET = 0x10; // Offset to metatile attributes array pointer (const u16 *)
+export const TILESET_METATILE_ATTRIBUTES_POINTER_OFFSET =
+  selectedConstants.TILESET_METATILE_ATTRIBUTES_POINTER_OFFSET; // Offset to metatile attributes array pointer (const u32 *); field order differs between games
 export const PRIMARY_TILESET_METATILE_COUNT =
   selectedConstants.PRIMARY_TILESET_METATILE_COUNT; // Number of metatiles (max) listed in a tileset
-export const METATILE_ATTR_BEHAVIOR_MASK = 0x00ff; // Mask for the bits in a u16 metatile that correspond to behavior
+export const SECONDARY_TILESET_METATILE_COUNT =
+  MAPGRID_METATILE_ID_MASK + 1 - PRIMARY_TILESET_METATILE_COUNT; // Remaining metatile IDs (up to the mask's range) belong to the secondary tileset
+export const METATILE_ATTR_BEHAVIOR_MASK = 0x01ff; // Behavior lives in bits 0-8 (9-bit field). Matches the decomp's
+// sMetatileAttrMasks[METATILE_ATTRIBUTE_BEHAVIOR] = 0x000001ff in fieldmap.c; the prior 0x00ff truncated bit 8.
+// extractMapData.js (A1's static extractor) already used 0x01ff — this aligns the live runtime reader with it.
 
 // --- Map Events (Templates for Warps, NPCs, etc.) ---
 
@@ -256,6 +266,11 @@ export const PARTY_MENU_ADDR = selectedConstants.PARTY_MENU_ADDR;
 export const PARTY_MENU_SLOTID_OFFSET = 0x09; // Offset to slot ID (u8)
 export const PARTY_MENU_INTERNAL_ADDR =
   selectedConstants.PARTY_MENU_INTERNAL_ADDR;
+
+// --- Start Menu ---
+// undefined on games without a live-verified address (see GAMESTATE_CONSTANTS_FRLG.js) —
+// callers must handle that by falling back to gap-limited navigation.
+export const START_MENU_CURSOR_ADDR = selectedConstants.START_MENU_CURSOR_ADDR;
 
 // --- Tasks ---
 export const TASK_ARRAY_ADDR = selectedConstants.TASK_ARRAY_ADDR; // Address of the gTasks array which holds all current tasks

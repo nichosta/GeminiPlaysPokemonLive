@@ -56,7 +56,7 @@ const PRESS_BUTTONS = Object.freeze(
 let battlePolicy = Object.freeze({
     strategy: "default",
     lead: null,
-    catch_wild: false,
+    catch_all_pokemon: false,
 });
 
 /**
@@ -79,14 +79,42 @@ async function defaultDeps() {
         { getState },
         { classifyInterrupt },
         { healLive, useItemLive },
+        { runBattleLive },
     ] = await Promise.all([
         import("../skills/crossMapRouter.js"),
         import("../tools/inputExecutor.js"),
         import("../gamestate/getState.js"),
         import("../gamestate/interruptDetector.js"),
         import("../skills/menuMacros.js"),
+        import("../skills/battlePolicy.js"),
     ]);
-    return { gotoLive, executeQueue, getState, classifyInterrupt, healLive, useItemLive };
+    return { gotoLive, executeQueue, getState, classifyInterrupt, healLive, useItemLive, runBattleLive };
+}
+
+/**
+ * Coerce a `destination` arg into the documented `{location}` / `{map?,x,y}`
+ * shape. Live runs against small/cheap models show they frequently ignore the
+ * nested-object schema and send a bare string instead — a plain location name
+ * ("Pallet Town"), a "x,y" coordinate pair ("12,11"), or a "map,x,y" triple
+ * ("MAP_PALLET_TOWN,12,11"). Rather than hard-failing on the shape mismatch
+ * (which just burns a turn on the same invalid_args error repeatedly — models
+ * do not reliably recover from it), interpret these as the doc-shape the
+ * model evidently meant. Anything already object-shaped passes through
+ * untouched.
+ * @param {*} destination
+ * @returns {*} the original value, or a normalized `{location}` / `{map,x,y}` object
+ */
+function normalizeGotoDestination(destination) {
+    if (typeof destination !== "string") return destination;
+    const trimmed = destination.trim();
+    const parts = trimmed.split(",").map((p) => p.trim());
+    if (parts.length === 2 && parts.every((p) => /^-?\d+$/.test(p))) {
+        return { x: Number(parts[0]), y: Number(parts[1]) };
+    }
+    if (parts.length === 3 && /^-?\d+$/.test(parts[1]) && /^-?\d+$/.test(parts[2])) {
+        return { map: parts[0], x: Number(parts[1]), y: Number(parts[2]) };
+    }
+    return { location: trimmed };
 }
 
 /**
@@ -96,7 +124,7 @@ async function defaultDeps() {
  * @returns {Promise<object>} outcome envelope
  */
 async function dispatchGoto(args, deps) {
-    const destination = args?.destination;
+    const destination = normalizeGotoDestination(args?.destination);
     if (!destination || (typeof destination.location !== "string" && (typeof destination.x !== "number" || typeof destination.y !== "number"))) {
         return makeOutcome(OUTCOME_STATUS.FAILED, {
             stopReason: STOP_REASON.INVALID_ARGS,
@@ -160,11 +188,11 @@ async function dispatchPress(args, deps) {
     }
 
     const poll = deps.getState ?? ((() => null));
-    const classify = deps.classifyInterrupt ?? (() => null);
-    const hpThreshold = 0.2;
 
     // Baseline for the transition-style interrupts: we only stop on
-    // battle/warp/hp changes, NOT on a dialog lock the model walked into.
+    // battle/warp changes, NOT on a dialog lock the model walked into. Low HP
+    // is NOT a press interrupt (it would block the walk to a Pokécenter); the
+    // state prompt surfaces HP as plain text instead.
     let baseline;
     try {
         baseline = await poll();
@@ -200,14 +228,6 @@ async function dispatchPress(args, deps) {
                     (st.player.map.bank !== baseMap.bank || st.player.map.number !== baseMap.number)
                 ) {
                     stopReason = STOP_REASON.WARP_COMPLETED;
-                    return true;
-                }
-                // HP dropped below threshold mid-sequence.
-                if (
-                    typeof st.party?.lowestHpFraction === "number" &&
-                    st.party.lowestHpFraction <= hpThreshold
-                ) {
-                    stopReason = STOP_REASON.HP_LOW;
                     return true;
                 }
                 return false;
@@ -259,11 +279,11 @@ async function dispatchSetBattleStrategy(args) {
     battlePolicy = Object.freeze({
         strategy,
         lead: typeof args.lead === "string" ? args.lead : null,
-        catch_wild: typeof args.catch_wild === "boolean" ? args.catch_wild : false,
+        catch_all_pokemon: typeof args.catch_all_pokemon === "boolean" ? args.catch_all_pokemon : false,
     });
     return makeOutcome(OUTCOME_STATUS.OK, {
         stepsUsed: 0,
-        message: `battle policy set: strategy=${strategy} lead=${battlePolicy.lead ?? "-"} catch_wild=${battlePolicy.catch_wild} (consumed by runBattleLive when a battle interrupts goto)`,
+        message: `battle policy set: strategy=${strategy} lead=${battlePolicy.lead ?? "-"} catch_all_pokemon=${battlePolicy.catch_all_pokemon} (consumed by runBattleLive when a battle interrupts goto or you call fight_battle)`,
     });
 }
 
@@ -323,11 +343,50 @@ async function dispatchUseItem(args, deps) {
         });
     }
     try {
-        return await deps.useItemLive({ item, target_slot: args.target_slot, quantity }, {});
+        return await deps.useItemLive({ item, targetSlot: args.target_slot, quantity }, {});
     } catch (error) {
         return makeOutcome(OUTCOME_STATUS.FAILED, {
             stopReason: STOP_REASON.UNKNOWN_STATE,
             message: `use_item threw: ${error?.message ?? String(error)}`,
+        });
+    }
+}
+
+/**
+ * Validate + execute a `fight_battle` tool call via C3's runBattleLive. Uses
+ * the standing policy (set_battle_strategy) unless a one-off `strategy`
+ * override is given. Precondition: a battle must be active — runBattleLive
+ * itself returns OK/"no active battle" when there isn't one; we surface that
+ * as precondition_failed so the model doesn't read it as a fought battle.
+ * @param {object} args
+ * @param {object} deps
+ * @returns {Promise<object>} outcome envelope
+ */
+async function dispatchFightBattle(args, deps) {
+    const allowed = TOOLS_BY_NAME.fight_battle.parameters.properties.strategy.enum;
+    if (args?.strategy != null && !allowed.includes(args.strategy)) {
+        return makeOutcome(OUTCOME_STATUS.FAILED, {
+            stopReason: STOP_REASON.INVALID_ARGS,
+            message: `fight_battle: strategy must be one of ${allowed.join(", ")}`,
+        });
+    }
+    const policy = args?.strategy
+        ? { ...getBattlePolicy(), strategy: args.strategy }
+        : getBattlePolicy();
+    const maxSteps = typeof args?.max_steps === "number" ? args.max_steps : 200;
+    try {
+        const out = await deps.runBattleLive(policy, { maxSteps });
+        if (out.status === OUTCOME_STATUS.OK && out.message === "no active battle") {
+            return makeOutcome(OUTCOME_STATUS.FAILED, {
+                stopReason: STOP_REASON.PRECONDITION_FAILED,
+                message: "fight_battle: no battle is active",
+            });
+        }
+        return out;
+    } catch (error) {
+        return makeOutcome(OUTCOME_STATUS.FAILED, {
+            stopReason: STOP_REASON.UNKNOWN_STATE,
+            message: `fight_battle threw: ${error?.message ?? String(error)}`,
         });
     }
 }
@@ -352,8 +411,8 @@ export async function dispatchTool(name, args, deps = {}) {
 
     // Fill in real transports only for the tools that need them, and only if
     // the caller didn't inject a fake. Keeps tests stub-free for set_battle_strategy.
-    if (name === "goto" || name === "press" || name === "heal" || name === "use_item") {
-        if (!deps.gotoLive || !deps.executeQueue || !deps.getState || !deps.classifyInterrupt || !deps.healLive || !deps.useItemLive) {
+    if (name === "goto" || name === "press" || name === "heal" || name === "use_item" || name === "fight_battle") {
+        if (!deps.gotoLive || !deps.executeQueue || !deps.getState || !deps.classifyInterrupt || !deps.healLive || !deps.useItemLive || !deps.runBattleLive) {
             const real = await defaultDeps();
             deps = { ...real, ...deps };
         }
@@ -370,6 +429,8 @@ export async function dispatchTool(name, args, deps = {}) {
             return dispatchHeal(args, deps);
         case "use_item":
             return dispatchUseItem(args, deps);
+        case "fight_battle":
+            return dispatchFightBattle(args, deps);
         default:
             return makeOutcome(OUTCOME_STATUS.FAILED, {
                 stopReason: STOP_REASON.INVALID_ARGS,

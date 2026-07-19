@@ -1,6 +1,6 @@
 {
-  "note": "Pre-Brock (up to and including Boulder Badge) walkthrough corpus from Bulbapedia, StrategyWiki, and video transcripts. Used for LLM finetuning.",
-  "generatedAt": "2026-07-18T18:41:04.512Z",
+  "note": "Walkthrough corpus (wiki scoped through Misty/Cascade Badge: Bulbapedia Parts 1-5 + StrategyWiki route/city + mechanic pages; transcripts truncated at Boulder Badge). Used for LLM finetuning.",
+  "generatedAt": "2026-07-19T04:05:11.005Z",
   "items": [
     {
       "type": "wiki",
@@ -9,7 +9,7 @@
       "url": "https://bulbapedia.bulbagarden.net/wiki/Walkthrough:Pok%C3%A9mon_FireRed_and_LeafGreen/Part_1",
       "file": "wiki/bulbapedia_part-1.txt",
       "chars": 6215,
-      "fetchedAt": "2026-07-18T18:40:54.996Z"
+      "fetchedAt": "2026-07-19T04:04:44.934Z"
     },
     {
       "type": "wiki",
@@ -18,7 +18,7 @@
       "url": "https://bulbapedia.bulbagarden.net/wiki/Walkthrough:Pok%C3%A9mon_FireRed_and_LeafGreen/Part_2",
       "file": "wiki/bulbapedia_part-2.txt",
       "chars": 4758,
-      "fetchedAt": "2026-07-18T18:40:55.876Z"
+      "fetchedAt": "2026-07-19T04:04:45.831Z"
     },
     {
       "type": "wiki",
@@ -27,7 +27,88 @@
       "url": "https://bulbapedia.bulbagarden.net/wiki/Walkthrough:Pok%C3%A9mon_FireRed_and_LeafGreen/Part_3",
       "file": "wiki/bulbapedia_part-3.txt",
       "chars": 3518,
-      "fetchedAt": "2026-07-18T18:40:56.732Z"
+      "fetchedAt": "2026-07-19T04:04:46.744Z"
+    },
+    {
+      "type": "wiki",
+      "source": "bulbapedia",
+      "title": "Route 3, Mt. Moon, Route 4",
+      "url": "https://bulbapedia.bulbagarden.net/wiki/Walkthrough:Pok%C3%A9mon_FireRed_and_LeafGreen/Part_4",
+      "file": "wiki/bulbapedia_part-4.txt",
+      "chars": 2698,
+      "fetchedAt": "2026-07-19T04:04:47.704Z"
+    },
+    {
+      "type": "wiki",
+      "source": "bulbapedia",
+      "title": "Cerulean City, Cerulean Gym, Route 24, Route 25, Route 5, Underground Path",
+      "url": "https://bulbapedia.bulbagarden.net/wiki/Walkthrough:Pok%C3%A9mon_FireRed_and_LeafGreen/Part_5",
+      "file": "wiki/bulbapedia_part-5.txt",
+      "chars": 6718,
+      "fetchedAt": "2026-07-19T04:04:48.598Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Gameplay",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Gameplay",
+      "file": "wiki/strategywiki_gameplay.txt",
+      "chars": 4740,
+      "fetchedAt": "2026-07-19T04:04:49.538Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Controls",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Controls",
+      "file": "wiki/strategywiki_controls.txt",
+      "chars": 147,
+      "fetchedAt": "2026-07-19T04:04:50.451Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Raising Champions",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Raising_Champions",
+      "file": "wiki/strategywiki_raising-champions.txt",
+      "chars": 12522,
+      "fetchedAt": "2026-07-19T04:04:51.318Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Catching Pokémon",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Catching_Pok%C3%A9mon",
+      "file": "wiki/strategywiki_catching-pokmon.txt",
+      "chars": 1663,
+      "fetchedAt": "2026-07-19T04:04:52.219Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Abilities",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Abilities",
+      "file": "wiki/strategywiki_abilities.txt",
+      "chars": 530,
+      "fetchedAt": "2026-07-19T04:04:53.996Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Key Items",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Key_Items",
+      "file": "wiki/strategywiki_key-items.txt",
+      "chars": 88,
+      "fetchedAt": "2026-07-19T04:04:55.695Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Poké Balls",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Pok%C3%A9_Balls",
+      "file": "wiki/strategywiki_pok-balls.txt",
+      "chars": 41,
+      "fetchedAt": "2026-07-19T04:04:56.560Z"
     },
     {
       "type": "wiki",
@@ -36,7 +117,7 @@
       "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Pallet_Town",
       "file": "wiki/strategywiki_pallet-town.txt",
       "chars": 3200,
-      "fetchedAt": "2026-07-18T18:40:57.606Z"
+      "fetchedAt": "2026-07-19T04:04:57.434Z"
     },
     {
       "type": "wiki",
@@ -45,7 +126,7 @@
       "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Route_1",
       "file": "wiki/strategywiki_route-1.txt",
       "chars": 1197,
-      "fetchedAt": "2026-07-18T18:40:58.488Z"
+      "fetchedAt": "2026-07-19T04:04:58.363Z"
     },
     {
       "type": "wiki",
@@ -54,7 +135,7 @@
       "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Viridian_City",
       "file": "wiki/strategywiki_viridian-city.txt",
       "chars": 5547,
-      "fetchedAt": "2026-07-18T18:40:59.366Z"
+      "fetchedAt": "2026-07-19T04:04:59.242Z"
     },
     {
       "type": "wiki",
@@ -63,7 +144,7 @@
       "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Route_22",
       "file": "wiki/strategywiki_route-22.txt",
       "chars": 1024,
-      "fetchedAt": "2026-07-18T18:41:00.234Z"
+      "fetchedAt": "2026-07-19T04:05:00.118Z"
     },
     {
       "type": "wiki",
@@ -72,7 +153,7 @@
       "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Route_2",
       "file": "wiki/strategywiki_route-2.txt",
       "chars": 666,
-      "fetchedAt": "2026-07-18T18:41:01.119Z"
+      "fetchedAt": "2026-07-19T04:05:00.960Z"
     },
     {
       "type": "wiki",
@@ -81,7 +162,7 @@
       "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Viridian_Forest",
       "file": "wiki/strategywiki_viridian-forest.txt",
       "chars": 2746,
-      "fetchedAt": "2026-07-18T18:41:02.006Z"
+      "fetchedAt": "2026-07-19T04:05:01.861Z"
     },
     {
       "type": "wiki",
@@ -90,7 +171,70 @@
       "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Pewter_City",
       "file": "wiki/strategywiki_pewter-city.txt",
       "chars": 3244,
-      "fetchedAt": "2026-07-18T18:41:02.888Z"
+      "fetchedAt": "2026-07-19T04:05:02.792Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Route 3",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Route_3",
+      "file": "wiki/strategywiki_route-3.txt",
+      "chars": 1567,
+      "fetchedAt": "2026-07-19T04:05:03.683Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Mt. Moon",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Mt._Moon",
+      "file": "wiki/strategywiki_mt-moon.txt",
+      "chars": 4313,
+      "fetchedAt": "2026-07-19T04:05:04.599Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Route 4",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Route_4",
+      "file": "wiki/strategywiki_route-4.txt",
+      "chars": 1951,
+      "fetchedAt": "2026-07-19T04:05:05.596Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Cerulean City",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Cerulean_City",
+      "file": "wiki/strategywiki_cerulean-city.txt",
+      "chars": 3309,
+      "fetchedAt": "2026-07-19T04:05:06.583Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Route 24",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Route_24",
+      "file": "wiki/strategywiki_route-24.txt",
+      "chars": 1013,
+      "fetchedAt": "2026-07-19T04:05:07.658Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Route 25",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Route_25",
+      "file": "wiki/strategywiki_route-25.txt",
+      "chars": 1147,
+      "fetchedAt": "2026-07-19T04:05:08.527Z"
+    },
+    {
+      "type": "wiki",
+      "source": "strategywiki",
+      "title": "Route 5",
+      "url": "https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/Route_5",
+      "file": "wiki/strategywiki_route-5.txt",
+      "chars": 2211,
+      "fetchedAt": "2026-07-19T04:05:09.415Z"
     },
     {
       "type": "transcript",

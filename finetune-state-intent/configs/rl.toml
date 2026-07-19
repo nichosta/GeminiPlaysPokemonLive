@@ -1,0 +1,21 @@
+model = "Qwen/Qwen3.5-4B"
+algorithm = "grpo"
+
+# Environment: upload this project folder with
+# `flash env push --name my-env .`, then paste the returned id below.
+# If the environment reads secrets with os.environ, list only the env var names here.
+# Values are read from your shell or .env at submit time and are not stored in the spec.
+[environment]
+id = ""
+
+# secrets = ["SERPAPI_API_KEY"]
+
+[train]
+epochs = 1
+max_examples = 2  # rows to train on; the starter dataset has 2 (raise as your dataset grows)
+lora_rank = 32
+# Constrain every rollout with guided decoding (a JSON schema is shown; regex and
+# choice forms also parse) — see `flash train --doc`:
+# structured_outputs = '{"type": "object", "properties": {"answer": {"type": "string"}}, "required": ["answer"]}'
+# GPU and HF artifacts are managed automatically by the platform: the GPU is
+# the cheapest fitting managed class, and artifacts live in a private environment-scoped repo.

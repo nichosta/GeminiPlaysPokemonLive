@@ -26,6 +26,10 @@ let indexCache = null;
 const mapCache = new Map();
 /** behavior id (number) -> name (e.g. 59 -> "MB_JUMP_SOUTH"). */
 let behaviorCache = null;
+/** Parsed components.json (per-map connected-component label grids). */
+let componentsCache = null;
+/** Parsed obstacles.json (per-map permanent HM-gated obstacle tiles). */
+let obstaclesCache = null;
 
 function keyOf(group, num) {
     return `${group}:${num}`;
@@ -40,6 +44,108 @@ export function getIndex() {
         indexCache = JSON.parse(readFileSync(join(FRLG_DIR, "index.json"), "utf8"));
     }
     return indexCache;
+}
+
+/**
+ * Loads and caches `frlg/components.json` — the per-tile connected-component
+ * label grids emitted by A3 (see staticdata/extractLocations.js). One entry per
+ * extracted map, keyed `"group:num"`, each carrying `{ width, height, count,
+ * labels }` where `labels` is a row-major array (index = y*width + x) of
+ * component index, or -1 for blocked tiles. Component indices match
+ * mapGraph.json nodes' `component` field 1:1.
+ *
+ * @returns {Record<string, {width:number,height:number,count:number,labels:number[]}>}
+ */
+export function getComponents() {
+    if (!componentsCache) {
+        componentsCache = JSON.parse(readFileSync(join(FRLG_DIR, "components.json"), "utf8"));
+    }
+    return componentsCache.maps;
+}
+
+/**
+ * The connected-component label grid for a map (or null if the map is outside
+ * the pre-Brock extraction scope). Exposed so callers that scan many tiles —
+ * e.g. C2's connection-border resolver filtering to the traveller's component —
+ * can read labels directly instead of calling `componentOf` per tile.
+ *
+ * @param {number} group
+ * @param {number} num
+ * @returns {{width:number,height:number,count:number,labels:number[]}|null}
+ */
+export function getComponentLabels(group, num) {
+    const entry = getComponents()[keyOf(group, num)];
+    if (!entry) return null;
+    return entry;
+}
+
+const COMP_NEIGHBORS = [
+    [0, -1],
+    [0, 1],
+    [-1, 0],
+    [1, 0],
+];
+
+/**
+ * Which connected component a tile belongs to, or null if the map is out of
+ * scope or the tile is genuinely isolated. Blocked tiles (door metatiles,
+ * collision != 0) have no label of their own; this returns the component of a
+ * passable ortho-neighbour — the region the player steps off the tile into —
+ * mirroring A3's `componentOfTile` so extraction-time and runtime agree on a
+ * door's component. Used by C2 to turn a live player/goal tile into the
+ * `component` index the per-component graph BFS keys on.
+ *
+ * @param {number} group
+ * @param {number} num
+ * @param {number} x
+ * @param {number} y
+ * @returns {number|null} Component index, or null.
+ */
+export function componentOf(group, num, x, y) {
+    const entry = getComponentLabels(group, num);
+    if (!entry) return null;
+    const { width, height, labels } = entry;
+    if (x < 0 || y < 0 || x >= width || y >= height) return null;
+    const direct = labels[y * width + x];
+    if (direct !== -1) return direct;
+    for (const [dx, dy] of COMP_NEIGHBORS) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+        const ni = ny * width + nx;
+        if (labels[ni] !== -1) return labels[ni];
+    }
+    return null;
+}
+
+/**
+ * Loads and caches `frlg/obstacles.json` — the permanent, HM-gated field
+ * obstacles (cut trees, Strength boulders) as object-event tile positions, one
+ * entry per map keyed `"group:num"` (see staticdata/extractObstacles.js). These
+ * are NOT in A1's collision grid (they're object events, not terrain), so the
+ * pathfinder must fold them into its blocked set from here or it will plan
+ * routes physically requiring an HM the pre-Brock player doesn't have.
+ *
+ * @returns {Record<string, Array<{x:number,y:number,kind:string,requires:string}>>}
+ */
+export function getObstacles() {
+    if (!obstaclesCache) {
+        obstaclesCache = JSON.parse(readFileSync(join(FRLG_DIR, "obstacles.json"), "utf8"));
+    }
+    return obstaclesCache.maps;
+}
+
+/**
+ * The permanent-obstacle tiles for a map (empty array if none / out of scope).
+ * Pre-Brock the player has no HM, so every listed tile is impassable; a future
+ * HM-aware caller can filter by each tile's `requires` field.
+ *
+ * @param {number} group
+ * @param {number} num
+ * @returns {Array<{x:number,y:number,kind:string,requires:string}>}
+ */
+export function getObstacleTiles(group, num) {
+    return getObstacles()[keyOf(group, num)] || [];
 }
 
 /**
@@ -72,6 +178,11 @@ export function getStaticMap(group, num) {
     }
 
     const map = JSON.parse(readFileSync(join(FRLG_DIR, entry.file), "utf8"));
+    // Attach permanent HM-gated obstacles (cut trees / boulders) so findPath can
+    // treat them as blocked without a separate lookup at every call site. They
+    // live outside A1's collision grid (object events), so they must be folded
+    // in here or routes get planned straight through them.
+    map.obstacles = getObstacleTiles(group, num);
     mapCache.set(key, map);
     return map;
 }

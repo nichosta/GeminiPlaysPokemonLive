@@ -1,0 +1,60 @@
+{
+  "generatedAt": "2026-07-19T04:49:53.380Z",
+  "note": "Permanent HM-gated field obstacles (cut trees, Strength boulders) as object-event tile positions. Pre-Brock the player has no HM, so all are impassable. See extractObstacles.js.",
+  "maps": {
+    "3:1": [
+      {
+        "x": 11,
+        "y": 24,
+        "kind": "cut_tree",
+        "requires": "cut"
+      },
+      {
+        "x": 18,
+        "y": 5,
+        "kind": "cut_tree",
+        "requires": "cut"
+      }
+    ],
+    "3:20": [
+      {
+        "x": 16,
+        "y": 62,
+        "kind": "cut_tree",
+        "requires": "cut"
+      },
+      {
+        "x": 15,
+        "y": 69,
+        "kind": "cut_tree",
+        "requires": "cut"
+      },
+      {
+        "x": 11,
+        "y": 13,
+        "kind": "cut_tree",
+        "requires": "cut"
+      },
+      {
+        "x": 18,
+        "y": 26,
+        "kind": "cut_tree",
+        "requires": "cut"
+      },
+      {
+        "x": 6,
+        "y": 85,
+        "kind": "cut_tree",
+        "requires": "cut"
+      }
+    ],
+    "3:2": [
+      {
+        "x": 30,
+        "y": 5,
+        "kind": "cut_tree",
+        "requires": "cut"
+      }
+    ]
+  }
+}

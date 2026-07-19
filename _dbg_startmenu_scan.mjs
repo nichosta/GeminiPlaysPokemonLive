@@ -1,0 +1,69 @@
+import "dotenv/config";
+import { executeQueue } from "./tools/inputExecutor.js";
+import { readRange } from "./gamestate/emulatorInteraction/httpMemoryReader.js";
+
+const RANGE_START = 0x02030000;
+const RANGE_LEN = 0xc000; // 48KB
+
+async function snapshot() {
+    const bytes = await readRange(RANGE_START, RANGE_LEN);
+    return bytes;
+}
+
+function diff(a, b) {
+    const out = [];
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) out.push({ addr: RANGE_START + i, before: a[i], after: b[i] });
+    }
+    return out;
+}
+
+const settle = 20;
+
+console.log("opening start menu...");
+await executeQueue(["start"], { tapSettleFrames: settle });
+
+console.log("snapshot A (baseline)...");
+const a = await snapshot();
+
+console.log("press down...");
+await executeQueue(["down"], { tapSettleFrames: settle });
+const b = await snapshot();
+const diffAB = diff(a, b);
+console.log(`A->B: ${diffAB.length} changed bytes`);
+
+console.log("press down again...");
+await executeQueue(["down"], { tapSettleFrames: settle });
+const c = await snapshot();
+const diffBC = diff(b, c);
+console.log(`B->C: ${diffBC.length} changed bytes`);
+
+console.log("press up (should reverse)...");
+await executeQueue(["up"], { tapSettleFrames: settle });
+const d = await snapshot();
+const diffCD = diff(c, d);
+console.log(`C->D: ${diffCD.length} changed bytes`);
+
+// Candidates: addresses that changed in all three transitions
+const setAB = new Map(diffAB.map((x) => [x.addr, x]));
+const setBC = new Map(diffBC.map((x) => [x.addr, x]));
+const setCD = new Map(diffCD.map((x) => [x.addr, x]));
+
+const candidates = [];
+for (const addr of setAB.keys()) {
+    if (setBC.has(addr) && setCD.has(addr)) {
+        candidates.push({
+            addr,
+            ab: setAB.get(addr),
+            bc: setBC.get(addr),
+            cd: setCD.get(addr),
+        });
+    }
+}
+
+console.log(`\nCandidates present in all 3 transitions: ${candidates.length}`);
+for (const cnd of candidates) {
+    console.log(
+        `0x${cnd.addr.toString(16)}: A=${cnd.ab.before} -down-> B=${cnd.ab.after} -down-> C=${cnd.bc.after} -up-> D=${cnd.cd.after}`
+    );
+}

@@ -14,10 +14,13 @@
 //   - "is milestone X complete?"            -> isComplete (against a flag set)
 //   - "what's the numeric bit-offset of a   -> flagBit (for runtime readPlayerFlag)
 //     flag, to read it from RAM?"
+//   - "read every story flag from RAM into  -> readFlagSet(readFlag) (pure given
+//     a Set<string> the graph can evaluate"     an injected bit reader)
 //
 // Pure data + pure functions — no emulator dependency, matching the rest of
 // skills/. The runtime side (actually reading these bits from RAM) is B's
-// job; this module only supplies the resolved flag ids and the story DAG.
+// job; this module only supplies the resolved flag ids, the story DAG, and
+// the readFlagSet helper that an injected RAM reader plugs into.
 // =============================================================================
 
 import { readFileSync } from "node:fs";
@@ -204,4 +207,52 @@ export function currentMilestone(setFlags) {
 
     const progress = reached ? reached.order / ms.length : 0;
     return { reached, next, availableOptional, progress };
+}
+
+/**
+ * Every flag name the milestone graph needs to evaluate completion: each
+ * milestone's completion.flags, its completion.sideFlags, and (for item-tracked
+ * milestones with no dedicated flag) its completion.item.resolvesTo.flag.
+ * @returns {string[]}
+ */
+export function allMilestoneFlagNames() {
+    const names = new Set();
+    for (const m of milestones()) {
+        for (const f of m.completion?.flags ?? []) names.add(f.flag);
+        for (const f of m.completion?.sideFlags ?? []) names.add(f.flag);
+        const resolvesTo = m.completion?.item?.resolvesTo;
+        if (resolvesTo?.flag) names.add(resolvesTo.flag);
+    }
+    return [...names];
+}
+
+/**
+ * Read every milestone flag through `readFlag(bitOffset)` and return the
+ * Set<string> of flag names currently set. A flag whose bit-offset is unknown
+ * (flagBit === undefined) is skipped; a single unreadable flag is swallowed
+ * (one bad read can't blank the whole eval). This is the input this module's
+ * isComplete / currentMilestone consume.
+ *
+ * Pure given an injected `readFlag` (a `(bitOffset:number) => Promise<boolean>`)
+ * — kept here in the pure query layer so both the runtime snapshot (B1's
+ * getState) and the eval harness (D4) can use it without either importing the
+ * other.
+ *
+ * @param {(bitOffset:number)=>Promise<boolean>} readFlag
+ * @param {string[]} [names] defaults to allMilestoneFlagNames()
+ * @returns {Promise<Set<string>>}
+ */
+export async function readFlagSet(readFlag, names = allMilestoneFlagNames()) {
+    const set = new Set();
+    for (const name of names) {
+        const bit = flagBit(name);
+        if (bit === undefined) continue;
+        try {
+            if (await readFlag(bit)) set.add(name);
+        } catch {
+            // One unreadable flag must not blank the eval — skip it. The
+            // milestone it gates will simply read incomplete this poll.
+        }
+    }
+    return set;
 }

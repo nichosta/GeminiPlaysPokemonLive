@@ -3,7 +3,7 @@
 // model now reads ONLY the text state prompt (llminteract/buildStatePrompt.js)
 // and emits one high-level tool call per turn (llminteract/toolInterface.js).
 export const OPENROUTER_MODEL_NAME = "google/gemini-3.5-flash";
-export const HISTORY_LENGTH = 30; // Keep the last X pairs of user/model messages
+export const HISTORY_LENGTH = 15; // Keep the last X pairs of user/model messages (halved to fit the 30k prompt+response token budget)
 export const LOOP_DELAY_MS = 5000; // Delay between loop iterations (5 seconds)
 export const MAX_SUMMARIES = 30; // Maximum number of summary messages to keep in history
 
@@ -65,9 +65,10 @@ You are driving Pokémon via a HARNESS, not pressing buttons yourself. Each turn
 
 The tools you have (call exactly one per turn):
   - goto {destination, avoid_trainers?, max_steps?}: navigate to a named location or map coordinate. The harness handles within-map A*, cross-map routing over warps/connections, and live NPC dodging. It returns when you arrive OR an interrupt fires (a battle starts, an NPC dialog pops up, you're blocked, or the step budget runs out).
-  - set_battle_strategy {strategy, lead?, catch_wild?}: set the standing battle policy the harness follows. Does not start or advance a battle.
+  - set_battle_strategy {strategy, lead?, catch_all_pokemon?}: set the standing battle policy the harness follows. Does not start or advance a battle. catch_all_pokemon is a STANDING toggle: while it is true, the engine tries to CATCH the opponent in EVERY battle (chip it down with the weakest move, then throw a Poké Ball, repeat until caught). Use it to build/train your team — set it true, then walk back and forth through a grassy area (e.g. Viridian Forest) to catch and grind. It stays on until you set it false again, and it WASTES turns against trainers (you cannot catch another trainer's Pokémon), so turn it OFF before every gym/trainer battle. It needs Poké Balls in your bag (buy some at a Poké Mart first).
   - heal {method?, max_steps?}: restore the party (route to a Pokécenter or apply bag items).
-  - use_item {item, target_slot?, quantity?}: use one bag item, in the overworld or in battle.
+  - use_item {item, target_slot?, quantity?}: use one bag item (overworld only — during a battle call fight_battle instead).
+  - fight_battle {strategy?, max_steps?}: hand the CURRENT battle to the harness's battle engine — it picks and executes moves turn by turn until the battle ends or it must escalate back to you. ALWAYS prefer this over pressing A through a battle yourself; use it any time the state shows a battle is active.
   - press {buttons, max_steps?}: ESCAPE HATCH. Send a raw button sequence for states no higher-level tool covers (odd menus, cutscene prompts). Prefer the structured tools; every press call is a sign something is missing. press only stops early if a battle starts, a warp fires, or HP drops low mid-sequence — pressing A through dialog is expected, not an interrupt.
 
 State is reported to you as pure text from the emulator's RAM: your location and position, battle/dialog/menu flags, your party and bag, and an on-screen collision grid with warps and NPCs marked. There is no screenshot — read the grid.
@@ -165,10 +166,10 @@ Do not include any acknowledgement or additional words in the response, only the
 // trace readability and loop-breaking reasoning, D3). No JSON envelope, no
 // markdown fences — just the tool call plus optional plain-text commentary.
 const SYSTEM_PROMPT_OUTPUT_FORMAT = `
-Each turn you MUST issue exactly ONE tool call from: goto, set_battle_strategy, heal, use_item, press. The harness executes it and returns its outcome in the next turn.
+Each turn you MUST issue exactly ONE tool call from: goto, set_battle_strategy, fight_battle, heal, use_item, press. The harness executes it and returns its outcome in the next turn.
 You may also include a short plain-text commentary alongside the tool call: your reading of the current situation, what changed since last turn, your immediate objective, and any reasoning behind the tool call you chose. Keep it concise.
 Do NOT wrap anything in JSON, do NOT use markdown code fences, do NOT output a "functionCall" field. Use the tool-calling interface directly (the harness parses your tool_calls). Commentary goes in the normal message text, not as a JSON object.
-If the previous tool's outcome was an interrupt (battle_started, dialog, choice_required, blocked, etc.), address it directly: e.g. after "dialog" use press to advance the text, after "battle_started" use set_battle_strategy then fight via press, after "blocked" pick a different goto destination or a press to step away.
+If the previous tool's outcome was an interrupt (battle_started, dialog, choice_required, blocked, etc.), address it directly: e.g. after "dialog" use press to advance the text, after "battle_started" call fight_battle (optionally set_battle_strategy first), after "blocked" pick a different goto destination or a press to step away.
 `;
 
 // Generation configuration for the main OpenRouter call. response_format is

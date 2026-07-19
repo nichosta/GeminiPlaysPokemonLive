@@ -1,0 +1,25 @@
+# Qwen3.5-9B chosen for before/after parity: OpenRouter serves the same base as
+# `qwen/qwen3.5-9b`, which is the "before" baseline (no LoRA). freesolo has no
+# Qwen3, and OpenRouter has no 3.5-4B, so 9B is the smallest exact match.
+model = "Qwen/Qwen3.5-9B"
+algorithm = "sft"
+
+# Environment: upload this project folder with
+# `flash env push --name frlg-wiki-qa .`, then paste the returned id below.
+# The id is org-scoped (printed by the push); re-push and re-paste if
+# `flash whoami` changes accounts, or after ANY edit to environment.py/dataset/.
+[environment]
+id = "thundr/frlg-wiki-qa"
+
+# secrets = ["SERPAPI_API_KEY"]
+
+[train]
+epochs = 3
+# Full wiki_qa.jsonl (no held-out); eval is reframed, see
+# finetune/dataset/eval_reframed_index.json. train.jsonl is the 558-row full
+# set from buildReframedEval.js — do NOT re-run buildSFTDataset.js without
+# re-running buildReframedEval.js afterward.
+max_examples = 558
+lora_rank = 32
+# GPU and HF artifacts are managed automatically by the platform: the GPU is
+# the cheapest fitting managed class, and artifacts live in a private environment-scoped repo.

@@ -1,10 +1,11 @@
 // Workstream A5 — Walkthrough and wiki corpus extraction.
 //
 // Builds an offline corpus from two sources for later finetuning:
-// 1. Wiki pages (Bulbapedia parts 1-3, StrategyWiki pre-Brock pages)
-// 2. Video transcripts (three playthrough dirs)
+// 1. Wiki pages (Bulbapedia parts 1-5, StrategyWiki pages through Misty/Cascade
+//    Badge plus the mechanic/reference pages — see STRATEGYWIKI_ALLOWLIST)
+// 2. Video transcripts (three playthrough dirs, still truncated at Boulder Badge)
 //
-// The corpus is scoped to pre-Brock (through Boulder Badge receipt).
+// The wiki corpus is scoped through Misty / Cascade Badge (Parts 1-5).
 // Generated bulk text is gitignored; the manifest index.json is tracked.
 //
 // Usage:
@@ -95,7 +96,12 @@ function curlJson(url) {
 
 // --- Wiki scrape -----------------------------------------------------------
 
+// Scoped through Misty / Cascade Badge (Parts 1-5 on Bulbapedia). Includes the
+// pre-Brock pages, the Route 3 / Mt. Moon / Route 4 / Cerulean / 24 / 25 / 5
+// pages, and the mechanic/reference pages (Moves, Abilities, Items, ...) which
+// are the richest non-walkthrough content. Dial this up to extend further.
 const STRATEGYWIKI_ALLOWLIST = new Set([
+  // pre-Brock walkthrough
   "Pallet Town",
   "Route 1",
   "Viridian City",
@@ -103,6 +109,24 @@ const STRATEGYWIKI_ALLOWLIST = new Set([
   "Route 2",
   "Viridian Forest",
   "Pewter City",
+  // post-Brock through Misty
+  "Route 3",
+  "Mt. Moon",
+  "Route 4",
+  "Cerulean City",
+  "Route 24",
+  "Route 25",
+  "Route 5",
+  // mechanic / reference pages (richest non-walkthrough content)
+  "Gameplay",
+  "Controls",
+  "Raising Champions",
+  "Catching Pokémon",
+  "Moves",
+  "Abilities",
+  "Items",
+  "Key Items",
+  "Poké Balls",
 ]);
 
 async function fetchWiki() {
@@ -125,7 +149,7 @@ async function fetchWiki() {
 
     for (const part of source.parts) {
       let include = false;
-      if (isBulbapedia && part.part <= 3) {
+      if (isBulbapedia && part.part <= 5) {
         include = true;
       } else if (isStrategyWiki && STRATEGYWIKI_ALLOWLIST.has(part.title)) {
         include = true;
@@ -398,7 +422,7 @@ async function generateManifest(wikiItems, transcriptItems) {
   console.log("\n[Manifest] Writing index.json...");
 
   const manifest = {
-    note: "Pre-Brock (up to and including Boulder Badge) walkthrough corpus from Bulbapedia, StrategyWiki, and video transcripts. Used for LLM finetuning.",
+    note: "Walkthrough corpus (wiki scoped through Misty/Cascade Badge: Bulbapedia Parts 1-5 + StrategyWiki route/city + mechanic pages; transcripts truncated at Boulder Badge). Used for LLM finetuning.",
     generatedAt: new Date().toISOString(),
     items: [...wikiItems, ...transcriptItems],
   };

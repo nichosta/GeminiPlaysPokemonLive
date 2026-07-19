@@ -2,6 +2,7 @@
 export const BAG_MAIN_ADDR = 0x02039dd8; // Start address of the bag pocket pointers and sizes
 export const SECURITY_KEY_POINTER_ADDR = 0x03005d90; // Address holding the pointer to the save block containing the key
 export const SECURITY_KEY_OFFSET = 0x01f4; // Offset within the save block to find the security key
+export const SAVESTATE_MONEY_OFFSET = 0x0490; // Offset to player money (u32, XOR-encrypted) within SaveBlock1 — matches pokeemerald's struct SaveBlock1 layout
 
 // Enum-like object for pocket indices for clarity
 export const POCKETS = Object.freeze({
@@ -30,6 +31,7 @@ export const PLAYER_AVATAR_ADDR = 0x02037590; // Address of gPlayerAvatar struct
 // --- Party Pokémon Data Constants ---
 export const IN_BATTLE_BIT_ADDR = 0x30026f9; // Location of the bitmask determining if the player is in battle
 export const PARTY_BASE_ADDR = 0x020244ec; // Base address for party Pokémon data [1]
+export const ENEMY_PARTY_BASE_ADDR = 0x02024744; // gEnemyParty (Emerald US) — same per-mon struct layout as the player party
 
 // --- Species Info ---
 export const SPECIES_INFO_ADDR = 0x083203CC;
@@ -58,6 +60,10 @@ export const CURRENT_MAP_HEADER_ADDR = 0x02037318; // Address of the current map
 
 // --- Mapgrid ---
 export const PRIMARY_TILESET_METATILE_COUNT = 0x200; // Number of metatiles (max) listed in a tileset
+
+// --- Tileset ---
+// Emerald's struct Tileset orders metatileAttributes (0x10) before callback (0x14).
+export const TILESET_METATILE_ATTRIBUTES_POINTER_OFFSET = 0x10;
 
 // --- Map Events (Templates for Warps, NPCs, etc.) ---
 

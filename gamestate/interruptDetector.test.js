@@ -47,13 +47,15 @@ function makeState(overrides = {}) {
         "party menu open -> UNEXPECTED_MENU",
         classifyInterrupt(makeState({ menu: { partyMenuOpen: true } })) === STOP_REASON.UNEXPECTED_MENU
     );
+    // Low HP is intentionally NOT an interrupt (it deadlocks the walk to a
+    // Pokécenter); the state prompt surfaces it as plain text instead.
     check(
-        "lowest HP at threshold -> HP_LOW",
-        classifyInterrupt(makeState({ party: { lowestHpFraction: 0.2 } }), { hpThreshold: 0.2 }) === STOP_REASON.HP_LOW
+        "lowest HP at threshold -> null (not an interrupt)",
+        classifyInterrupt(makeState({ party: { lowestHpFraction: 0.2 } })) === null
     );
     check(
-        "lowest HP above threshold -> null",
-        classifyInterrupt(makeState({ party: { lowestHpFraction: 0.21 } }), { hpThreshold: 0.2 }) === null
+        "lowest HP at zero -> null (not an interrupt)",
+        classifyInterrupt(makeState({ party: { lowestHpFraction: 0 } })) === null
     );
 }
 
@@ -89,7 +91,7 @@ function makeState(overrides = {}) {
     check("expectMenu suppresses UNEXPECTED_MENU", classifyInterrupt(menuOpen, { expectMenu: true }) === null);
 }
 
-// --- classifyInterrupt: priority order (battle > dialog > warp > hp > menu) -
+// --- classifyInterrupt: priority order (battle > dialog > warp > menu) -----
 {
     const battleAndDialog = makeState({ battle: { active: true }, progress: { controlsLocked: true } });
     check("battle beats dialog", classifyInterrupt(battleAndDialog) === STOP_REASON.BATTLE_STARTED);
@@ -103,17 +105,14 @@ function makeState(overrides = {}) {
         classifyInterrupt(dialogAndWarp, { baselineMap: { bank: 3, number: 0 } }) === STOP_REASON.DIALOG
     );
 
-    const warpAndHp = makeState({
+    const warpAndMenu = makeState({
         player: { position: { x: 5, y: 5 }, map: { bank: 4, number: 1 } },
-        party: { lowestHpFraction: 0.1 },
+        menu: { partyMenuOpen: true },
     });
     check(
-        "warp beats hp_low",
-        classifyInterrupt(warpAndHp, { baselineMap: { bank: 3, number: 0 }, hpThreshold: 0.2 }) === STOP_REASON.WARP_COMPLETED
+        "warp beats unexpected_menu",
+        classifyInterrupt(warpAndMenu, { baselineMap: { bank: 3, number: 0 } }) === STOP_REASON.WARP_COMPLETED
     );
-
-    const hpAndMenu = makeState({ party: { lowestHpFraction: 0.1 }, menu: { partyMenuOpen: true } });
-    check("hp_low beats unexpected_menu", classifyInterrupt(hpAndMenu, { hpThreshold: 0.2 }) === STOP_REASON.HP_LOW);
 }
 
 // --- classifyInterrupt: out-of-scope reasons are never emitted --------------

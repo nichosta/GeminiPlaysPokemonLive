@@ -1,0 +1,17 @@
+model = "Qwen/Qwen3.5-4B"
+algorithm = "opd"   # on-policy distillation from a managed Fireworks teacher (default GLM 5.2)
+
+# Environment: upload this project folder with
+# `flash env push --name my-env .`, then paste the returned id below.
+# The teacher and its Fireworks key are platform-managed — nothing to set up or export.
+[environment]
+id = ""
+
+[train]
+epochs = 1
+max_examples = 2  # rows to train on; the starter dataset has 2 (raise as your dataset grows)
+lora_rank = 32
+# teacher_model = "glm-5.2"   # teacher to distil from: glm-5.2 (default) |
+#                             # deepseek-v4-pro | kimi-k2.6 (key stays managed)
+# GPU and HF artifacts are managed automatically by the platform: the GPU is
+# the cheapest fitting managed class, and artifacts live in a private environment-scoped repo.

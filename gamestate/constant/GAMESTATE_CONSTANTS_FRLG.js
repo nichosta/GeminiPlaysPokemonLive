@@ -20,9 +20,24 @@ export const POCKET_NAMES = [
   "Berries",
 ];
 
+// Address of gBagMenuState.cursorPos[0] (item_menu.c's struct BagStruct,
+// EWRAM_DATA — file-scope, not heap/pointer-indirected), the Items pocket's
+// on-screen list cursor (u16; includes CANCEL as the row after the last
+// item). Live-verified via memory diff against the running emulator (press
+// up/down, readUint16 before/after) and cross-checked against the decomp
+// source. Persists across bag opens like the start-menu cursor (same class
+// of gap — see menuMacros.js), so blind "assume cursor starts at 0"
+// navigation can overshoot onto CANCEL or the wrong item.
+// NUM_BAG_POCKETS_NO_CASES is 3 (Items, Key Items, Poké Balls — TM Case and
+// Berry Pouch are separate key-item menus in FRLG, not swipeable pockets),
+// so cursorPos[1]/[2] likely sit at +2/+4 bytes; only [0] is live-verified,
+// so only the Items pocket gets the exact path for now.
+export const BAG_ITEMS_POCKET_CURSOR_ADDR = 0x0203ad04;
+
 // --- Savestate Object ---
 export const SAVESTATE_OBJECT_POINTER = 0x03005008; // Address of pointer to savestate 1 object structure in IWRAM
 export const SAVESTATE_FLAGS_OFFSET = 0x0EE0; // Offset to player flags (u32) within savestate object
+export const SAVESTATE_MONEY_OFFSET = 0x0290; // Offset to player money (u32, XOR-encrypted with the security key) within SaveBlock1 — matches pokefirered's struct SaveBlock1 layout
 
 // --- Player Avatar ---
 export const PLAYER_AVATAR_ADDR = 0x02037078; // Address of gPlayerAvatar struct
@@ -30,6 +45,7 @@ export const PLAYER_AVATAR_ADDR = 0x02037078; // Address of gPlayerAvatar struct
 // --- Party Pokémon Data Constants ---
 export const IN_BATTLE_BIT_ADDR = 0x03003529; // Location of the bitmask determining if the player is in battle
 export const PARTY_BASE_ADDR = 0x02024284; // Base address for party Pokémon data [1]
+export const ENEMY_PARTY_BASE_ADDR = 0x0202402c; // gEnemyParty (FireRed US v1.0) — exactly 6×100 bytes below gPlayerParty; same per-mon struct layout
 
 // --- Species Info ---
 export const SPECIES_INFO_ADDR = 0x08254784;
@@ -59,6 +75,11 @@ export const CURRENT_MAP_HEADER_ADDR = 0x02036dfc; // Address of the current map
 // --- Mapgrid ---
 export const PRIMARY_TILESET_METATILE_COUNT = 0x280; // Number of metatiles (max) listed in a tileset
 
+// --- Tileset ---
+// FRLG's struct Tileset orders callback (0x10) before metatileAttributes (0x14),
+// the reverse of Emerald's layout.
+export const TILESET_METATILE_ATTRIBUTES_POINTER_OFFSET = 0x14;
+
 // --- Map Events (Templates for Warps, NPCs, etc.) ---
 
 // --- Live Object Events (Player + NPCs currently on screen/active) ---
@@ -74,6 +95,16 @@ export const FACING_DIRECTION_ADDR = 0x02036e50; // Address containing player fa
 // --- Party Menu ---
 export const PARTY_MENU_ADDR = 0x0203b0a0; // Address of the global party menu handler object
 export const PARTY_MENU_INTERNAL_ADDR = 0x0203b09c; // Address of global party internal object pointer (check here for contents)
+
+// --- Start Menu ---
+// Address of sStartMenuCursorPos (start_menu.c), a persistent EWRAM u8 that
+// remembers the cursor's list position (0-based) across menu opens/closes —
+// confirmed live via memory diff (readUint8 before/after up/down presses) and
+// cross-checked against the decomp source, which shows Menu_MoveCursor wraps
+// (top<->bottom), so blind "assume cursor starts at 0" navigation is unsafe:
+// it can land on SAVE and complete a real save (see menuMacros.js). Reading
+// this address makes the BAG-entry navigation exact instead of gap-limited.
+export const START_MENU_CURSOR_ADDR = 0x020370f4;
 
 // --- Tasks ---
 export const TASK_ARRAY_ADDR = 0x03005090; // Address of the gTasks array which holds all current tasks

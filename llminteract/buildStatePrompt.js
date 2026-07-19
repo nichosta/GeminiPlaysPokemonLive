@@ -39,6 +39,32 @@ function renderPartyMember(p) {
 }
 
 /**
+ * Fraction (0..1) of the lowest-HP, non-fainted party member, for the low-HP
+ * hint. Prefers the snapshot's precomputed `party.lowestHpFraction`; falls back
+ * to computing min(currentHP/maxHP) across readable members. Returns null when
+ * HP can't be read at all.
+ *
+ * Low HP is surfaced as a NON-BLOCKING hint line here, not as an interrupt —
+ * blocking on it deadlocks the walk to a Pokécenter (see
+ * gamestate/interruptDetector.js).
+ */
+const LOW_HP_FRACTION = 0.2;
+function lowestHpFraction(party) {
+    if (!party) return null;
+    if (typeof party.lowestHpFraction === "number") return party.lowestHpFraction;
+    const members = Array.isArray(party.pokemon) ? party.pokemon : [];
+    let lowest = null;
+    for (const m of members) {
+        if (m?.fainted) continue;
+        if (typeof m?.currentHP === "number" && typeof m?.maxHP === "number" && m.maxHP > 0) {
+            const f = m.currentHP / m.maxHP;
+            if (lowest === null || f < lowest) lowest = f;
+        }
+    }
+    return lowest;
+}
+
+/**
  * Renders the on-screen map block: map identity + dimensions, the collision
  * grid (one line per row, emoji per tile), the on-screen warps, NPCs, and
  * overworld connections. Mirrors the grid the old `saveHumanReadablePromptToFile`
@@ -114,12 +140,47 @@ function renderMap(map) {
 }
 
 /**
+ * Renders the story/quest block: where the player is in the run toward Brock —
+ * the furthest reached milestone, the next critical-path target, and any
+ * optional side content that's open right now. Sourced from the snapshot's
+ * `quest` section (B1 readQuest → A4 milestone DAG). Absent when the snapshot
+ * didn't include it (includeQuest was false) or the read failed.
+ * @param {object|null} quest The snapshot.quest section.
+ * @returns {string}
+ */
+function renderQuest(quest) {
+    if (!quest || typeof quest !== "object") {
+        return "Story progress: (quest read not included this poll)";
+    }
+    const lines = [];
+    const total = typeof quest.total === "number" ? quest.total : "?";
+    const reached = quest.reached;
+    if (reached) {
+        lines.push(`Story: ${reached.name} (${reached.order}/${total})`);
+    } else {
+        lines.push(`Story: not started (0/${total})`);
+    }
+    const next = quest.next;
+    if (next) {
+        lines.push(`Next objective: ${next.name}`);
+    } else if (reached) {
+        lines.push("Next objective: (all critical-path beats complete)");
+    }
+    const side = Array.isArray(quest.availableOptional) ? quest.availableOptional : [];
+    if (side.length) {
+        lines.push(`Side content available: ${side.map((s) => `${s.name}`).join(", ")}`);
+    }
+    return lines.join("\n");
+}
+
+/**
  * Build the text the model reads for one turn, from a B1 getState() snapshot.
  *
  * Section order is deliberate: identity/location first (so the model orients),
  * then the flags that decide whether it can act at all (battle/dialog lock),
- * then party/bag (resources), then the on-screen map (where it can go). Any
- * section that failed to read is reported inline via `snapshot.errors`.
+ * then where it is in the story (so it knows what to aim for), then party/bag
+ * (resources), then the on-screen map (where it can go). Any section that
+ * failed to read is reported inline via `snapshot.errors`.
  *
  * @param {object} state A getState() snapshot.
  * @returns {string}
@@ -154,6 +215,9 @@ export function buildStatePrompt(state) {
     const menu = state.menu || {};
     out.push(`Party menu open: ${menu.partyMenuOpen ?? "?"} (slot ${menu.partyMenuSlot ?? "?"})`);
 
+    // --- Story / quest progress (where in the run toward Brock) ---
+    out.push(renderQuest(state.quest));
+
     // --- Party ---
     const party = state.party;
     if (party) {
@@ -162,6 +226,12 @@ export function buildStatePrompt(state) {
             for (const mem of party.pokemon) out.push("  " + renderPartyMember(mem));
         } else {
             out.push("  (no Pokémon read)");
+        }
+        // Soft, non-blocking nudge: replaces the old hp_low interrupt (which
+        // deadlocked movement) with a plain-text flag the model can act on.
+        const low = lowestHpFraction(party);
+        if (low !== null && low <= LOW_HP_FRACTION) {
+            out.push(`  ⚠ low HP — consider heal (lowest ${Math.round(low * 100)}%)`);
         }
     } else {
         out.push("Party: (unreadable)");

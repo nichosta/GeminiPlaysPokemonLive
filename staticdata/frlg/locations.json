@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-18T18:51:36.779Z",
+  "generatedAt": "2026-07-19T05:05:30.777Z",
   "source": "derived from staticdata/frlg/index.json + maps/*.json (A1)",
   "note": "One entry per extracted map. `anchorKind: warp` means (x,y) is the landing tile of the first in-scope warp into this map (deterministic by index.json order); `center` means the nearest passable tile to the map's geometric center (outdoor maps, or indoor maps with no in-scope door).",
   "locations": [

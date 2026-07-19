@@ -5,9 +5,15 @@
 // Fast polling loop over B1's getState() snapshot with an explicit,
 // STOP_REASON-typed classification of why control should return to the model:
 // battle started, dialog/cutscene/script (controls locked), warp completed,
-// HP below threshold, unexpected menu. This is the crux macros (C2-C5) build
-// on: every long-running tool call polls this instead of re-inventing its own
-// stop-condition checks.
+// unexpected menu. This is the crux macros (C2-C5) build on: every long-running
+// tool call polls this instead of re-inventing its own stop-condition checks.
+//
+// NOTE: low HP is NOT an interrupt here. It is surfaced as plain text in the D2
+// state prompt (see buildStatePrompt.js) so the model can decide to heal —
+// interrupting on it blocked the very movement needed to reach a Pokécenter.
+// STOP_REASON.HP_LOW remains in the enum for trace/tool-interface stability but
+// nothing produces it; the in-battle faint trigger is battlePolicy's own
+// about_to_faint, not this detector.
 //
 // Two layers, same split as B1/C1:
 //   - `classifyInterrupt` is pure: given one getState()-shaped snapshot (plus
@@ -42,7 +48,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * @typedef {Object} ClassifyOptions
- * @property {number} [hpThreshold=0.2] Fraction at/below which HP_LOW fires.
  * @property {boolean} [expectMenu=false] Suppress UNEXPECTED_MENU (caller
  *           intentionally opened the party menu, e.g. a future C4 macro).
  * @property {{bank:number,number:number}|null} [baselineMap=null] Map identity
@@ -56,15 +61,16 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * field -> STOP_REASON mapping (docs/state-snapshot.md). Pure; does no I/O.
  *
  * Priority order (first match wins) follows that table: battle, dialog, warp,
- * HP, menu. A snapshot with an unreadable player position/map can't be
- * classified at all and reports UNKNOWN_STATE ahead of everything else.
+ * menu. A snapshot with an unreadable player position/map can't be classified
+ * at all and reports UNKNOWN_STATE ahead of everything else. Low HP is
+ * intentionally NOT classified here — see the module docstring.
  *
- * @param {object} state A getState() snapshot (includeParty required for HP_LOW).
+ * @param {object} state A getState() snapshot.
  * @param {ClassifyOptions} [options]
  * @returns {string|null} A STOP_REASON, or null if nothing warrants an interrupt.
  */
 export function classifyInterrupt(state, options = {}) {
-    const { hpThreshold = 0.2, expectMenu = false, baselineMap = null } = options;
+    const { expectMenu = false, baselineMap = null } = options;
 
     if (!state || state.player?.map?.bank == null || state.player?.map?.number == null || state.player?.position?.x == null) {
         return STOP_REASON.UNKNOWN_STATE;
@@ -77,9 +83,6 @@ export function classifyInterrupt(state, options = {}) {
     }
     if (baselineMap && (state.player.map.bank !== baselineMap.bank || state.player.map.number !== baselineMap.number)) {
         return STOP_REASON.WARP_COMPLETED;
-    }
-    if (typeof state.party?.lowestHpFraction === "number" && state.party.lowestHpFraction <= hpThreshold) {
-        return STOP_REASON.HP_LOW;
     }
     if (!expectMenu && state.menu?.partyMenuOpen) {
         return STOP_REASON.UNEXPECTED_MENU;
@@ -94,7 +97,6 @@ export function classifyInterrupt(state, options = {}) {
  * @property {number} [intervalMs=150] Delay between polls after the baseline.
  * @property {number|null} [timeoutMs=null] Give up and return uninterrupted
  *           after this long. `null` watches indefinitely.
- * @property {number} [hpThreshold=0.2]
  * @property {boolean} [expectMenu=false]
  * @property {boolean} [expectWarp=false] If true, never fires WARP_COMPLETED
  *           (the baseline map is still captured but not diffed).
@@ -105,8 +107,8 @@ export function classifyInterrupt(state, options = {}) {
  * The live fast-polling loop: takes a baseline snapshot, then re-polls on
  * `intervalMs` until `classifyInterrupt` reports a STOP_REASON, `timeoutMs`
  * elapses, or `signal` aborts. The baseline itself is checked too, so a macro
- * that starts already mid-interrupt (e.g. HP already low) returns immediately
- * on the first poll rather than waiting a full interval.
+ * that starts already mid-interrupt (e.g. a battle already active) returns
+ * immediately on the first poll rather than waiting a full interval.
  *
  * @param {WatchOptions} [options]
  * @returns {Promise<{interrupted:boolean, stopReason:string|null, state:object}>}
@@ -116,7 +118,6 @@ export async function watchForInterrupt(options = {}) {
         pollState = () => getState({ includeMap: false, includeBag: false }),
         intervalMs = 150,
         timeoutMs = null,
-        hpThreshold = 0.2,
         expectMenu = false,
         expectWarp = false,
         signal,
@@ -128,7 +129,7 @@ export async function watchForInterrupt(options = {}) {
             ? { bank: baseline.player.map.bank, number: baseline.player.map.number }
             : null;
 
-    const classifyOptions = { hpThreshold, expectMenu, baselineMap };
+    const classifyOptions = { expectMenu, baselineMap };
 
     const baselineReason = classifyInterrupt(baseline, classifyOptions);
     if (baselineReason) {

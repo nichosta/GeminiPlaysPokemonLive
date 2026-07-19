@@ -1,0 +1,58 @@
+{
+  "note": "Held-out (state, tool_call) eval split. state = the exact D2 buildStatePrompt() text a LIVE gemini-3.5-flash run read; tool_call = the tool call it actually issued (real behavior, not a teacher-generated grounded label — see staticdata/extractAgentTraces.js). Contamination rule: the eval is held out ONLY IF the SFT trains on train.jsonl (the complementary ~80%), NOT on all rows. Deterministic stratified-by-source (live run_id): every Nth row by id within source -> eval. NOTE: 'press' (escape hatch) dominates the raw distribution (~80%) because manual battle/dialog mashing generates many turns per LLM call vs one macro call for goto/heal/fight_battle — this is the corpus's honest composition (outcome.status==='ok' only, no rebalancing), not a target ratio; address via curriculum/reward if it skews the trained model toward over-using press.",
+  "source": "staticdata/frlg/agent_traces.jsonl",
+  "sourceManifest": "../staticdata/frlg/agent_traces_index.json",
+  "evalRatio": 0.2,
+  "stride": 5,
+  "total": 326,
+  "train": 254,
+  "eval": 72,
+  "evalBySource": {
+    "run-tie7wn-e660": 1,
+    "run-tie90s-c4df": 5,
+    "run-tieb9k-8c7f": 1,
+    "run-tiebc1-8ee6": 15,
+    "run-tiefa3-2115": 17,
+    "run-tiehnu-36ec": 6,
+    "run-tiejir-8649": 3,
+    "run-tieo6c-fd8c": 1,
+    "run-tieovz-d230": 5,
+    "run-tieqvy-fb5f": 2,
+    "run-tierqe-94a9": 2,
+    "run-tiet09-9548": 1,
+    "run-tieuyo-3b21": 2,
+    "run-tievs3-b59a": 6,
+    "run-tiez9z-cf3e": 1,
+    "run-tif15v-1eb1": 4
+  },
+  "trainBySource": {
+    "run-tie7wn-e660": 1,
+    "run-tie90s-c4df": 16,
+    "run-tieb9k-8c7f": 4,
+    "run-tiebc1-8ee6": 60,
+    "run-tiefa3-2115": 68,
+    "run-tiehnu-36ec": 20,
+    "run-tiejir-8649": 12,
+    "run-tieovz-d230": 20,
+    "run-tieqvy-fb5f": 5,
+    "run-tierqe-94a9": 8,
+    "run-tieuyo-3b21": 7,
+    "run-tievs3-b59a": 20,
+    "run-tiez9z-cf3e": 1,
+    "run-tif15v-1eb1": 12
+  },
+  "evalByTool": {
+    "press": 49,
+    "set_battle_strategy": 8,
+    "goto": 10,
+    "heal": 4,
+    "fight_battle": 1
+  },
+  "trainByTool": {
+    "press": 182,
+    "set_battle_strategy": 33,
+    "goto": 32,
+    "heal": 5,
+    "fight_battle": 2
+  }
+}

@@ -73,11 +73,15 @@ export async function readRange(address, length) {
         try {
             // Read the response as text
             const responseText = await response.text();
-            // Parse the text as a JSON array
-            const chunkBytes = JSON.parse(responseText);
+            // Parse the comma-separated hex byte string (e.g. "b2,04,bc,0f")
+            const chunkBytes = responseText
+                .trim()
+                .split(',')
+                .filter(hex => hex.length > 0)
+                .map(hex => Number.parseInt(hex, 16));
 
-            if (!Array.isArray(chunkBytes)) {
-                throw new Error(`[readRange] Response for chunk URL ${url} was not a valid JSON array.`);
+            if (chunkBytes.some(Number.isNaN)) {
+                throw new Error(`[readRange] Response for chunk URL ${url} was not a valid comma-separated hex byte string: "${responseText}"`);
             }
 
             // Append the received bytes to the main array

@@ -26,14 +26,29 @@
 //     slot by re-reading the slot id after every up/down press is EXACT — no
 //     guessing, no wrap-around bugs. `selectPartySlotLive` is the reliable
 //     primitive the reorder / use_item-target / move-learn steps build on.
-//   - The START-MENU and BAG cursors are NOT readable from B1's snapshot (no
-//     RAM read exists for them yet). Navigating to the BAG entry, to a specific
-//     bag pocket, or to a specific item slot therefore assumes a known cursor
-//     start position and presses a counted up/down — the SAME class of gap as
-//     C3's battle-move cursor (see battlePolicy.js's docstring). A wrong count
-//     still presses SOMETHING valid (never a dead press) and B2 surfaces any
-//     resulting odd state next poll; making it exact is downstream B-work (a
-//     bag/start-menu cursor RAM read), NOT this workstream.
+//   - The START-MENU cursor IS now readable on FRLG (`menu.startMenuCursorPos`,
+//     via getStartMenuCursorPos — sStartMenuCursorPos's RAM address, found live
+//     via memory diff and cross-checked against the pokefirered decomp
+//     source). It persists across opens and wraps top<->bottom
+//     (Menu_MoveCursor), so a blind assumed-cursor navigation isn't just
+//     imprecise — it can land on SAVE and complete a real save (this actually
+//     happened live before the fix). buildStartMenuToBagSequence now computes
+//     the exact shortest wrap-aware path when the read is available, and only
+//     falls back to the old assumed-0 gap-limited path on games without a
+//     verified address (EMERALD).
+//   - The BAG's Items-pocket (pocket 0) item cursor IS now readable on FRLG
+//     (`menu.bagItemsPocketCursorPos`, via getBagItemsPocketCursorPos —
+//     gBagMenuState.cursorPos[0]'s RAM address, found the same way as the
+//     start-menu cursor). It persists across bag opens too (live-verified: a
+//     blind "down" from the remembered position overshot onto CANCEL).
+//     buildBagNavigationSequence takes the exact shortest path for pocket 0
+//     when the read is available. Pocket SWITCHING (Left/Right) and the other
+//     pockets' item cursors are still NOT readable (gBagMenuState.cursorPos[1]
+//     /[2] are unverified, and TM Case / Berry Pouch are separate menus
+//     entirely in FRLG) — navigating those still assumes a known cursor start
+//     position and presses a counted up/down/right, the SAME class of gap as
+//     C3's battle-move cursor (see battlePolicy.js's docstring). Out of scope
+//     today since every item this harness uses lives in pocket 0.
 //   - The POKÉCENTER NURSE heal sidesteps both gaps: the nurse stands at a
 //     fixed tile in every standard-layout center (verified for both pre-Brock
 //     centers — Viridian 5:4, Pewter 6:5 — nurse at (7,2) behind an MB_COUNTER
@@ -74,6 +89,13 @@ const POCKET_INDEX = {
     "tms&hms": 3,
     berries: 4,
 };
+
+// Frames between taps when a sequence switches BAG POCKETS (Left/Right). The
+// pocket-switch slide animation blocks input longer than the executor's
+// 1-frame default menu-cursor settle — see battlePolicy.js's
+// BAG_POCKET_SETTLE_FRAMES for the live-verified numbers (10 and even 20
+// frames dropped the second of two back-to-back Rights; 30 was reliable).
+const BAG_POCKET_SETTLE_FRAMES = 30;
 
 // =============================================================================
 // PURE HELPERS
@@ -130,37 +152,96 @@ export function resolveBagItem(bag, itemName) {
 }
 
 /**
- * Pure sequence: navigate the bag to a specific pocket + item slot, assuming
- * the bag opens on pocket 0 with the cursor at item 0 (the GAP — see module
- * docstring). Returns the up/down/right presses to reach pocket `pocketIndex`,
- * item `itemIndex`, NOT including the A that enters the item's action menu
- * (the caller presses A so it can poll for the action-menu state).
+ * Pure sequence: navigate the bag to a specific pocket + item slot. Returns
+ * the up/down/right presses to reach pocket `pocketIndex`, item `itemIndex`,
+ * NOT including the A that enters the item's action menu (the caller presses
+ * A so it can poll for the action-menu state).
+ *
+ * Pocket switching is still GAP-LIMITED (assumes the bag opens on pocket 0;
+ * see module docstring) — out of scope here since every item this harness
+ * uses lives in pocket 0 (Items).
+ *
+ * Item-slot navigation is EXACT for pocket 0 when `currentItemIndex` is given
+ * (live RAM read — see getBagItemsPocketCursorPos; the Items pocket cursor
+ * persists across bag opens like the start-menu cursor, so this is knowable
+ * before the bag is even opened): computes the shortest wrap-aware path (see
+ * buildMenuCursorSequence), needing `pocketLength` (item count + 1 for
+ * CANCEL) to know where the wrap boundary is. Falls back to the GAP-LIMITED
+ * assumed-0 path otherwise (other pockets, or games without a verified
+ * address) — the real cursor remembers the last-used slot, so the down count
+ * can be off (confirmed live: it overshot onto CANCEL).
  *
  * @param {number} pocketIndex 0-4.
  * @param {number} itemIndex 0-based position within the pocket.
+ * @param {object} [opts]
+ * @param {number} [opts.currentItemIndex] live cursor read (pocket 0 only).
+ * @param {number} [opts.pocketLength] item count + 1 (CANCEL), required with currentItemIndex.
  * @returns {string[]} button names (lowercase, executor's enum).
  */
-export function buildBagNavigationSequence(pocketIndex, itemIndex) {
+export function buildBagNavigationSequence(pocketIndex, itemIndex, { currentItemIndex, pocketLength } = {}) {
     const seq = [];
     // Pocket switch: Right advances one pocket in FRLG's bag (Left reverses).
     // Assume opening pocket = 0; press Right `pocketIndex` times.
     for (let i = 0; i < (pocketIndex || 0); i++) seq.push("right");
-    // Item selection: Down advances one item slot. Assume opening cursor = 0.
-    for (let i = 0; i < (itemIndex || 0); i++) seq.push("down");
+    if (pocketIndex === 0 && typeof currentItemIndex === "number" && typeof pocketLength === "number" && pocketLength > 0) {
+        seq.push(...buildMenuCursorSequence(currentItemIndex, itemIndex, pocketLength));
+    } else {
+        // GAP: item selection assumes the opening cursor is at item 0.
+        for (let i = 0; i < (itemIndex || 0); i++) seq.push("down");
+    }
     return seq;
+}
+
+// FRLG start menu order (normal field, both FLAG_SYS_POKEDEX_GET and
+// FLAG_SYS_POKEMON_GET set — true for the entire post-intro corpus this
+// harness operates in): POKéDEX, POKéMON, BAG, <player>, SAVE, OPTION, EXIT.
+// BAG is index 2. See start_menu.c's SetUpStartMenu_NormalField: either flag
+// unset drops its entry and shifts everyone after it down by one — out of
+// scope here (both flags are set within minutes of a new game, well before
+// this harness's corpus begins).
+const START_MENU_BAG_INDEX = 2;
+const START_MENU_LENGTH = 7;
+
+/**
+ * Pure sequence: shortest wrap-aware up/down path from `currentPos` to
+ * `targetPos` in a menu of `length` entries. The FRLG start menu's cursor
+ * (sStartMenuCursorPos, decomp start_menu.c) wraps top<->bottom via
+ * Menu_MoveCursor — live-verified via memory diff (readUint8 before/after
+ * up/down presses) against the running emulator, matching the decomp source.
+ * Picks whichever direction is fewer presses; ties go to "down".
+ * @param {number} currentPos
+ * @param {number} targetPos
+ * @param {number} [length=START_MENU_LENGTH]
+ * @returns {string[]}
+ */
+export function buildMenuCursorSequence(currentPos, targetPos, length = START_MENU_LENGTH) {
+    const forward = ((targetPos - currentPos) % length + length) % length;
+    const backward = ((currentPos - targetPos) % length + length) % length;
+    if (forward === 0) return [];
+    return backward < forward ? Array(backward).fill("up") : Array(forward).fill("down");
 }
 
 /**
  * Pure sequence: from the start menu, navigate to the BAG entry and enter it.
- * FRLG start menu order is POKéDEX, POKéMON, BAG, <player>, SAVE, OPTION, EXIT
- * (BAG is index 2). GAP: assumes the start-menu cursor opens at index 0; the
- * real cursor remembers the last-used entry, so the down count can be off (same
- * class of gap as the bag cursor). Returns the presses up to (not including)
- * the A that enters BAG, so the caller can poll for the bag-open state.
+ * EXACT when `startMenuCursorPos` is given (read live from RAM — see
+ * getStartMenuCursorPos; the cursor persists across opens, so this is knowable
+ * before the menu is even opened): computes the shortest wrap-aware path to
+ * BAG (see buildMenuCursorSequence). Falls back to the GAP-LIMITED assumed-0
+ * path (games without a live-verified cursor address, e.g. EMERALD) when
+ * `startMenuCursorPos` is null — the real cursor remembers the last-used
+ * entry, so the down count can be off; wrong navigation risks landing on SAVE
+ * and completing a real save (confirmed live), so prefer the exact path
+ * whenever the address is available. Returns the presses up to (not
+ * including) the A that enters BAG, so the caller can poll for the bag-open
+ * state.
+ * @param {number|null} [startMenuCursorPos] live cursor read, or null/undefined for the gap-limited fallback.
  * @returns {string[]}
  */
-export function buildStartMenuToBagSequence() {
-    // Cursor assumed at top (POKéDEX); BAG is 2 entries down.
+export function buildStartMenuToBagSequence(startMenuCursorPos) {
+    if (typeof startMenuCursorPos === "number") {
+        return ["start", ...buildMenuCursorSequence(startMenuCursorPos, START_MENU_BAG_INDEX)];
+    }
+    // GAP: cursor assumed at top (POKéDEX); BAG is 2 entries down.
     return ["start", "down", "down"];
 }
 
@@ -379,17 +460,18 @@ export async function useItemLive({ item, targetSlot, quantity = 1 }, options = 
 
     let stepsUsed = 0;
     const consume = (n) => { stepsUsed += n; };
-    const runPhase = async (presses) => {
+    const runPhase = async (presses, { tapSettleFrames } = {}) => {
         if (signal?.aborted) return makeOutcome(OUTCOME_STATUS.INTERRUPTED, { stopReason: STOP_REASON.NONE, stepsUsed, message: "aborted" });
         if (stepsUsed >= maxSteps) {
             return makeOutcome(OUTCOME_STATUS.BUDGET_EXHAUSTED, { stopReason: STOP_REASON.BUDGET_EXHAUSTED, stepsUsed, message: "use_item step budget exhausted" });
         }
         const res = await executeQueue(presses, {
             io, signal,
+            ...(tapSettleFrames ? { tapSettleFrames } : {}),
             onStep: async () => {
                 const st = await pollState().catch(() => null);
                 if (!st) return false;
-                const reason = classifyInterrupt(st, { hpThreshold: 0.2, expectMenu: true, baselineMap: null });
+                const reason = classifyInterrupt(st, { expectMenu: true, baselineMap: null });
                 // A menu open / dialog lock is EXPECTED mid-use (we're driving
                 // menus); only stop on the things we can't press through.
                 if (reason && reason !== STOP_REASON.UNEXPECTED_MENU && reason !== STOP_REASON.DIALOG) {
@@ -431,7 +513,7 @@ export async function useItemLive({ item, targetSlot, quantity = 1 }, options = 
         return makeOutcome(OUTCOME_STATUS.FAILED, {
             stopReason: STOP_REASON.PRECONDITION_FAILED,
             stepsUsed,
-            message: "use_item overworld-only (in-battle item use is the battle engine's path)",
+            message: "use_item cannot run during a battle (it drives the overworld start-menu). To resolve the battle, call fight_battle (the harness fights it turn by turn); heal afterwards. Manual in-battle item use is press-tool territory: B to the main battle menu, then BAG.",
         });
     }
     if (state0.progress?.controlsLocked) {
@@ -442,12 +524,35 @@ export async function useItemLive({ item, targetSlot, quantity = 1 }, options = 
         });
     }
 
-    // Phase 1: Start menu → BAG entry (gap-limited cursor).
-    let out = await runPhase([...buildStartMenuToBagSequence(), "a"]);
+    // Phase 1: Start menu → BAG entry. Exact when state0.menu.startMenuCursorPos
+    // is readable (live RAM read — see getStartMenuCursorPos); falls back to the
+    // gap-limited assumed-0 path otherwise (see buildStartMenuToBagSequence).
+    // MENU_CURSOR_SETTLE_FRAMES: cursor moves need the same slower settle as
+    // bag pocket switches — live-verified two back-to-back cursor presses at
+    // 20 frames dropped the second one (readUint8 against the live cursor
+    // address confirmed the miss); reuses BAG_POCKET_SETTLE_FRAMES's value.
+    let out = await runPhase(
+        [...buildStartMenuToBagSequence(state0.menu?.startMenuCursorPos), "a"],
+        { tapSettleFrames: BAG_POCKET_SETTLE_FRAMES }
+    );
     if (out || abortedReason) return out || makeOutcome(OUTCOME_STATUS.INTERRUPTED, { stopReason: abortedReason, stepsUsed, message: `interrupted opening bag: ${abortedReason}` });
 
-    // Phase 2: navigate to the item's pocket + slot (gap-limited), open action menu.
-    out = await runPhase([...buildBagNavigationSequence(found.pocketIndex, found.itemIndex), "a"]);
+    // Phase 2: navigate to the item's pocket + slot, open action menu. Pocket
+    // 0 (Items) item-slot navigation is exact when
+    // state0.menu.bagItemsPocketCursorPos is readable (live RAM read — see
+    // getBagItemsPocketCursorPos); other pockets stay gap-limited (see
+    // buildBagNavigationSequence). BAG_POCKET_SETTLE_FRAMES: the pocket-switch
+    // slide animation blocks input longer than a plain cursor move
+    // (live-verified in battlePolicy.js's ball throw — two Rights back-to-back
+    // at the executor's 1-frame default only registered ONE pocket change),
+    // so pocket/item navigation gets a slower settle.
+    out = await runPhase(
+        [...buildBagNavigationSequence(found.pocketIndex, found.itemIndex, {
+            currentItemIndex: state0.menu?.bagItemsPocketCursorPos,
+            pocketLength: bag?.[found.pocketName]?.length != null ? bag[found.pocketName].length + 1 : undefined,
+        }), "a"],
+        { tapSettleFrames: BAG_POCKET_SETTLE_FRAMES }
+    );
     if (out || abortedReason) return out || makeOutcome(OUTCOME_STATUS.INTERRUPTED, { stopReason: abortedReason, stepsUsed, message: `interrupted selecting item: ${abortedReason}` });
 
     // Phase 3: select "Use" (default cursor) + confirm.
@@ -537,7 +642,7 @@ export async function healAtPokecenterLive(options = {}) {
 
     // Leg 1: route to the nearest Pokécenter. gotoLive returns an outcome; if
     // it's not OK, hand it straight back (interrupt / blocked / budget).
-    const leg1 = await gotoLiveFn({ location: "nearest pokecenter" }, { maxSteps, hpThreshold: 0.2, signal });
+    const leg1 = await gotoLiveFn({ location: "nearest pokecenter" }, { maxSteps, signal });
     stepsUsed += leg1.steps_used ?? 0;
     if (leg1.status !== OUTCOME_STATUS.OK) {
         return leg1.status === OUTCOME_STATUS.INTERRUPTED || leg1.status === OUTCOME_STATUS.BUDGET_EXHAUSTED
@@ -568,7 +673,7 @@ export async function healAtPokecenterLive(options = {}) {
     // Leg 2: walk to the nurse-interact tile on this center's map. gotoLive
     // with {x,y} and no `map` targets the current map. Returns on arrival or
     // an interrupt (hand it back). Reuse the remaining budget.
-    const leg2 = await gotoLiveFn({ x: nurseTile.x, y: nurseTile.y }, { maxSteps: Math.max(1, maxSteps - stepsUsed), hpThreshold: 0.2, signal });
+    const leg2 = await gotoLiveFn({ x: nurseTile.x, y: nurseTile.y }, { maxSteps: Math.max(1, maxSteps - stepsUsed), signal });
     stepsUsed += leg2.steps_used ?? 0;
     if (leg2.status !== OUTCOME_STATUS.OK) {
         return leg2.status === OUTCOME_STATUS.INTERRUPTED || leg2.status === OUTCOME_STATUS.BUDGET_EXHAUSTED

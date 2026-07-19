@@ -1,0 +1,40 @@
+{
+  "note": "Reframed eval set. Seeds are TRAINED-ON rows; questions are LLM-reframed (singles) or combined (pairs) so the eval tests learned knowledge, not memorized strings. Gold answers are NEVER LLM-produced: single gold = seed.answer; combined gold = concatenation of two seed answers. Trains-on-all + evals-on-reframed.",
+  "grounding": "STRICT — teacher rewrites/combines QUESTIONS only; answers are copied/concatenated from seeds, never generated.",
+  "model": "gemma-4-31b",
+  "temperature": 0,
+  "rephrasePromptHash": "6453ed0331de4a4b",
+  "combinePromptHash": "2fbfe840f083a325",
+  "source": "staticdata/frlg/wiki_qa.jsonl",
+  "sourceManifest": "../staticdata/frlg/wiki_qa_index.json",
+  "evalTarget": 56,
+  "combinedRatio": 0.2,
+  "singleCount": 45,
+  "combinedCount": 11,
+  "strideSelection": "deterministic stride by id within source; combined pairs share title (fallback: adjacent id); singles and pairs use disjoint seed sets",
+  "pairAdjacency": {
+    "same-title": 10,
+    "adjacent-id": 1
+  },
+  "bySource": {
+    "bulbapedia": 20,
+    "strategywiki": 36
+  },
+  "byKind": {
+    "single": 45,
+    "combined": 11
+  },
+  "rephraseMethod": {
+    "first-try": 56,
+    "retry": 0,
+    "fallback": 0
+  },
+  "asked": 53,
+  "fromCache": 3,
+  "failures": [],
+  "outputs": {
+    "train": "finetune/dataset/train.jsonl",
+    "eval": "finetune/dataset/eval_reframed.jsonl",
+    "cache": "finetune/dataset/.eval_reframed_cache.json"
+  }
+}

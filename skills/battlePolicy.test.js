@@ -15,7 +15,7 @@
 // runtime state, not static).
 // =============================================================================
 
-import { decideAction, runBattleLive } from "./battlePolicy.js";
+import { decideAction, runBattleLive, pickCatchBall } from "./battlePolicy.js";
 import { STOP_REASON } from "../llminteract/toolInterface.js";
 
 let passed = 0;
@@ -230,7 +230,7 @@ console.log("\n== flee: wild battles flee, trainers fall back to default ==");
         `got ${JSON.stringify(d2)}`);
 }
 
-console.log("\n== catch_wild: chips with the weakest effective move ==");
+console.log("\n== catch_all_pokemon: chips with the weakest effective move ==");
 {
     const wild = {
         ...CHARMANDER_VS_GRASS,
@@ -243,9 +243,14 @@ console.log("\n== catch_wild: chips with the weakest effective move ==");
             ],
         },
     };
-    const d = decideAction(wild, { strategy: "default", catchWild: true });
-    check("catch_wild picks the lowest-effective-damage move (Scratch)", d.kind === "move" && d.moveIndex === 1,
+    const d = decideAction(wild, { strategy: "default", catchAll: true });
+    check("catch_all_pokemon picks the lowest-effective-damage move (Scratch)", d.kind === "move" && d.moveIndex === 1,
         `got ${JSON.stringify(d)}`);
+    // catch_all chips regardless of the wild/trainer flag (the model toggles it
+    // off before trainers itself; the engine no longer gates on isWild).
+    const dTrainer = decideAction({ ...wild, isWild: false }, { strategy: "default", catchAll: true });
+    check("catch_all_pokemon chips even when isWild is false", dTrainer.kind === "move" && dTrainer.moveIndex === 1,
+        `got ${JSON.stringify(dTrainer)}`);
 }
 
 console.log("\n== escalation paths ==");
@@ -389,14 +394,17 @@ console.log("\n== runBattleLive: one move pressed, then battle ends -> OK ==");
 {
     // Poll 1: in battle, lead at full HP. Poll 2 (after the move sequence): still
     // in battle (turn resolving). Poll 3: battle ended. decideAction (default)
-    // picks EMBER at slot 1 (STAB outranks Scratch), so the sequence is A, Down, A.
+    // picks EMBER at slot 1 (STAB outranks Scratch), so the cursor-agnostic
+    // sequence is B,B (back out), Left,Up (force FIGHT), A, Up,Left (force
+    // slot 0), Right (to slot 1), A.
     const seq = [battleState(1.0), battleState(1.0), { ...battleState(1.0), battle: { active: false } }];
     let i = 0;
     const pollState = async () => seq[Math.min(i++, seq.length - 1)];
     const io = new FakeIo();
     const res = await runBattleLive({ strategy: "default" }, { pollState, io, maxSteps: 50 });
     check("move-then-end -> status ok", res.status === "ok", JSON.stringify(res));
-    check("move-then-end -> sent A, Down, A for slot-1 Ember", io.tapLog.length === 3 && io.tapLog[0] === "A" && io.tapLog[1] === "Down" && io.tapLog[2] === "A", JSON.stringify(io.tapLog));
+    check("move-then-end -> cursor-agnostic slot-1 sequence",
+        io.tapLog.join(",") === "B,B,Left,Up,A,Up,Left,Right,A", JSON.stringify(io.tapLog));
     check("move-then-end -> battle ended message", /battle ended/.test(res.message), JSON.stringify(res));
 }
 
@@ -435,8 +443,8 @@ console.log("\n== runBattleLive: out_of_pp -> escalated, no presses wasted ==");
 
 console.log("\n== runBattleLive: move decision honours moveIndex via down-presses ==");
 {
-    // Lead with Ember at slot 1: the sequence should be A (open Fight), down (to
-    // slot 1), A (confirm) — 3 presses. Poll must stay in-battle long enough for
+    // Lead with Ember at slot 1: the 2x2 move grid means slot 1 is one Right
+    // from the forced top-left. Poll must stay in-battle long enough for
     // the move sequence to run before the ended poll closes the loop.
     const seq = [battleState(1.0), battleState(1.0), { ...battleState(1.0), battle: { active: false } }];
     let i = 0;
@@ -444,8 +452,85 @@ console.log("\n== runBattleLive: move decision honours moveIndex via down-presse
     const io = new FakeIo();
     await runBattleLive({ strategy: "type_effective" }, { pollState, io, maxSteps: 50 });
     // decideAction picks EMBER (slot 1) for the Fire STAB vs null enemy (60 > 40).
-    check("slot-1 move -> 3 presses (A, down, A)", io.tapLog.length === 3, JSON.stringify(io.tapLog));
-    check("slot-1 move -> second press is Down", io.tapLog[1] === "Down", JSON.stringify(io.tapLog));
+    check("slot-1 move -> 9 presses (normalize + select)", io.tapLog.length === 9, JSON.stringify(io.tapLog));
+    check("slot-1 move -> Right into slot 1 before confirm", io.tapLog[7] === "Right" && io.tapLog[8] === "A", JSON.stringify(io.tapLog));
+}
+
+// =============================================================================
+// catch_all_pokemon: ball selection (pure) + live throw/chip/no-ball paths
+// =============================================================================
+
+console.log("\n== pickCatchBall: prefers the most basic ball, null when none ==");
+{
+    const bag = {
+        Items: [{ name: "POTION", quantity: 3 }],
+        Pokeballs: [{ name: "GREAT_BALL", quantity: 2 }, { name: "POKE_BALL", quantity: 5 }],
+    };
+    const ball = pickCatchBall(bag);
+    check("pickCatchBall prefers POKE_BALL over GREAT_BALL", ball && ball.name === "POKE_BALL" && ball.itemIndex === 1, JSON.stringify(ball));
+    check("pickCatchBall reports pokéballs pocket index 2", ball && ball.pocketIndex === 2, JSON.stringify(ball));
+    check("pickCatchBall falls back to any ball present",
+        pickCatchBall({ Pokeballs: [{ name: "DUSK_BALL", quantity: 1 }] })?.name === "DUSK_BALL");
+    check("pickCatchBall -> null when no balls", pickCatchBall({ Items: [{ name: "POTION", quantity: 1 }] }) === null);
+    check("pickCatchBall -> null when pocket empty", pickCatchBall({ Pokeballs: [] }) === null);
+}
+
+/** battleState + an injected enemy read at a given HP fraction. */
+function catchDeps(enemyHpFraction, { bag = { Pokeballs: [{ name: "POKE_BALL", quantity: 5 }] } } = {}) {
+    const state = battleState(1.0);
+    let bagCalled = false;
+    return {
+        pollState: async () => state,
+        readEnemy: async () => ({ species: "PIDGEY", types: ["NORMAL", "FLYING"], level: 3, currentHP: Math.round(12 * enemyHpFraction), maxHP: 12 }),
+        readBag: async () => { bagCalled = true; return bag; },
+        wasBagCalled: () => bagCalled,
+        state,
+    };
+}
+
+console.log("\n== runBattleLive catch_all: chips (no ball) while target is healthy ==");
+{
+    const d = catchDeps(1.0); // enemy at full HP -> above catch threshold
+    const io = new FakeIo();
+    // End the battle right after the first move so the loop terminates.
+    let polls = 0;
+    // startState (poll 0) + first loop poll (poll 1) active, then battle ends.
+    const pollState = async () => (polls++ < 2 ? d.state : { ...d.state, battle: { active: false } });
+    const res = await runBattleLive(
+        { strategy: "default", catch_all_pokemon: true },
+        { pollState, readEnemy: d.readEnemy, readBag: d.readBag, io, maxSteps: 50 },
+    );
+    check("healthy target -> status ok", res.status === "ok", JSON.stringify(res));
+    check("healthy target -> did NOT read the bag (no throw)", d.wasBagCalled() === false);
+    check("healthy target -> a fight-menu sequence fired", io.tapLog[0] === "B", JSON.stringify(io.tapLog));
+}
+
+console.log("\n== runBattleLive catch_all: throws a ball once target is weak ==");
+{
+    const d = catchDeps(0.16); // ~2/12 HP -> below catch threshold
+    const io = new FakeIo();
+    let polls = 0;
+    // startState (poll 0) + first loop poll (poll 1) active -> throw. Then caught.
+    const pollState = async () => (polls++ < 2 ? d.state : { ...d.state, battle: { active: false } });
+    const res = await runBattleLive(
+        { strategy: "default", catch_all_pokemon: true },
+        { pollState, readEnemy: d.readEnemy, readBag: d.readBag, io, maxSteps: 50, throwBallSequence: () => ["a"] },
+    );
+    check("weak target -> status ok (battle ended)", res.status === "ok", JSON.stringify(res));
+    check("weak target -> read the bag for a ball", d.wasBagCalled() === true);
+    check("weak target -> threw (only the injected throw press fired)", io.tapLog.join(",") === "A", JSON.stringify(io.tapLog));
+}
+
+console.log("\n== runBattleLive catch_all: no balls -> choice_required ==");
+{
+    const d = catchDeps(0.16, { bag: { Pokeballs: [] } });
+    const res = await runBattleLive(
+        { strategy: "default", catch_all_pokemon: true },
+        { pollState: d.pollState, readEnemy: d.readEnemy, readBag: d.readBag, io: new FakeIo(), maxSteps: 50 },
+    );
+    check("no balls -> interrupted", res.status === "interrupted", JSON.stringify(res));
+    check("no balls -> choice_required", res.stop_reason === STOP_REASON.CHOICE_REQUIRED, JSON.stringify(res));
+    check("no balls -> message points at Poké Balls", /Pok./.test(res.message) && /ball/i.test(res.message), JSON.stringify(res));
 }
 
 // --- Summary ----------------------------------------------------------------

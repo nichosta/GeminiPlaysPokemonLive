@@ -1,0 +1,31 @@
+# State→intent SFT lane, v2 — fresh env/scaffold (see environment.py docstring
+# for why: the old thundr/frlg-state-intent run trained cleanly but served
+# broken prose instead of JSON at inference; republishing under a new id rules
+# out anything tied to the old published env).
+#
+# Qwen3.5-9B matches the "before" baseline (OpenRouter qwen/qwen3.5-9b) used in
+# intentEval.js.
+model = "Qwen/Qwen3.5-9B"
+algorithm = "sft"
+
+# Environment: upload this project folder with
+# `flash env push --name frlg-state-intent-v2 .`, then paste the returned id below.
+[environment]
+id = "thundr/frlg-state-intent-v2"
+
+[train]
+epochs = 3
+# Complementary ~80% of the 981-row state_intent corpus (held-out eval = the
+# other 197, dataset/eval.jsonl — see dataset/eval_index.json). Do NOT train on
+# all 981 or the before/after comparison is contaminated.
+max_examples = 784
+# The intent system message (system_message.txt, the D1 interface doc) is
+# ~1295 tokens vs a typical short system prompt, so every rendered prompt
+# (sys + state window) runs 1380-1800 tokens. Without this cap flash's default
+# sft_max_len (~1024) truncates the sequence before the short completion,
+# erroring "every SFT example has an empty completion after sft_max_len
+# truncation".
+max_context_tokens = 2048
+lora_rank = 32
+# GPU and HF artifacts are managed automatically by the platform: the GPU is
+# the cheapest fitting managed class, and artifacts live in a private environment-scoped repo.

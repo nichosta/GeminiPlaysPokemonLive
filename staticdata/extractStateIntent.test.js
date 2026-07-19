@@ -79,7 +79,7 @@ function ev(start, end, text) {
 // --- validateIntent: set_battle_strategy -----------------------------------
 {
     check("sbs: valid strategy ok", validateIntent({ name: "set_battle_strategy", args: { strategy: "type_effective" } }).ok);
-    check("sbs: with lead + catch_wild ok", validateIntent({ name: "set_battle_strategy", args: { strategy: "flee", lead: "Charmander", catch_wild: true } }).ok);
+    check("sbs: with lead + catch_all_pokemon ok", validateIntent({ name: "set_battle_strategy", args: { strategy: "flee", lead: "Charmander", catch_all_pokemon: true } }).ok);
     check("sbs: missing strategy rejected", !validateIntent({ name: "set_battle_strategy", args: {} }).ok);
     check("sbs: bad strategy enum rejected", !validateIntent({ name: "set_battle_strategy", args: { strategy: "ultra_damage" } }).ok);
 }

@@ -13,7 +13,7 @@
 // See docs/tool-interface.md for the prose spec, rationale, and examples.
 // =============================================================================
 
-export const TOOL_INTERFACE_VERSION = "1.0.0";
+export const TOOL_INTERFACE_VERSION = "1.1.0";
 
 // -----------------------------------------------------------------------------
 // Outcome envelope — EVERY tool call resolves to exactly this shape.
@@ -40,7 +40,10 @@ export const STOP_REASON = Object.freeze({
     DIALOG: "dialog",                 // Controls locked by dialog/cutscene/script.
     CHOICE_REQUIRED: "choice_required", // A yes/no or menu choice needs a decision.
     WARP_COMPLETED: "warp_completed", // Crossed a warp (map changed).
-    HP_LOW: "hp_low",                 // A party member dropped below the HP threshold.
+    HP_LOW: "hp_low",                 // LEGACY: nothing produces this anymore (low HP is surfaced as
+                                     // plain text in the D2 state prompt, not as a hard interrupt —
+                                     // blocking on it deadlocked the walk to a Pokécenter). Kept in
+                                     // the enum for trace/tool-interface stability.
     OUT_OF_PP: "out_of_pp",           // Battle policy has no usable move.
     ABOUT_TO_FAINT: "about_to_faint",
     BLOCKED: "blocked",               // Pathing blocked (NPC, impassable, no route).
@@ -194,12 +197,18 @@ export const TOOLS = Object.freeze([
                         "Optional nickname/species to keep as the active battler; " +
                         "the engine switches to it when possible.",
                 },
-                catch_wild: {
+                catch_all_pokemon: {
                     type: "boolean",
                     default: false,
                     description:
-                        "If true, attempt to weaken-and-catch wild encounters " +
-                        "instead of defeating/fleeing them.",
+                        "If true, the engine tries to CATCH the opponent in EVERY " +
+                        "battle: it chips the target down with the weakest move, " +
+                        "then throws a Poké Ball, repeating until it's caught. Use " +
+                        "this to build/train your team (e.g. walking back and forth " +
+                        "through grass). It stays on until you change it, and it " +
+                        "wastes turns against trainers (their Pokémon can't be " +
+                        "caught) — turn it OFF (set false) before gym/trainer " +
+                        "battles. Requires Poké Balls in the bag.",
                 },
             },
         },
@@ -258,6 +267,31 @@ export const TOOLS = Object.freeze([
                     default: 1,
                     description: "How many to use.",
                 },
+            },
+        },
+    },
+    {
+        name: "fight_battle",
+        description:
+            "Hand the CURRENT battle to the C3 battle engine: it picks and " +
+            "executes moves turn by turn (per the standing strategy from " +
+            "set_battle_strategy, or the optional override here) until the " +
+            "battle ends or it must escalate (out_of_pp / about_to_faint / " +
+            "choice_required). Use this instead of pressing A through a battle " +
+            "manually. Fails with precondition_failed when no battle is active.",
+        parameters: {
+            type: "object",
+            required: [],
+            additionalProperties: false,
+            properties: {
+                strategy: {
+                    type: "string",
+                    enum: [...BATTLE_STRATEGY],
+                    description:
+                        "Optional one-off strategy override for THIS battle. " +
+                        "Omit to use the standing policy.",
+                },
+                max_steps: MAX_STEPS_SCHEMA,
             },
         },
     },

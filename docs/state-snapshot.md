@@ -17,7 +17,10 @@ Everything downstream binds to this shape:
   [`llminteract/toolInterface.js`](../llminteract/toolInterface.js) maps onto
   them one-to-one (see table below).
 - **D2** (agent loop) builds the model prompt from it.
-- **D3** (trace logging) records it verbatim as `state_before`.
+- **D3** (trace logging) records it verbatim as `state_before` and derives a
+  compact `state_summary` from it (incl. the reached/next milestone for E3/E4
+  filtering).
+- **D4** (eval harness) checkpoints milestones + benchmarks the run from it.
 
 ## Shape
 
@@ -56,10 +59,24 @@ Everything downstream binds to this shape:
   },
   "bag": { "Items": [ … ], "Poke Balls": [ … ], … },  // only when includeBag
   "map": { … },                                        // only when includeMap
+  "quest": {                                           // only when includeQuest
+    "reached": { "id": "got_pokedex", "name": "…", "order": 4 },
+    "next": { "id": "defeated_brock", "name": "…", "order": 7 },
+    "availableOptional": [ { "id": "…", "name": "…", "order": 5 } ],
+    "progress": 0.5,      // reached.order / total (0..1)
+    "total": 8
+  },
   "errors": {},                // section -> message for any reader that failed
   "ok": true                   // true when errors is empty
 }
 ```
+
+The `quest` section is the runtime surfacing of A4's milestone graph — `readQuest`
+reads every story flag via `readFlagSet`/`readPlayerFlag` (the same path D4's eval
+harness uses, by bit-offset, bypassing the badge-only flag map) and walks the DAG
+with `currentMilestone`. Only `id`/`name`/`order` are kept per milestone so the
+snapshot and trace stay compact; the full graph lives in
+[`skills/milestones.js`](../skills/milestones.js).
 
 ## Options
 
@@ -69,10 +86,12 @@ Everything downstream binds to this shape:
 | `mapMode` | `"visibleBackup"` | `"visible"` \| `"visibleBackup"` \| `"full"` map view. |
 | `includeBag` | `true` | Read bag contents (moderately expensive). |
 | `includeParty` | `true` | Read the full party (needed for HP-based stops). |
+| `includeQuest` | `false` | Read the story/quest block (one flag per milestone). OFF by default — only the model-facing snapshot (D2) opts in; interrupt detection and the macro skills don't use it and poll tightly. |
 
 The fast poll B2 needs is `getState({ includeMap: false, includeBag: false })` —
 it drops the two heavy reads while keeping the battle / dialog / map-id / HP /
-menu fields that stop detection depends on.
+menu fields that stop detection depends on. (Quest is already off by default,
+so the fast poll skips it automatically.)
 
 ## Error isolation
 

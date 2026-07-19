@@ -13,7 +13,7 @@
 // exactly where the plan says it does.
 // =============================================================================
 
-import { getStaticMap, getStaticMapById } from "./staticMap.js";
+import { getStaticMap, getStaticMapById, componentOf } from "./staticMap.js";
 import { getMapGraph, resolveLocation } from "./locationGraph.js";
 import { resolveConnectionCrossing, planCrossMapRoute, resolveGotoTarget, gotoLive } from "./crossMapRouter.js";
 import { makeOutcome, OUTCOME_STATUS, STOP_REASON } from "../llminteract/toolInterface.js";
@@ -319,29 +319,67 @@ function borderRowOrCol(map, direction) {
     check("resolveGotoTarget: unresolvable name -> null", resolveGotoTarget({ location: "Cinnabar Island" }, current) === null);
 }
 
-// --- 8. Known limitation: Pallet Town -> Pewter Gym is NOT solvable yet -----
+// --- 8. Route 2 re-entry: Pallet Town -> Pewter Gym IS now solvable ----------
 //
-// The real route detours through Viridian Forest: Route 2 (3,20) is split by
-// a fully-impassable Cut-tree line (rows 42-44, no Cut pre-Boulder-Badge) into
-// a south half bordering Viridian City and a north half bordering Pewter City.
-// The forest's warps land you back on Route 2's NORTH half — the same graph
-// node the map-hop BFS already marked visited on the way in via the south
-// half. Since mapGraph.json has one node per MAP (not per connected region
-// within a map), no BFS over it — with or without edge exclusion — can
-// express "leave this node, come back to it a different way." Fixing this for
-// real needs A3 to split a map into per-connected-component nodes. This test
-// pins the current (incomplete) behavior so it fails loudly, not silently,
-// the day someone lands that fix and forgets to update it.
+// Route 2 (3,20) is split by a fully-impassable Cut-tree line (rows 42-44, no
+// Cut pre-Boulder-Badge) into a south half bordering Viridian City and a north
+// half bordering Pewter City. The route to Pewter must leave Route 2's south
+// half and re-enter the SAME map at its north half — via the Route 2 East
+// Building through-gatehouse (shortest) or Viridian Forest's warps (fallback).
+// That re-entry is exactly what a one-node-per-MAP graph could not express (the
+// BFS marked the map visited on the way in via the south half). A3 now splits a
+// map into per-connected-component nodes, so mapRoute keys on (map, component)
+// and the north half is a distinct, unvisited node. This test pins the fixed
+// behavior: the plan is found, it re-enters Route 2 at a different component,
+// and every leg replays legally under real movement rules.
 {
     const start = { group: 3, num: 0, x: 6, y: 12 };
     const gymMap = getStaticMapById("MAP_PEWTER_CITY_GYM");
     const goal = { group: gymMap.group, num: gymMap.num, x: 6, y: 14 }; // the gym's warp landing tile
     const plan = planCrossMapRoute(start, goal);
-    check(
-        "known limitation: Pallet -> Pewter Gym still fails (needs Route 2 re-entry via Viridian Forest)",
-        !plan.found,
-        JSON.stringify(plan.reason)
-    );
+    check("Route 2 re-entry: Pallet -> Pewter Gym plan found", plan.found, JSON.stringify(plan.reason));
+
+    if (plan.found) {
+        check("Route 2 re-entry: multi-leg route", plan.legs.length > 1, `${plan.legs.length} legs`);
+        check("Route 2 re-entry: reasonable cost", plan.totalCost < 400, `total cost ${plan.totalCost}`);
+
+        // Replaying the critical path under real movement rules: every warp leg
+        // ends adjacent to a door whose facing press lands on the door tile,
+        // every connection lands on a passable border tile, and the final leg
+        // reaches the goal tile exactly. While replaying, also record which
+        // component of Route 2 (3:20) each Route 2 leg enters — the defining
+        // property of the fix is that Route 2 is re-entered at a DIFFERENT
+        // component (south half, then north half).
+        let cur = { x: start.x, y: start.y };
+        let ok = true;
+        const r2Comps = new Set();
+        for (const leg of plan.legs) {
+            const map = getStaticMap(leg.group, leg.num);
+            if (leg.group === 3 && leg.num === 20) r2Comps.add(componentOf(leg.group, leg.num, cur.x, cur.y));
+            let ended;
+            try {
+                ended = replay(map, cur, leg.directions);
+            } catch (e) {
+                ok = false;
+                check(`re-entry replay legal on ${leg.group}:${leg.num}`, false, e.message);
+                break;
+            }
+            if (leg.crossing) {
+                if (leg.crossing.kind === "warp") {
+                    const doorTile = map.warps.find((w) => Math.abs(w.x - ended.x) + Math.abs(w.y - ended.y) <= 1);
+                    const [dx, dy] = DIRS[leg.crossing.press];
+                    const stepped = { x: ended.x + dx, y: ended.y + dy };
+                    check(`re-entry warp leg faces a door (${leg.group}:${leg.num})`, !!doorTile && stepped.x === doorTile.x && stepped.y === doorTile.y, JSON.stringify({ ended, stepped, doorTile }));
+                }
+                cur = { ...leg.crossing.toTile };
+            } else {
+                check(`re-entry final leg reaches goal (${leg.group}:${leg.num})`, ended.x === goal.x && ended.y === goal.y, JSON.stringify(ended));
+                cur = ended;
+            }
+        }
+        check("Route 2 re-entry: Route 2 visited at >= 2 components (south + north)", r2Comps.size >= 2, `comps ${[...r2Comps]}`);
+        check("Route 2 re-entry: full plan replays legally", ok);
+    }
 }
 
 // =============================================================================
@@ -375,7 +413,6 @@ const POS0 = { group: 3, num: 0, x: 5, y: 19 };
 const GOAL_TILE = { x: 5, y: 18 };
 const DIALOG_SNAP = snap(5, 19, { progress: { controlsLocked: true } });
 const BATTLE_SNAP = snap(5, 19, { battle: { active: true } });
-const HPLOW_SNAP = snap(5, 19, { party: { lowestHpFraction: 0.1, pokemon: [] } });
 
 /** Build an injectable transport bundle from scripted queues + sub-handler fakes. */
 function makeGotoDeps({
@@ -455,7 +492,7 @@ function makeGotoDeps({
 // C. BATTLE_STARTED mid-route -> C3 fights it -> route continues -> OK
 {
     const pressLog = [];
-    const battlePolicy = { strategy: "type_effective", lead: "Charmander", catch_wild: false };
+    const battlePolicy = { strategy: "type_effective", lead: "Charmander", catch_all_pokemon: false };
     const harness = makeGotoDeps({
         polls: [snap(5, 19), BATTLE_SNAP, snap(5, 19)],
         positions: [POS0, POS0, POS0],
@@ -488,25 +525,28 @@ function makeGotoDeps({
     check("gotoLive(battle-escalate): steps = routing + battle", out.steps_used === 5, String(out.steps_used));
 }
 
-// E. Non-auto-clearable interrupt (hp_low) -> surface verbatim, no sub-handler
+// E. Low HP is NOT an interrupt: a low-HP baseline routes normally (HP is
+//    surfaced as plain text in the D2 state prompt, not as a hard stop that
+//    would deadlock the walk to a Pokécenter). Replaces the old hp_low latch
+//    cases — there is no latch and no hp_low surface anymore.
 {
+    const low = snap(5, 19, { party: { lowestHpFraction: 0.1, pokemon: [] } });
     const harness = makeGotoDeps({
-        polls: [snap(5, 19), HPLOW_SNAP],
+        polls: [low, low],
         positions: [POS0, POS0],
         advanceDialogImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
         runBattleImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
     });
     const out = await gotoLive({ x: GOAL_TILE.x, y: GOAL_TILE.y }, { ...harness.deps });
     const c = harness.counts();
-    check("gotoLive(hp_low): status interrupted", out.status === OUTCOME_STATUS.INTERRUPTED, JSON.stringify(out));
-    check("gotoLive(hp_low): stop_reason hp_low", out.stop_reason === STOP_REASON.HP_LOW, out.stop_reason);
-    check("gotoLive(hp_low): no sub-handler called", c.dialogCalls === 0 && c.battleCalls === 0, JSON.stringify(c));
-    check("gotoLive(hp_low): steps = routing only", out.steps_used === 1, String(out.steps_used));
+    check("gotoLive(low hp): not interrupted", out.status === OUTCOME_STATUS.OK, JSON.stringify(out));
+    check("gotoLive(low hp): stop_reason none", out.stop_reason === STOP_REASON.NONE, out.stop_reason);
+    check("gotoLive(low hp): no sub-handler called", c.dialogCalls === 0 && c.battleCalls === 0, JSON.stringify(c));
 }
 
 // F. BATTLE already active at goto start -> C3 fights first, then routes -> OK
 {
-    const battlePolicy = { strategy: "flee", lead: null, catch_wild: true };
+    const battlePolicy = { strategy: "flee", lead: null, catch_all_pokemon: true };
     const harness = makeGotoDeps({
         polls: [BATTLE_SNAP, snap(5, 19)],
         positions: [POS0, POS0],
@@ -517,7 +557,7 @@ function makeGotoDeps({
     const c = harness.counts();
     check("gotoLive(start-battle): status ok", out.status === OUTCOME_STATUS.OK, JSON.stringify(out));
     check("gotoLive(start-battle): runBattle called at start", c.battleCalls === 1, String(c.battleCalls));
-    check("gotoLive(start-battle): battlePolicy flows (flee+catch_wild)", c.battleArg?.policy?.strategy === "flee" && c.battleArg?.policy?.catch_wild === true, JSON.stringify(c.battleArg?.policy));
+    check("gotoLive(start-battle): battlePolicy flows (flee+catch_all_pokemon)", c.battleArg?.policy?.strategy === "flee" && c.battleArg?.policy?.catch_all_pokemon === true, JSON.stringify(c.battleArg?.policy));
     check("gotoLive(start-battle): steps = routing + battle", out.steps_used === 8, String(out.steps_used));
 }
 
@@ -538,6 +578,134 @@ function makeGotoDeps({
     check("gotoLive(plain): no sub-handler called", c.dialogCalls === 0 && c.battleCalls === 0, JSON.stringify(c));
     check("gotoLive(plain): one routing press", pressLog.length === 1 && pressLog[0] === "up", JSON.stringify(pressLog));
     check("gotoLive(plain): steps = 1", out.steps_used === 1, String(out.steps_used));
+}
+
+// H. Already standing exactly on a warp tile (start === the warp's fromTile):
+//    findPath still produces a valid plan with a real crossing direction.
+//    (Whether that plan should detour or not turned out to depend on the
+//    specific door's geometry — see run-improvement-log.md — so gotoLive's
+//    stall guard, not this planner, is what caps a bad guess's cost live.)
+{
+    const oaksLab = getStaticMapById("MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB");
+    const doorTile = oaksLab.warps[0]; // {x:6, y:12, dest_map: MAP_PALLET_TOWN, ...}
+    const from = { group: oaksLab.group, num: oaksLab.num, x: doorTile.x, y: doorTile.y };
+    const to = { group: 3, num: 0, x: 12, y: 10 }; // MAP_PALLET_TOWN center
+    const plan = planCrossMapRoute(from, to);
+    check("already-on-warp-tile: plan found", plan.found, JSON.stringify(plan));
+    if (plan.found) {
+        const firstLeg = plan.legs[0];
+        check("already-on-warp-tile: crossing press is a real direction, not undefined",
+            ["up", "down", "left", "right"].includes(firstLeg.crossing?.press), JSON.stringify(firstLeg.crossing));
+    }
+}
+
+// I. gotoLive stall guard: a warp crossing that never actually moves the
+//    player (live-confirmed possible — a bad detour guess, or a re-derive
+//    that keeps landing back on the same tile) must bail out with BLOCKED
+//    after a few re-derives, not silently burn the whole step budget.
+{
+    const oaksLab = getStaticMapById("MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB");
+    const doorTile = oaksLab.warps[0];
+    const stuckPos = { group: oaksLab.group, num: oaksLab.num, x: doorTile.x, y: doorTile.y };
+    const stuckSnap = () => snap(doorTile.x, doorTile.y, { player: { position: { x: doorTile.x, y: doorTile.y }, map: { bank: oaksLab.group, number: oaksLab.num } } });
+    const harness = makeGotoDeps({
+        // readCurrent never moves past the door tile — presses are logged but
+        // never actually change position (this is what a bad/failing warp
+        // crossing looks like from gotoLive's point of view).
+        polls: Array(20).fill(stuckSnap()),
+        positions: Array(20).fill(stuckPos),
+        advanceDialogImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+        runBattleImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+    });
+    const out = await gotoLive(
+        { location: "Pallet Town" }, // unreachable from inside Oak's Lab without crossing this door
+        { ...harness.deps, battlePolicy: { strategy: "default" }, dialogPolicy: { choice: "yes" }, maxSteps: 500 }
+    );
+    check("gotoLive(warp stall): bails out BLOCKED, not budget_exhausted",
+        out.status === OUTCOME_STATUS.FAILED && out.stop_reason === STOP_REASON.BLOCKED, JSON.stringify(out));
+    check("gotoLive(warp stall): bails out well before the 500-step budget",
+        out.steps_used < 50, String(out.steps_used));
+}
+
+// H. Trainer-battle chain: dialog sub-handler escalates battle_started ->
+//    gotoLive hands off to C3 (instead of surfacing the battle to the model),
+//    battle resolves OK -> route continues -> OK.
+{
+    const pressLog = [];
+    const harness = makeGotoDeps({
+        polls: [snap(5, 19), DIALOG_SNAP, snap(5, 19)],
+        positions: [POS0, POS0, POS0],
+        advanceDialogImpl: makeOutcome(OUTCOME_STATUS.INTERRUPTED, {
+            stopReason: STOP_REASON.BATTLE_STARTED, stepsUsed: 4, message: "dialog interrupted: battle_started",
+        }),
+        runBattleImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 6, message: "battle ended" }),
+        pressLog,
+    });
+    const out = await gotoLive({ x: GOAL_TILE.x, y: GOAL_TILE.y }, { ...harness.deps, battlePolicy: { strategy: "default" } });
+    const c = harness.counts();
+    check("gotoLive(dialog->battle chain): status ok", out.status === OUTCOME_STATUS.OK, JSON.stringify(out));
+    check("gotoLive(dialog->battle chain): dialog then battle each called once", c.dialogCalls === 1 && c.battleCalls === 1, JSON.stringify(c));
+    check("gotoLive(dialog->battle chain): steps = routing + dialog + battle", out.steps_used === 12, String(out.steps_used));
+}
+
+// I. Trainer-battle chain, battle engine escalates: the ESCALATION (not the
+//    raw battle_started) is what surfaces to the model.
+{
+    const harness = makeGotoDeps({
+        polls: [snap(5, 19), DIALOG_SNAP],
+        positions: [POS0, POS0],
+        advanceDialogImpl: makeOutcome(OUTCOME_STATUS.INTERRUPTED, {
+            stopReason: STOP_REASON.BATTLE_STARTED, stepsUsed: 4, message: "dialog interrupted: battle_started",
+        }),
+        runBattleImpl: makeOutcome(OUTCOME_STATUS.INTERRUPTED, {
+            stopReason: STOP_REASON.OUT_OF_PP, stepsUsed: 5, message: "no damaging move with PP remaining",
+        }),
+    });
+    const out = await gotoLive({ x: GOAL_TILE.x, y: GOAL_TILE.y }, { ...harness.deps });
+    const c = harness.counts();
+    check("gotoLive(chain-escalate): status interrupted", out.status === OUTCOME_STATUS.INTERRUPTED, JSON.stringify(out));
+    check("gotoLive(chain-escalate): stop_reason out_of_pp (not battle_started)", out.stop_reason === STOP_REASON.OUT_OF_PP, out.stop_reason);
+    check("gotoLive(chain-escalate): both sub-handlers ran", c.dialogCalls === 1 && c.battleCalls === 1, JSON.stringify(c));
+    check("gotoLive(chain-escalate): steps = routing + dialog + battle", out.steps_used === 10, String(out.steps_used));
+}
+
+// J. Held-run batching: a straight 4-tile stretch goes through moveRun as ONE
+//    held input, then the leg re-derives from live position (which the fake
+//    advances to the goal) instead of trusting the rest of the plan.
+{
+    const pressLog = [];
+    const moveRuns = [];
+    const harness = makeGotoDeps({
+        polls: Array(6).fill(snap(5, 19)),
+        positions: [POS0, POS0, { group: 3, num: 0, x: 5, y: 15 }],
+        advanceDialogImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+        runBattleImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+        pressLog,
+    });
+    const out = await gotoLive(
+        { x: 5, y: 15 },
+        { ...harness.deps, moveRun: async (button, count) => { moveRuns.push([button, count]); } }
+    );
+    check("gotoLive(hold): status ok", out.status === OUTCOME_STATUS.OK, JSON.stringify(out));
+    check("gotoLive(hold): straight run batched into one held input", moveRuns.length === 1 && moveRuns[0][0] === "up" && moveRuns[0][1] === 4, JSON.stringify(moveRuns));
+    check("gotoLive(hold): no per-tile taps for the batched run", pressLog.length === 0, JSON.stringify(pressLog));
+    check("gotoLive(hold): steps count the batched tiles", out.steps_used === 4, String(out.steps_used));
+}
+
+// K. Held-run batching stays OFF when a per-press fake is injected without a
+//    moveRun (offline tests keep seeing every tile press).
+{
+    const pressLog = [];
+    const harness = makeGotoDeps({
+        polls: Array(8).fill(snap(5, 19)),
+        positions: [POS0],
+        advanceDialogImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+        runBattleImpl: makeOutcome(OUTCOME_STATUS.OK, { stepsUsed: 0 }),
+        pressLog,
+    });
+    const out = await gotoLive({ x: 5, y: 15 }, { ...harness.deps });
+    check("gotoLive(no-hold fallback): status ok", out.status === OUTCOME_STATUS.OK, JSON.stringify(out));
+    check("gotoLive(no-hold fallback): per-tile presses preserved", pressLog.length === 4 && pressLog.every((b) => b === "up"), JSON.stringify(pressLog));
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

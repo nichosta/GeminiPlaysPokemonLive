@@ -38,7 +38,7 @@ import "dotenv/config";
 import * as CONFIGS from "./CONFIGS.js";
 
 import { getState } from "./gamestate/getState.js";
-import { toOpenAITools } from "./llminteract/toolInterface.js";
+import { toOpenAITools, OUTCOME_STATUS } from "./llminteract/toolInterface.js";
 import { buildStatePrompt, renderOutcomeText } from "./llminteract/buildStatePrompt.js";
 import { dispatchTool } from "./llminteract/toolDispatcher.js";
 import {
@@ -60,6 +60,12 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const SUMMARY_HISTORY_FILE_PATH = path.join(process.cwd(), 'summary_history.json');
 const HUMAN_READABLE_PROMPT_FILE_PATH = path.join(process.cwd(), 'human_readable_prompt_details.txt');
 const HISTORY_FILE_PATH = path.join(process.cwd(), 'chat_history.json');
+// Consecutive clean `press` turns are collapsed into one history triple (see
+// the merge in runGameLoop) so a manual button-mash sequence (e.g. Oak's lab
+// dialog/menus with no macro coverage) doesn't re-store the full state prompt
+// (map grid + party + bag) once per single button. Capped at the tool's own
+// per-call button limit so a merged entry stays a valid `press` call.
+const MAX_MERGED_PRESS_BUTTONS = 32;
 
 // --- D3 trace logger ---
 // Every model call is recorded as a (state_before, tool_call, outcome) tuple in
@@ -343,6 +349,12 @@ async function runGameLoop() {
     // Each turn contributes user+assistant+tool = 3 history messages; a "turn"
     // here is one user/model exchange, so divide by the messages per turn.
     let turnCounter = Math.floor(chatHistory.length / 3);
+    // Tracks the trailing run of clean `press` turns already merged into the
+    // last chatHistory triple, so the next clean press turn can extend it
+    // instead of appending a new one. Reset (null) by any non-press tool call,
+    // a non-OK press outcome, or a fresh process start (history reload can't
+    // recover this cheaply, so a restart just starts a new streak).
+    let lastPressStreak = null;
 
     while (true) {
         let parsedResponseCommentary = "AI is still processing...";
@@ -355,7 +367,9 @@ async function runGameLoop() {
             console.log(`Turns Till Summary: ${Math.max(0, CONFIGS.HISTORY_LENGTH - turnCounter)}`);
 
             // 1. Snapshot (one full read per macro boundary, not a fixed poll).
-            const state = await getState({ includeMap: true, includeBag: true, includeParty: true });
+            // includeQuest reads the A4 milestone flags so the model's prompt
+            // (and D3 trace summary / D4 final_state) carry story progress.
+            const state = await getState({ includeMap: true, includeBag: true, includeParty: true, includeQuest: true });
             if (!state) {
                 console.error("Critical: getState() returned null. Skipping iteration.");
                 await delay(CONFIGS.LOOP_DELAY_MS);
@@ -407,6 +421,7 @@ async function runGameLoop() {
                         }
                         chatHistory = [];
                         turnCounter = 0;
+                        lastPressStreak = null; // the mergeable triple just got wiped into the summary
                         await saveHistoryToFile(chatHistory, HISTORY_FILE_PATH);
                         await saveHistoryToFile(summaryHistory, SUMMARY_HISTORY_FILE_PATH);
                         console.log("History summarized and replaced.");
@@ -481,6 +496,7 @@ async function runGameLoop() {
                     role: "user",
                     content: "You did not issue a tool call. You MUST issue exactly one tool call (goto, set_battle_strategy, heal, use_item, or press) next turn.",
                 });
+                lastPressStreak = null; // not a press turn: ends any merge streak
                 turnCounter++;
                 evalHarness.markTurn(); // D4: count the (no-tool) model turn.
                 await saveHistoryToFile(chatHistory, HISTORY_FILE_PATH);
@@ -513,24 +529,67 @@ async function runGameLoop() {
 
             // 5. Record the turn in history: the user state prompt, the assistant
             //    tool_call, and the tool outcome message the model reads next.
-            chatHistory.push(userMessage);
-            chatHistory.push({
-                role: "assistant",
-                content: parsedResponseCommentary,
-                tool_calls: [{
-                    id: toolCall.id,
-                    type: "function",
-                    function: {
-                        name: toolCall.name,
-                        arguments: JSON.stringify(toolCall.args),
-                    },
-                }],
-            });
-            chatHistory.push({
-                role: "tool",
-                tool_call_id: toolCall.id,
-                content: renderOutcomeText(outcome),
-            });
+            //
+            // Consecutive clean `press` calls are merged into a single triple
+            // instead of each getting their own: a manual button-mash sequence
+            // (no macro covers it) would otherwise re-store the full state
+            // prompt — map grid, party, bag — once per single button, which is
+            // almost entirely duplicate content across those turns. Merging
+            // keeps the freshest state prompt (most relevant) and folds the
+            // button lists + outcomes together; any non-press tool call or a
+            // non-OK press outcome ends the streak so a real interrupt is never
+            // silently absorbed into a merged entry.
+            const isPressCall = toolCall.name === "press";
+            const pressButtons = isPressCall && Array.isArray(toolCall.args?.buttons) ? toolCall.args.buttons : [];
+            const outcomeOk = outcome?.status === OUTCOME_STATUS.OK;
+            const canMergeWithPrev = isPressCall
+                && outcomeOk
+                && lastPressStreak
+                && (lastPressStreak.buttons.length + pressButtons.length) <= MAX_MERGED_PRESS_BUTTONS;
+
+            if (canMergeWithPrev) {
+                const mergedButtons = [...lastPressStreak.buttons, ...pressButtons];
+                chatHistory.splice(chatHistory.length - 3, 3); // drop the previous triple, replaced below
+                chatHistory.push(userMessage);
+                chatHistory.push({
+                    role: "assistant",
+                    content: parsedResponseCommentary,
+                    tool_calls: [{
+                        id: toolCall.id,
+                        type: "function",
+                        function: {
+                            name: "press",
+                            arguments: JSON.stringify({ ...toolCall.args, buttons: mergedButtons }),
+                        },
+                    }],
+                });
+                chatHistory.push({
+                    role: "tool",
+                    tool_call_id: toolCall.id,
+                    content: `${renderOutcomeText(outcome)} | merged with ${lastPressStreak.buttons.length} prior press${lastPressStreak.buttons.length === 1 ? "" : "es"} this streak`,
+                });
+                lastPressStreak = { buttons: mergedButtons };
+            } else {
+                chatHistory.push(userMessage);
+                chatHistory.push({
+                    role: "assistant",
+                    content: parsedResponseCommentary,
+                    tool_calls: [{
+                        id: toolCall.id,
+                        type: "function",
+                        function: {
+                            name: toolCall.name,
+                            arguments: JSON.stringify(toolCall.args),
+                        },
+                    }],
+                });
+                chatHistory.push({
+                    role: "tool",
+                    tool_call_id: toolCall.id,
+                    content: renderOutcomeText(outcome),
+                });
+                lastPressStreak = (isPressCall && outcomeOk) ? { buttons: pressButtons } : null;
+            }
             turnCounter++;
             // D4: account this model turn + the tool's consumed step budget so
             // the benchmark report reflects turns-to-Brock and step efficiency.

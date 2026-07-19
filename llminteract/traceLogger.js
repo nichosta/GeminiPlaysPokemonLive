@@ -102,6 +102,9 @@ export function summarizeState(state) {
     const p = state.player || {};
     const map = p.map || {};
     const pos = p.position || {};
+    const q = state.quest || {};
+    const reached = q.reached || null;
+    const next = q.next || null;
     return {
         map: map.name ?? null,
         bank: map.bank ?? null,
@@ -113,6 +116,10 @@ export function summarizeState(state) {
         badges: Array.isArray(p.badges) ? p.badges : [],
         party_count: state.party ? (state.party.count ?? null) : null,
         money: typeof p.money === "number" ? p.money : null,
+        reached_milestone: reached ? reached.id : null,
+        reached_milestone_order: reached ? reached.order : null,
+        next_milestone: next ? next.id : null,
+        story_progress: typeof q.progress === "number" ? q.progress : null,
     };
 }
 

@@ -52,17 +52,24 @@ Scope: everything up to and including the Pewter City gym.
   `staticdata/frlg/locations.json` (one named entry per map — humanized name,
   aliases, a type tag, and an anchor tile: the landing tile of the first
   in-scope warp for indoor maps, nearest-passable-to-center for outdoor ones)
-  and `staticdata/frlg/mapGraph.json` (30 nodes, warp edges with concrete
-  tiles both ends + connection edges with direction/offset, plus
-  `boundaryEdges` for the 9 real edges that leave the pre-Brock scope rather
-  than dropping them silently). Query layer:
-  [`skills/locationGraph.js`](skills/locationGraph.js) —
+  and `staticdata/frlg/mapGraph.json` (one node per connected COMPONENT of each
+  map — see the resolved Route 2 note in C2; warp edges with concrete tiles
+  both ends + connection edges with direction/offset, every edge carrying
+  `from.component`/`to.component`, plus `boundaryEdges` for the 9 real edges
+  that leave the pre-Brock scope rather than dropping them silently) and
+  `staticdata/frlg/components.json` (a per-tile connected-component label grid
+  per map, undirected 4-connectivity over passable tiles, so the runtime can
+  resolve a tile's component by O(1) lookup instead of flood-filling). Query
+  layer: [`skills/locationGraph.js`](skills/locationGraph.js) —
   `resolveLocation`/`resolveDestination` (name/alias/"nearest \<type\>",
   backing the `goto` tool's `location` field) and `mapRoute`/`mapDistance`
-  (BFS over the graph, unweighted). `skills/locationGraph.test.js` verifies
-  every anchor is passable, every warp edge's landing tile is real, the graph
+  (BFS over the per-component graph, unweighted; multi-source when a caller
+  has a map but no tile). `skills/locationGraph.js` `componentOf` (backed by
+  components.json) and [`skills/staticMap.js`](skills/staticMap.js) turn a live
+  tile into a component index. `skills/locationGraph.test.js` verifies every
+  anchor is passable, every warp edge's landing tile is real, the graph
   composes correctly with C1 end-to-end (Pallet Town → Pewter Gym door), and
-  the D1 tool-schema example queries resolve (58 checks, all green).
+  the D1 tool-schema example queries resolve (64 checks, all green).
     - *Found:* door metatiles (`MB_WARP_DOOR`) read as collision-blocked in
       A1's static grid — the engine special-cases doors past the normal
       collision check. C1's `stopAdjacent` was already designed around this;
@@ -226,21 +233,39 @@ Scope: everything up to and including the Pewter City gym.
       failing the whole plan on a graph-level shortest path that isn't
       actually walkable — this recovers whenever a genuinely different
       map-level route exists.
-    - *Found (unresolved):* that recovery can NOT fix the case where the fix
-      requires re-entering the SAME map at a different position, because the
-      graph has one node per map, not one per connected region within a map.
-      Route 2 is the pre-Brock example: rows 42-44 are a fully impassable
-      Cut-tree line (no Cut pre-Boulder-Badge) splitting it into a south half
-      (borders Viridian City) and a north half (borders Pewter City); the
-      real route detours through Viridian Forest's warps, which land back on
-      Route 2's north half — the same graph node BFS already marked visited
-      via the south half. So **`goto`/C2 cannot currently route Pallet Town →
-      Pewter City/Gym** (pinned as an expected-failure test in
-      crossMapRouter.test.js so a future fix has to notice and update it).
-      Fixing this for real needs A3 to split a map into per-connected-
-      component graph nodes (accounting for one-way ledges as directed
-      edges) — real work, deferred; every other pre-Brock map was scanned and
-      Route 2 is the only one whose split actually sits on a needed route.
+    - *Found (resolved):* the `excludeEdges` recovery above can NOT by itself
+      fix the case where the fix requires re-entering the SAME map at a different
+      position, because the graph had one node per map, not one per connected
+      region within a map. Route 2 is the pre-Brock example: rows 42-44 are a
+      fully impassable Cut-tree line (no Cut pre-Boulder-Badge) splitting it
+      into a south half (borders Viridian City) and a north half (borders Pewter
+      City); the route to Pewter leaves the south half and re-enters the same
+      map at the north half — the same graph node BFS already marked visited.
+      **Resolved** by A3 splitting each map into per-connected-component graph
+      nodes (undirected 4-connectivity of passable tiles — C1's ledge model is
+      reversible, so that's exactly C1's reachability; no directed-SCC needed):
+      [`staticdata/extractLocations.js`](staticdata/extractLocations.js) emits
+      one node per component, every warp/connection edge carries
+      `from.component`/`to.component`, and a per-tile label grid lands in
+      [`staticdata/frlg/components.json`](staticdata/frlg/components.json).
+      [`skills/locationGraph.js`](skills/locationGraph.js) `mapRoute` then keys
+      on `(map, component)` (multi-source when a caller has a map but no tile),
+      and [`skills/staticMap.js`](skills/staticMap.js) `componentOf` turns a
+      live player/goal tile into that index. C2's `planCrossMapRoute`/
+      `gotoLive` resolve `componentOf(start)`/`componentOf(goal)` and pass them
+      in, so the BFS re-enters Route 2's north as a distinct unvisited node —
+      `goto` now routes Pallet Town → Pewter City/Gym (shortest path: Route 2
+      south → Route 2 East Building through-gatehouse → Route 2 north → Pewter;
+      Viridian Forest's warps are the fallback when that edge is excluded).
+      `resolveConnectionCrossing` gained an optional component filter so a
+      multi-component border (Route 22 → Viridian City touches three small
+      regions) picks a tile in the traveller's component instead of wrongly
+      excluding a valid edge. The expected-failure test in
+      crossMapRouter.test.js is flipped to assert the plan is found, re-enters
+      Route 2 at ≥2 components, and replays legally under movement rules.
+      Scanning every pre-Brock map, only Route 2's split sits on a needed route;
+      Pewter Museum 1F (ticket gate) and a few Poké Center 2F floors also split
+      and are handled by the same per-component nodes.
 - **C3. Battle policy engine** — ✅ **DONE.** Rule-based, strategy-parameterized
   decision-maker behind D1's `set_battle_strategy` (the tool only updates the
   standing policy; this is what consumes it each battle turn).
@@ -657,10 +682,82 @@ Scope: everything up to and including the Pewter City gym.
       is currently broken against the working-tree CONFIGS** for the same reason
       and needs the same one-line fix — left for a separate E1 touch-up, not
       done here to keep this commit scoped to E2.
-- **E3. Distillation trace collection** — big-model runs on the finished
-  harness, branched from savestates for coverage.
+- **E3. Distillation trace collection** — ✅ **DONE.**
+  [`staticdata/extractAgentTraces.js`](staticdata/extractAgentTraces.js) turns
+  the D3 trace logs live `node agent.js` runs already write (`traces/*.jsonl`,
+  one file per boot, `llminteract/traceLogger.js`) into the SFT-source corpus.
+  Unlike E1/E2, this is GENUINE behavior distillation, not a grounded label: the
+  `state`/`tool_call` pair is exactly what the live `google/gemini-3.5-flash`
+  model read and chose (`CONFIGS.js`'s `OPENROUTER_MODEL_NAME`), with no teacher
+  call at all — the script only filters and reshapes. Filtering keeps
+  `outcome.status === "ok"` turns only (configurable via `--status`), which
+  drops every `failed`/`invalid_args`/`budget_exhausted`/no-tool-call turn AND
+  every `interrupted` turn regardless of `stop_reason` — including every
+  low-health interrupt (`hp_low`, `about_to_faint`) — so the student never
+  trains on gemini's mistakes or on the harness taking over mid-execution, per
+  TRAINING.md's "SFT can only be as good as the answers you show it." A SECOND
+  filter, `isManualMovementFallback()`, drops `press` turns where the model
+  manually walked the overworld (directional buttons while
+  `state_summary.in_battle===false` AND `state_summary.controls_locked===false`)
+  instead of calling `goto` — this is a degenerate fallback (the model gives up
+  retrying `goto` after it fails, e.g. a bad destination format or a routing
+  gap) confirmed live on 2026-07-19: the user stopped a fresh run specifically
+  because of this pattern, and it turned out to be present across most of the
+  older trace files too, not just the new run — every legitimate dialog/
+  cutscene press (`controls_locked===true`) uses only a/b and never mixes in
+  movement buttons, so the signal cleanly separates the two without touching
+  in-battle manual presses. Exact `(state, tool_call)` duplicates collapse via
+  a sha1 dedup key (mirrors E2's `dedupKey`). Full run against the 20 trace
+  files on disk (a start-to-Brock campaign plus one fresh, deliberately-cut-
+  short run, `run-improvement-log.md`): 1047 raw lines (645 `ok` / 314
+  `interrupted` / 57 `failed` / 21 `no_tool_call` / 10 `budget_exhausted`), 262
+  manual-movement-fallback presses dropped → 326 deduped pairs (187 dupes
+  dropped). Distribution is still press-heavy but less so (`press` 231,
+  `set_battle_strategy` 41, `goto` 42, `heal` 9, `fight_battle` 3) — the
+  corpus's honest composition (manual battle-mashing pre-`fight_battle` still
+  generates many turns per LLM call), not rebalanced. Output:
+  `staticdata/frlg/agent_traces.jsonl` (git-ignored/regenerable) + tracked
+  `agent_traces_index.json` manifest. Pure-function self-test
+  [`staticdata/extractAgentTraces.test.js`](staticdata/extractAgentTraces.test.js)
+  (22 checks, all green) covers `isDistillable` (incl. the low-HP-interrupt
+  exclusion), `isManualMovementFallback`, `dedupKey`, `toAgentTraceRecord`,
+  `parseAgentTraceObj`. CLI: `--traces-dir`, `--out`, `--status`, `--limit`,
+  `--dry-run`.
+    - *Found while live-testing (not fixed):* the manual-movement fallback is
+      often triggered by `goto` failing on a bracket-wrapped coordinate string
+      destination (e.g. `"[2, 4]"`, `"[21, 34]"`) — `normalizeGotoDestination`
+      (`llminteract/toolDispatcher.js:107`) coerces bare `"x,y"` and
+      `"map,x,y"` strings but not a bracket-wrapped variant, so these resolve
+      to `invalid_args`/"could not resolve destination" instead of a
+      coordinate. A second, separate cause is genuine: `goto MAP_ROUTE2` failed
+      with `"no map route to destination"` from Pewter City — a real graph gap
+      in `skills/locationGraph.js`/`mapGraph.json`, not a format bug. Neither
+      is fixed yet; flagged for a future harness touch-up since fixing the
+      format bug directly reduces how often this fallback recurs in future
+      live runs.
 - **E4. SFT + RL on FreeSolo** — using milestone flags from A4/D4 as reward
-  signals.
+  signals. The E3 lane's freesolo env
+  ([`finetune-agent/`](finetune-agent/), parallel to `finetune/` and
+  `finetune-state-intent/`, no shared push source) is built and ready to train:
+  [`buildAgentDataset.js`](finetune-agent/buildAgentDataset.js) splits
+  `agent_traces.jsonl` into a stratified-by-run 254/72 train/eval (`dataset/`,
+  git-ignored except the tracked `eval_index.json`); `environment.py` +
+  `system_message.txt` (the D1 interface framed for a live state prompt,
+  output `{"tool_call":{...},"commentary":"..."}`) + `configs/{sft,rl,opd}.toml`
+  (model `Qwen/Qwen3.5-9B`, matching the state-intent lane's "before" baseline;
+  `max_context_tokens = 4096`, measured via tiktoken against the longest row —
+  2248 tokens including the system message); `TRAINING.md` copied
+  byte-identical from the other two lanes. `configs/opd.toml` calls out
+  explicitly that OPD's teacher is a managed model (GLM-5.2 by default), NOT
+  gemini — the actual gemini-distillation mechanism here is SFT against the
+  harvested traces.
+  [`finetune-agent/agentTraceEval.js`](finetune-agent/agentTraceEval.js) is the
+  before/after/gemini comparison harness (mirrors
+  `finetune-state-intent/intentEval.js`: `parse_ok`/`valid`/`name_accuracy`/
+  `exact_accuracy`/`arg_match_rate`, optional Cerebras judge), test-covered in
+  [`agentTraceEval.test.js`](finetune-agent/agentTraceEval.test.js) (14 checks).
+  Not yet run: `flash env push` + the actual SFT training run + before/after
+  eval numbers.
 
 ---
 

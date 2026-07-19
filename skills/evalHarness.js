@@ -50,10 +50,18 @@ import path from "path";
 import {
     milestones,
     isComplete,
-    flagBit,
     currentMilestone,
     resolveMilestone,
+    readFlagSet,
+    allMilestoneFlagNames,
 } from "./milestones.js";
+
+// Re-export the pure flag-read helpers (now defined in the query layer) so
+// this module's existing import surface — `import { readFlagSet,
+// allMilestoneFlagNames } from "./evalHarness.js"` — keeps working. New
+// consumers (e.g. B1's getState) import them from milestones.js directly to
+// avoid the gamestate -> skills -> tools -> gamestate import cycle.
+export { readFlagSet, allMilestoneFlagNames };
 
 // Optional, injected by default from the live transport below. Imported lazily
 // via the default-transport getters so a pure import of this module never
@@ -72,53 +80,6 @@ export const SAVESTATE_FLAGS_SAVE = 31;
 export const SAVESTATE_FLAGS_LOAD = 29;
 
 const CORE_ENDPOINT = "http://localhost:5000/core";
-
-// -----------------------------------------------------------------------------
-// Pure helpers over the milestone graph.
-// -----------------------------------------------------------------------------
-
-/**
- * Every flag name the milestone graph needs to evaluate completion: each
- * milestone's completion.flags, its completion.sideFlags, and (for item-tracked
- * milestones with no dedicated flag) its completion.item.resolvesTo.flag.
- * @returns {string[]}
- */
-export function allMilestoneFlagNames() {
-    const names = new Set();
-    for (const m of milestones()) {
-        for (const f of m.completion?.flags ?? []) names.add(f.flag);
-        for (const f of m.completion?.sideFlags ?? []) names.add(f.flag);
-        const resolvesTo = m.completion?.item?.resolvesTo;
-        if (resolvesTo?.flag) names.add(resolvesTo.flag);
-    }
-    return [...names];
-}
-
-/**
- * Read every milestone flag through `readFlag(bitOffset)` and return the
- * Set<string> of flag names currently set. A flag whose bit-offset is unknown
- * (flagBit === undefined) is skipped; a single unreadable flag is swallowed
- * (one bad read can't blank the whole eval). This is the input
- * milestones.js's isComplete / currentMilestone consume.
- *
- * @param {(bitOffset:number)=>Promise<boolean>} readFlag
- * @param {string[]} [names] defaults to allMilestoneFlagNames()
- * @returns {Promise<Set<string>>}
- */
-export async function readFlagSet(readFlag, names = allMilestoneFlagNames()) {
-    const set = new Set();
-    for (const name of names) {
-        const bit = flagBit(name);
-        if (bit === undefined) continue;
-        try {
-            if (await readFlag(bit)) set.add(name);
-        } catch {
-            // One unreadable flag must not blank the eval — skip it. The
-            // milestone it gates will simply read incomplete this poll.
-        }
-    }
-    return set;
-}
 
 // -----------------------------------------------------------------------------
 // Savestate transport — thin wrappers over the mGBA-http endpoints. The

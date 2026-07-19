@@ -1,0 +1,18 @@
+{
+  "note": "Held-out QA eval split (never trained on). Deterministic stratified-by-source: every Nth row by id within source -> eval.",
+  "source": "staticdata/frlg/wiki_qa.jsonl",
+  "sourceManifest": "../staticdata/frlg/wiki_qa_index.json",
+  "evalRatio": 0.2,
+  "stride": 5,
+  "total": 558,
+  "train": 446,
+  "eval": 112,
+  "trainBySource": {
+    "bulbapedia": 162,
+    "strategywiki": 284
+  },
+  "evalBySource": {
+    "bulbapedia": 41,
+    "strategywiki": 71
+  }
+}

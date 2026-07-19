@@ -14,6 +14,7 @@ import {
     resolveBagItem,
     buildBagNavigationSequence,
     buildStartMenuToBagSequence,
+    buildMenuCursorSequence,
     buildUseActionSequence,
     buildMoveLearnDeclineSequence,
     buildMoveLearnAcceptSequence,
@@ -97,10 +98,22 @@ console.log("\n== resolveBagItem: name normalization + pocket/index ==");
 
 console.log("\n== sequence builders ==");
 {
-    check("start->bag = start, down, down", JSON.stringify(buildStartMenuToBagSequence()) === JSON.stringify(["start", "down", "down"]));
+    check("start->bag with unknown cursor (gap-limited fallback) = start, down, down", JSON.stringify(buildStartMenuToBagSequence()) === JSON.stringify(["start", "down", "down"]));
+    check("start->bag from cursor=2 (already on BAG) = [start]", JSON.stringify(buildStartMenuToBagSequence(2)) === JSON.stringify(["start"]));
+    check("start->bag from cursor=0 (POKéDEX) = start,down,down", JSON.stringify(buildStartMenuToBagSequence(0)) === JSON.stringify(["start", "down", "down"]));
+    check("start->bag from cursor=4 (SAVE) prefers up (2 up < 5 down)", JSON.stringify(buildStartMenuToBagSequence(4)) === JSON.stringify(["start", "up", "up"]));
+    check("start->bag from cursor=6 (EXIT, wraps) = start,down,down,down", JSON.stringify(buildStartMenuToBagSequence(6)) === JSON.stringify(["start", "down", "down", "down"]));
+    check("menu cursor same pos -> []", JSON.stringify(buildMenuCursorSequence(3, 3)) === "[]");
+    check("menu cursor wraps down past the end (6->1, length 7)", JSON.stringify(buildMenuCursorSequence(6, 1)) === JSON.stringify(["down", "down"]));
+    check("menu cursor wraps up past the start (1->6, length 7)", JSON.stringify(buildMenuCursorSequence(1, 6)) === JSON.stringify(["up", "up"]));
     check("use-action is empty (Use is default cursor)", JSON.stringify(buildUseActionSequence()) === "[]");
-    check("bag nav pocket 2 item 3 = right,right,down,down,down", JSON.stringify(buildBagNavigationSequence(2, 3)) === JSON.stringify(["right", "right", "down", "down", "down"]));
-    check("bag nav pocket 0 item 0 = []", JSON.stringify(buildBagNavigationSequence(0, 0)) === "[]");
+    check("bag nav pocket 2 item 3 = right,right,down,down,down (gap-limited, no cursor read)", JSON.stringify(buildBagNavigationSequence(2, 3)) === JSON.stringify(["right", "right", "down", "down", "down"]));
+    check("bag nav pocket 0 item 0, no cursor read (gap-limited fallback) = []", JSON.stringify(buildBagNavigationSequence(0, 0)) === "[]");
+    check("bag nav pocket 0, known cursor already on target -> []", JSON.stringify(buildBagNavigationSequence(0, 1, { currentItemIndex: 1, pocketLength: 3 })) === "[]");
+    check("bag nav pocket 0, known cursor overshoots without the fix (regression guard)",
+        JSON.stringify(buildBagNavigationSequence(0, 1, { currentItemIndex: 2, pocketLength: 3 })) === JSON.stringify(["up"]));
+    check("bag nav pocket 1 ignores currentItemIndex (unverified pocket, stays gap-limited)",
+        JSON.stringify(buildBagNavigationSequence(1, 2, { currentItemIndex: 0, pocketLength: 4 })) === JSON.stringify(["right", "down", "down"]));
     check("move-learn decline = [b]", JSON.stringify(buildMoveLearnDeclineSequence()) === JSON.stringify(["b"]));
     check("move-learn accept slot 2 = a,down,down,a", JSON.stringify(buildMoveLearnAcceptSequence(2)) === JSON.stringify(["a", "down", "down", "a"]));
     check("move-learn accept slot 0 = a,a", JSON.stringify(buildMoveLearnAcceptSequence(0)) === JSON.stringify(["a", "a"]));
@@ -207,6 +220,42 @@ console.log("\n== useItemLive: happy path (no target) presses the bag-open + use
     check("happy -> opens start menu then BAG entry", log[0] === "Start" && log[1] === "Down" && log[2] === "Down" && log[3] === "A", JSON.stringify(log));
     check("happy -> selects item slot then Use", log[4] === "A" && log[5] === "A", JSON.stringify(log));
     check("happy -> closes with B×3 tail", log.length >= 8 && log.slice(-3).every((b) => b === "B"), JSON.stringify(log));
+}
+
+console.log("\n== useItemLive: known startMenuCursorPos takes the exact (non-fallback) path ==");
+{
+    const bag = { Items: [{ name: "POTION", quantity: 2 }] };
+    // Cursor already on SAVE (index 4): exact path is start,up,up (2 presses,
+    // not the fallback's start,down,down) — regression guard for the bug
+    // where blind "down,down" from an unknown cursor landed on SAVE and
+    // completed a real save.
+    const base = { ...pcState(), bag, menu: { partyMenuOpen: false, partyMenuSlot: 7, startMenuCursorPos: 4 } };
+    const pollState = stateQueue([base, base, base, base, base, base, base, base, base, base]);
+    const io = new FakeIo();
+    const res = await useItemLive({ item: "Potion" }, { pollState, io, advanceDialog: fakeAdvanceDialog() });
+    check("known cursor -> ok", res.status === OUTCOME_STATUS.OK, JSON.stringify(res));
+    const log = io.tapLog;
+    check("known cursor -> takes exact shortest path (start,up,up,a), never touches SAVE",
+        log[0] === "Start" && log[1] === "Up" && log[2] === "Up" && log[3] === "A", JSON.stringify(log));
+}
+
+console.log("\n== useItemLive: known bagItemsPocketCursorPos takes the exact (non-fallback) path ==");
+{
+    const bag = { Items: [{ name: "ANTIDOTE", quantity: 1 }, { name: "POTION", quantity: 2 }] };
+    // Bag cursor already remembered on CANCEL (index 2, past POTION at index
+    // 1): exact path is up (1 press), not the fallback's down (1 press) —
+    // regression guard for the bug where a blind "down" from the remembered
+    // position overshot POTION onto CANCEL.
+    const base = { ...pcState(), bag, menu: { partyMenuOpen: false, partyMenuSlot: 7, startMenuCursorPos: 2, bagItemsPocketCursorPos: 2 } };
+    const pollState = stateQueue([base, base, base, base, base, base, base, base, base, base]);
+    const io = new FakeIo();
+    const res = await useItemLive({ item: "Potion" }, { pollState, io, advanceDialog: fakeAdvanceDialog() });
+    check("known bag cursor -> ok", res.status === OUTCOME_STATUS.OK, JSON.stringify(res));
+    const log = io.tapLog;
+    // Phase 1 (start menu already on BAG): start,a. Phase 2 (bag cursor on
+    // CANCEL, target POTION): up,a. Phase 3 (Use): a.
+    check("known bag cursor -> takes exact shortest path (start,a,up,a,a), never touches CANCEL",
+        JSON.stringify(log.slice(0, 5)) === JSON.stringify(["Start", "A", "Up", "A", "A"]), JSON.stringify(log));
 }
 
 console.log("\n== useItemLive: with targetSlot calls selectPartySlotLive + confirms ==");

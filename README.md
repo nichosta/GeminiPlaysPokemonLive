@@ -13,10 +13,10 @@ Update May 13: This project is now mostly focused on Emerald development; FRLG i
 ## Dependencies
 
 GeminiPlaysPokemonLive has the following dependencies:
-- `@google/genai`: The API used for interfacing with Gemini. If you want, you can switch this out for a different API, e.g. OpenRouter, Anthropic, but you will likely have to change the prompt format.
+- `openai`: OpenAI-compatible SDK, used to talk to both OpenRouter (the playing model) and Cerebras (the vision model). See `CONFIGS.js` for the model slugs in use.
+- `dotenv`: Loads API keys from a `.env` file.
 - [mGBA](https://mgba.io/): The mGBA Game Boy Advance emulator.
 - [mGBA-http](https://github.com/nikouu/mGBA-http/): Used for interacting with the emulator from the JS code. Make sure you have version 0.5.0 or higher, as it contains a fix necessary to run the memory reading code.
-- [tmi.js](https://github.com/tmijs/tmi.js): Used for interacting with Twitch chat.
 - [sharp](https://github.com/lovell/sharp): Used for screenshot image processing.
 
 ## Running the Agent
@@ -25,12 +25,10 @@ To run the agent, you will need to:
 1.  Install the dependencies: `npm install`
 2.  Start mGBA and run a compatible ROM (FireRed, LeafGreen, and Emerald are supported)
 3.  Start the mGBA-http server and script on the emulator [see here for details](https://github.com/nikouu/mGBA-http?tab=readme-ov-file#quick-start-guide)
-4.  Run `node twitchbot.js`.
-5.  In a separate terminal, set the `GOOGLE_API_KEY` environment variable to your Google AI API key
-6.  In the same terminal, set the `POKEMON_GAME_VERSION` environment variable to either `FRLG` or `EMERALD` (defaults to `EMERALD`).
-6.  Run `node agent.js`.
+4.  Copy `.env.example` to `.env` (if not already present) and fill in `OPENROUTER_API_KEY` and `CEREBRAS_API_KEY`. Set `POKEMON_GAME_VERSION` to either `FRLG` or `EMERALD` (defaults to `EMERALD`).
+5.  Run `node agent.js`.
 
-The agent should now run, and you can watch its thoughts in your terminal and its actions in the emulator. If you want to give it advice manually without a twitch channel, enter text in `twitch_chat.txt` and save; on the next iteration, it will receive it.
+The agent should now run, and you can watch its thoughts in your terminal and its actions in the emulator. Each turn, the current screenshot is sent to Cerebras for a text description first; only that description (not the raw image) is sent to the OpenRouter model, along with the RAM-derived game state.
 
 ## Beta Disclaimer
 

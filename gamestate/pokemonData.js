@@ -287,6 +287,46 @@ function getSpeciesId(growthBuffer) {
 }
 
 /**
+ * Reads a compact summary of the OPPONENT's lead Pokémon (gEnemyParty slot 0)
+ * during a battle: species, types, level, HP. This is the enemy-side read that
+ * makes the C3 battle policy's type-effectiveness scoring live (it previously
+ * ran blind with `enemy: null` — see skills/battlePolicy.js). The enemy party
+ * uses the exact same 100-byte encrypted mon struct as the player party, just
+ * at ENEMY_PARTY_BASE_ADDR.
+ *
+ * Returns null when the slot is empty/unreadable (no battle, or mid-teardown)
+ * — callers treat null as "enemy unknown" and degrade to the blind scoring.
+ *
+ * @returns {Promise<{species:string, speciesId:number, types:string[], level:number, currentHP:number, maxHP:number}|null>}
+ */
+export async function getEnemyLeadSummary() {
+    try {
+        const base = CONSTANTS.ENEMY_PARTY_BASE_ADDR;
+        const pid = await readUint32(base + CONSTANTS.PID_OFFSET);
+        if (!pid) return null; // empty slot (zeroed struct)
+        const otid = await readUint32(base + CONSTANTS.OTID_OFFSET);
+        const encrypted = Uint8Array.from(
+            await readRange(base + CONSTANTS.ENCRYPTED_BLOCK_OFFSET, CONSTANTS.ENCRYPTED_BLOCK_SIZE)
+        ).buffer;
+        const decrypted = decryptBlock(encrypted, pid, otid);
+        const subs = unshuffleSubstructures(decrypted, pid);
+        if (!subs.G) return null;
+        const speciesId = getSpeciesId(subs.G);
+        if (speciesId === CONSTANTS.SPECIES_NONE) return null;
+        const [level, currentHP, maxHP, types] = await Promise.all([
+            readUint8(base + CONSTANTS.LEVEL_OFFSET),
+            readUint16(base + CONSTANTS.CURRENT_HP_OFFSET),
+            readUint16(base + CONSTANTS.MAX_HP_OFFSET),
+            getTypes(speciesId),
+        ]);
+        return { species: getSpeciesName(speciesId), speciesId, types, level, currentHP, maxHP };
+    } catch (error) {
+        console.error("[getEnemyLeadSummary] Failed to read enemy lead:", error?.message ?? error);
+        return null;
+    }
+}
+
+/**
  * Calculates the number of Pokémon currently in the player's party.
  * It iterates through the party slots (0 to 5) and checks the species ID
  * of each Pokémon. The count stops when an empty slot (Species ID 0) is found

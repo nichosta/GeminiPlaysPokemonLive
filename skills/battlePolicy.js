@@ -40,6 +40,16 @@ import { makeOutcome, OUTCOME_STATUS, STOP_REASON } from "../llminteract/toolInt
 // engine prefers to switch (or, with no healthier switch, escalate).
 const DEFAULT_HP_THRESHOLD = 0.2;
 
+// catch_all_pokemon: enemy HP fraction at/below which the engine stops chipping
+// and throws a ball (higher catch odds the lower this is). Above it, it keeps
+// picking the weakest move to whittle the target down.
+const DEFAULT_CATCH_HP_THRESHOLD = 0.3;
+
+// Safety cap on ball throws in a single fight so a catch_all_pokemon flag left
+// on during a trainer battle (where balls are always blocked) fails fast and
+// escalates instead of burning the whole step budget throwing blocked balls.
+const MAX_CATCH_ATTEMPTS = 8;
+
 // A move counts as "damaging" when it has positive power. Status moves (power
 // 0) are never picked for damage by the policy — they're left to the model via
 // escalation when they're the only thing left.
@@ -107,7 +117,7 @@ function usableDamagingMoves(resolvedMoves) {
  * @param {string[]|null} enemyTypes
  * @returns {object} the chosen move (with its score + reason).
  */
-function pickMoveByStrategy(usable, strategy, leadTypes, enemyTypes, { catchWild, isWild }) {
+function pickMoveByStrategy(usable, strategy, leadTypes, enemyTypes, { catchAll }) {
     let best = null;
     for (const mv of usable) {
         let score;
@@ -146,16 +156,16 @@ function pickMoveByStrategy(usable, strategy, leadTypes, enemyTypes, { catchWild
             best = { move: mv, score, reason };
         }
     }
-    // catch_wild: when weakening-and-catching wild encounters, prefer the
-    // LOWEST-damage usable move so we don't accidentally KO. Overrides the
-    // per-strategy pick (the ball throw itself is the use_item tool's job,
-    // not this engine's).
-    if (catchWild && isWild && usable.length > 0) {
+    // catch_all_pokemon: while chipping a catch target down, prefer the
+    // LOWEST-damage usable move so we don't accidentally KO it before it's weak
+    // enough to throw a ball at. Overrides the per-strategy pick. The ball throw
+    // itself happens in runBattleLive (it needs live enemy-HP + bag reads).
+    if (catchAll && usable.length > 0) {
         let weakest = null;
         for (const mv of usable) {
             const eff = effectivePower(mv, leadTypes, enemyTypes);
             if (weakest === null || eff < weakest.eff) {
-                weakest = { move: mv, eff, reason: "chip (catch_wild): lowest effective damage" };
+                weakest = { move: mv, eff, reason: "chip (catch_all_pokemon): lowest effective damage" };
             }
         }
         best = { move: weakest.move, score: weakest.eff, reason: weakest.reason };
@@ -221,7 +231,7 @@ function findPreferredLead(party, leadSlot, leadPref) {
  * @param {object} battleState.lead The active battler (B1 party[0] shape).
  * @param {Array} [battleState.party] Full party, for switch decisions.
  * @param {{types:string[], level?:number}|null} [battleState.enemy] Opponent.
- * @param {{strategy:string, lead?:string, catchWild?:boolean}} policy
+ * @param {{strategy:string, lead?:string, catchAll?:boolean}} policy
  * @param {object} [options]
  * @param {number} [options.hpThreshold=0.2]
  * @returns {{kind:"move", moveIndex:number, reason:string}
@@ -292,8 +302,7 @@ export function decideAction(battleState, policy = {}, options = {}) {
     }
 
     const pick = pickMoveByStrategy(usable, strategy, leadTypes, enemyTypes, {
-        catchWild: !!policy.catchWild,
-        isWild,
+        catchAll: !!policy.catchAll,
     });
     // moveIndex = position in the ORIGINAL lead.moves array (the fight-menu slot
     // order matches the party move list), not the filtered usable list.
@@ -306,33 +315,112 @@ export function decideAction(battleState, policy = {}, options = {}) {
 // =============================================================================
 
 /**
- * Default fight-menu navigation. From the main battle menu (Fight/Bag/Pokemon/Run),
- * press Fight, then move the cursor down to slot `moveIndex` (0-based from the
- * top), then confirm with A.
- *
- * KNOWN GAP: this assumes the move-select cursor opens on slot 0. Gen-3
- * remembers the last-used move's position, so without a battle-menu-cursor RAM
- * read (not part of B1's snapshot) the down-press count can be off by the
- * distance from that remembered slot to 0. The harness degrades safely: a
- * wrong selection still picks SOME move (never a dead press), and B2's
- * interrupt detector surfaces any resulting dialog/menu/battle state next poll.
- * Making this cursor-accurate is downstream B-work (see plan.md C3 note).
+ * Default fight-menu navigation, cursor-position-agnostic. Both Gen-3 battle
+ * menus are 2x2 grids that REMEMBER their last cursor position (and the model
+ * may have parked the cursor anywhere before handing the battle over — live
+ * failure: cursor left on BAG made every blind "a" open the bag forever). So
+ * never assume a cursor position:
+ *   1. b,b     — back out of any submenu (bag/party/move-info) to the main
+ *                menu; harmless no-ops when already there (B also advances
+ *                battle text, which is equally fine).
+ *   2. left,up — force the main-menu cursor to FIGHT (top-left); edge presses
+ *                are no-ops, so this lands on FIGHT from any start.
+ *   3. a       — open the move grid.
+ *   4. up,left — force the move cursor to slot 0 (top-left), same trick.
+ *   5. right / down per the 2x2 layout (0 1 / 2 3), then a to confirm.
  */
 function defaultSelectMoveSequence(moveIndex) {
-    const seq = ["a"]; // open the FIGHT menu (A on the Fight button)
-    for (let i = 0; i < moveIndex; i++) seq.push("down");
+    const seq = ["b", "b", "left", "up", "a", "up", "left"];
+    if (moveIndex % 2 === 1) seq.push("right");
+    if (moveIndex >= 2) seq.push("down");
     seq.push("a"); // confirm the selected move
     return seq;
 }
 
 /**
- * Default Run-menu navigation: from the main battle menu, cursor to Run and A.
- * (Cursor starts on FIGHT, so: right, right, down-ish — but the exact path
- * depends on menu layout. This presses the conventional sequence; same
- * cursor-accuracy caveat as defaultSelectMoveSequence.)
+ * Default Run-menu navigation, cursor-position-agnostic (same normalization
+ * as defaultSelectMoveSequence): back out, force cursor to FIGHT (top-left),
+ * then RUN is bottom-right of the 2x2 main menu.
  */
 function defaultFleeSequence() {
-    return ["right", "down", "a"];
+    return ["b", "b", "left", "up", "right", "down", "a"];
+}
+
+// Preference order for which ball to spend when catch_all_pokemon is set: throw
+// the most basic ball we have first and save the good ones. Any ball not listed
+// here still gets used (as a last resort, first-in-pocket) — see pickCatchBall.
+const BALL_PREFERENCE = [
+    "POKE_BALL", "PREMIER_BALL", "GREAT_BALL", "NEST_BALL", "NET_BALL",
+    "DIVE_BALL", "TIMER_BALL", "REPEAT_BALL", "ULTRA_BALL", "LUXURY_BALL",
+];
+
+/** Normalize an item/pocket name for matching (mirror menuMacros' rule). */
+function normalizeCatchName(s) {
+    return String(s || "").toLowerCase().replace(/['’]/g, "").replace(/[\s_]+/g, "");
+}
+
+/**
+ * Pick a Poké Ball to throw from a B1 bag snapshot. Looks in the Pokéballs
+ * pocket, prefers the most basic ball available (BALL_PREFERENCE), and otherwise
+ * takes the first ball present. `itemIndex` is the ball's 0-based position in
+ * the pocket's display list (what the throw sequence navigates to).
+ *
+ * @param {object} bag getBagContents() result (pocketName -> [{name,quantity}]).
+ * @returns {{pocketIndex:number, itemIndex:number, name:string}|null} null when
+ *          the bag holds no balls at all.
+ */
+export function pickCatchBall(bag) {
+    if (!bag || typeof bag !== "object") return null;
+    let items = null;
+    for (const [pocketName, list] of Object.entries(bag)) {
+        const n = normalizeCatchName(pocketName);
+        if ((n === "pokeballs" || n === "pokeball") && Array.isArray(list)) { items = list; break; }
+    }
+    if (!items || items.length === 0) return null;
+    const present = (it) => it && (typeof it.quantity !== "number" || it.quantity > 0);
+    // Prefer the most basic ball in the pocket, in BALL_PREFERENCE order.
+    for (const want of BALL_PREFERENCE) {
+        const w = normalizeCatchName(want);
+        const idx = items.findIndex((it) => present(it) && normalizeCatchName(it.name) === w);
+        if (idx >= 0) return { pocketIndex: 2, itemIndex: idx, name: items[idx].name };
+    }
+    // Any other ball: first one present in the pocket.
+    const idx = items.findIndex(present);
+    if (idx < 0) return null;
+    return { pocketIndex: 2, itemIndex: idx, name: items[idx].name };
+}
+
+/**
+ * Default in-battle ball-throw navigation, cursor/pocket-agnostic (same
+ * normalization idea as defaultSelectMoveSequence). From the battle main menu:
+ * back out of any submenu, force the cursor to FIGHT then Right to BAG and open
+ * it; clamp the bag to its leftmost pocket (ITEMS) and advance Right to the
+ * Pokéballs pocket; clamp the item cursor to the top and Down to the ball; A to
+ * throw. FRLG bag pockets and item lists don't wrap, so the extra Left/Up
+ * presses land at the start regardless of the remembered cursor position.
+ *
+ * Live-verified: Right advances battle-bag pockets the same way it does the
+ * field bag (menuMacros.buildBagNavigationSequence). The pocket-switch slide
+ * animation DOES need more settle than a plain cursor move though — see
+ * BAG_POCKET_SETTLE_FRAMES in runBattleLive, the caller of this sequence.
+ *
+ * Live-verified: A on a ball does NOT throw it directly — it opens a small
+ * "POKé BALL is selected." USE/CANCEL submenu (USE pre-highlighted), so a
+ * second A is required to actually confirm the throw.
+ *
+ * @param {number} pocketIndex Pokéballs pocket index (2 in FRLG).
+ * @param {number} itemIndex 0-based ball slot within the pocket.
+ * @returns {string[]}
+ */
+function defaultThrowBallSequence(pocketIndex, itemIndex) {
+    const seq = ["b", "b", "left", "up", "right", "a"]; // battle menu -> BAG -> open
+    for (let i = 0; i < 5; i++) seq.push("left");        // clamp to leftmost pocket
+    for (let i = 0; i < (pocketIndex || 0); i++) seq.push("right"); // -> Pokéballs
+    for (let i = 0; i < 8; i++) seq.push("up");          // clamp to top of the list
+    for (let i = 0; i < (itemIndex || 0); i++) seq.push("down");    // -> the ball
+    seq.push("a");                                        // select the ball -> USE/CANCEL submenu
+    seq.push("a");                                        // confirm USE -> throw
+    return seq;
 }
 
 /**
@@ -357,7 +445,7 @@ function defaultFleeSequence() {
  * C4's domain. Until C4 lands, a `switch` decision is surfaced to the model as
  * a CHOICE_REQUIRED interrupt rather than executed here.
  *
- * @param {{strategy:string, lead?:string, catchWild?:boolean}} policy
+ * @param {{strategy:string, lead?:string, catchAll?:boolean}} policy
  * @param {object} [options]
  * @param {number} [options.maxSteps=200] Step budget (one step ≈ one menu press).
  * @param {number} [options.hpThreshold=0.2]
@@ -374,28 +462,63 @@ export async function runBattleLive(policy = {}, options = {}) {
     const {
         maxSteps = 200,
         hpThreshold = DEFAULT_HP_THRESHOLD,
+        catchHpThreshold = DEFAULT_CATCH_HP_THRESHOLD,
         pollState = () => import("../gamestate/getState.js").then((m) => m.getState({ includeMap: false, includeBag: false })),
         selectMoveSequence = defaultSelectMoveSequence,
         fleeSequence = defaultFleeSequence,
+        throwBallSequence = defaultThrowBallSequence,
         io,
         signal,
     } = options;
 
-    const { executeQueue } = await import("../tools/inputExecutor.js");
+    const { executeQueue, awaitFrames, defaultIo } = await import("../tools/inputExecutor.js");
     const { classifyInterrupt } = await import("../gamestate/interruptDetector.js");
+    const frameIo = io ?? defaultIo;
+    // Enemy-side read (gEnemyParty lead): closes the "enemy: null" gap so the
+    // type-effectiveness scoring is live. Injectable for tests; falls back to
+    // null ("enemy unknown") on any read failure.
+    const readEnemy = options.readEnemy
+        ?? (await import("../gamestate/pokemonData.js")).getEnemyLeadSummary;
+    // Bag read (only used when catch_all_pokemon fires, to locate a ball).
+    const readBag = options.readBag
+        ?? (await import("../gamestate/bagData.js")).getBagContents;
+
+    // Frames to let a battle turn play out (move animations, damage text,
+    // the enemy's move) after we've selected our move, before re-polling and
+    // deciding again. Without this the loop re-fires its 9-press sequence
+    // every ~600ms straight into the turn animation — the presses get eaten
+    // advancing text and the step budget burns ~14 presses/sec while exactly
+    // one real turn happens (live-observed: 207 steps, one PP used).
+    const TURN_SETTLE_FRAMES = 240; // ~4s of game time at 60fps
+
+    // Frames between the taps of one menu sequence. The executor's 1-frame
+    // default is too hot for the battle menus: navigation lands but the final
+    // A confirm is dropped, deterministically (live-verified: the same
+    // 9-press sequence never fired a move at 1-frame settle, fired every
+    // time at 10). ~167ms/press keeps a full sequence under 2s.
+    const MENU_TAP_SETTLE_FRAMES = 10;
+
+    // Frames between taps when the sequence switches BAG POCKETS (the ball
+    // throw's Left/Right presses). The pocket-switch slide animation blocks
+    // input longer than a plain menu-cursor move: live-verified two Rights
+    // back-to-back at 10 (and even 20) frames of settle only registered ONE
+    // pocket change — the bag stayed on ITEMS/landed one pocket short instead
+    // of reaching POKÉ BALLS — while 30 registered both reliably.
+    const BAG_POCKET_SETTLE_FRAMES = 30;
 
     // Normalize the standing policy shape. The D1 tool arg + the dispatcher
-    // store `catch_wild` (snake), while `decideAction` reads `catchWild`
+    // store `catch_all_pokemon` (snake), while `decideAction` reads `catchAll`
     // (camel). Accept both so the dispatcher's `getBattlePolicy()` flows in
     // unchanged and direct callers (tests, runBattleLive's own docstring
     // examples) keep using camelCase.
     const pol = {
         strategy: policy?.strategy,
         lead: policy?.lead ?? null,
-        catchWild: !!(policy?.catchWild ?? policy?.catch_wild),
+        catchAll: !!(policy?.catchAll ?? policy?.catch_all_pokemon),
     };
 
     let stepsUsed = 0;
+    let catchAttempts = 0;
     const startState = await pollState();
     if (!startState?.battle?.active) {
         // Not in a battle — nothing for the engine to drive.
@@ -440,16 +563,12 @@ export async function runBattleLive(policy = {}, options = {}) {
         }
 
         // A non-battle interrupt surfaced mid-fight (dialog/menu) — hand it to
-        // the model verbatim, same vocabulary as C2's gotoLive. BATTLE_STARTED
-        // and HP_LOW are NOT interrupts here: battle.active is the expected
-        // steady state (we just confirmed it above), and low HP is the policy
-        // engine's own switch-on-faint trigger, decided below — not a hard stop.
-        const interrupt = classifyInterrupt(state, { hpThreshold, baselineMap: null });
-        if (
-            interrupt &&
-            interrupt !== STOP_REASON.BATTLE_STARTED &&
-            interrupt !== STOP_REASON.HP_LOW
-        ) {
+        // the model verbatim, same vocabulary as C2's gotoLive. BATTLE_STARTED is
+        // NOT an interrupt here: battle.active is the expected steady state (we
+        // just confirmed it above), and low HP is the policy engine's own
+        // switch-on-faint trigger, decided below — not a hard stop.
+        const interrupt = classifyInterrupt(state, { baselineMap: null });
+        if (interrupt && interrupt !== STOP_REASON.BATTLE_STARTED) {
             return makeOutcome(OUTCOME_STATUS.INTERRUPTED, {
                 stopReason: interrupt,
                 stepsUsed,
@@ -460,13 +579,61 @@ export async function runBattleLive(policy = {}, options = {}) {
 
         const party = state?.party?.pokemon ?? [];
         const lead = party[0] ?? null;
+        let enemy = null;
+        let enemyHpFraction = null;
+        try {
+            const e = await readEnemy();
+            // A 0-HP enemy lead is a stale read (previous battle's KO'd mon
+            // lingers in RAM between fights) — treat as unknown.
+            if (e && e.currentHP > 0) {
+                enemy = { types: e.types, level: e.level, species: e.species };
+                if (typeof e.maxHP === "number" && e.maxHP > 0) enemyHpFraction = e.currentHP / e.maxHP;
+            }
+        } catch { /* enemy unknown; scoring degrades to raw power */ }
         const battleState = {
             inBattle: true,
             isWild: false, // unknown from B1's snapshot; flee strategy escalates safely below
             lead,
             party,
-            enemy: null, // enemy-side RAM read is deferred B-work (see docstring)
+            enemy,
         };
+
+        // catch_all_pokemon: once the target is chipped low enough, throw a ball
+        // instead of attacking. The model sets this policy when it wants to fill
+        // out its team (e.g. grinding back and forth through grass); it's the
+        // model's responsibility to turn it OFF before a trainer/gym battle,
+        // where a thrown ball is always blocked and wasted. We can't read wild-
+        // vs-trainer from B1's snapshot, so we trust the flag and cap throws
+        // (MAX_CATCH_ATTEMPTS) so a mis-set catch in a trainer fight fails fast.
+        if (pol.catchAll && enemyHpFraction !== null && enemyHpFraction <= catchHpThreshold) {
+            if (catchAttempts >= MAX_CATCH_ATTEMPTS) {
+                return makeOutcome(OUTCOME_STATUS.INTERRUPTED, {
+                    stopReason: STOP_REASON.CHOICE_REQUIRED,
+                    stepsUsed,
+                    message: `catch_all_pokemon: threw ${catchAttempts} balls without catching — it may keep breaking free, or this is a trainer battle (you can't catch those). Decide manually, or turn catch_all_pokemon off.`,
+                    stateDelta: { leadHpFraction: lead?.hpFraction ?? null },
+                });
+            }
+            const bag = await Promise.resolve().then(readBag).catch(() => null);
+            const ball = pickCatchBall(bag);
+            if (!ball) {
+                return makeOutcome(OUTCOME_STATUS.INTERRUPTED, {
+                    stopReason: STOP_REASON.CHOICE_REQUIRED,
+                    stepsUsed,
+                    message: "catch_all_pokemon is set but there are no Poké Balls in the bag — buy some, or turn catch_all_pokemon off.",
+                });
+            }
+            const res = await executeQueue(throwBallSequence(ball.pocketIndex, ball.itemIndex), { io, signal, tapSettleFrames: BAG_POCKET_SETTLE_FRAMES });
+            stepsUsed += res.stepsUsed;
+            catchAttempts += 1;
+            if (res.error) {
+                return makeOutcome(OUTCOME_STATUS.FAILED, { stopReason: STOP_REASON.UNKNOWN_STATE, stepsUsed, message: `ball-throw sequence failed: ${res.error}` });
+            }
+            // Let the throw animation + break-out / catch text resolve before
+            // re-polling (battle ends here on a successful catch).
+            await awaitFrames(frameIo, TURN_SETTLE_FRAMES);
+            continue;
+        }
 
         const decision = decideAction(battleState, pol, { hpThreshold });
 
@@ -488,11 +655,12 @@ export async function runBattleLive(policy = {}, options = {}) {
                     message: "flee requested but battle type unknown; surfacing to model",
                 });
             }
-            const res = await executeQueue(fleeSequence(), { io, signal });
+            const res = await executeQueue(fleeSequence(), { io, signal, tapSettleFrames: MENU_TAP_SETTLE_FRAMES });
             stepsUsed += res.stepsUsed;
             if (res.error) {
                 return makeOutcome(OUTCOME_STATUS.FAILED, { stopReason: STOP_REASON.UNKNOWN_STATE, stepsUsed, message: `flee sequence failed: ${res.error}` });
             }
+            await awaitFrames(frameIo, TURN_SETTLE_FRAMES);
             continue;
         }
 
@@ -517,11 +685,13 @@ export async function runBattleLive(policy = {}, options = {}) {
             });
         }
         const seq = selectMoveSequence(decision.moveIndex);
-        const res = await executeQueue(seq, { io, signal });
+        const res = await executeQueue(seq, { io, signal, tapSettleFrames: MENU_TAP_SETTLE_FRAMES });
         stepsUsed += res.stepsUsed;
         if (res.error) {
             return makeOutcome(OUTCOME_STATUS.FAILED, { stopReason: STOP_REASON.UNKNOWN_STATE, stepsUsed, message: `move sequence failed: ${res.error}` });
         }
+        // Let the selected turn actually play out before re-deciding.
+        await awaitFrames(frameIo, TURN_SETTLE_FRAMES);
         // Loop: re-poll, let the turn resolve, and decide the next turn (or
         // detect battle-end / an interrupt) at the top of the loop.
     }

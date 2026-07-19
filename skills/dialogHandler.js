@@ -56,9 +56,6 @@ import { makeOutcome, OUTCOME_STATUS, STOP_REASON } from "../llminteract/toolInt
 /** Default step budget for a dialog-advance macro (one step == one press). */
 const DEFAULT_MAX_STEPS = 60;
 
-/** Default HP fraction at/below which HP_LOW surfaces mid-dialog. */
-const DEFAULT_HP_THRESHOLD = 0.2;
-
 /** Frames to let each text box advance before re-pressing. Pokémon draws text
  *  slowly; too few frames and a press lands before the next box is ready. */
 const DEFAULT_PRESS_SETTLE_FRAMES = 4;
@@ -86,9 +83,9 @@ function buttonForChoice(choice) {
  * step counter, returns the next action for the live adapter to take.
  *
  * Delegates interrupt priority to B2's `classifyInterrupt` (battle > dialog >
- * warp > hp > menu > unknown), so every stop condition except the dialog-
- * specific ones surfaces verbatim. The dialog layer only adds: which button to
- * press while locked, and the budget-exhausted -> CHOICE_REQUIRED escalation.
+ * warp > menu > unknown), so every stop condition except the dialog-specific
+ * ones surfaces verbatim. The dialog layer only adds: which button to press
+ * while locked, and the budget-exhausted -> CHOICE_REQUIRED escalation.
  *
  * @param {object} state A B1 getState() snapshot.
  * @param {DialogPolicy} [policy]
@@ -96,7 +93,6 @@ function buttonForChoice(choice) {
  * @param {number} context.pressesUsed Presses sent so far against the budget.
  * @param {number} context.maxPresses Budget cap; at this many presses still
  *        locked -> CHOICE_REQUIRED.
- * @param {number} [context.hpThreshold=0.2]
  * @param {boolean} [context.expectMenu=false] Forwarded to classifyInterrupt.
  * @param {function} [classify=classifyInterrupt] Injectable classifier (test hook).
  * @returns {{kind:"press", button:"a"|"b", reason:string}
@@ -104,10 +100,10 @@ function buttonForChoice(choice) {
  *          | {kind:"escalate", stopReason:string, reason:string}}
  */
 export function decideDialogAction(state, policy = {}, context, classify = classifyInterrupt) {
-    const { pressesUsed, maxPresses, hpThreshold = DEFAULT_HP_THRESHOLD, expectMenu = false } = context || {};
+    const { pressesUsed, maxPresses, expectMenu = false } = context || {};
     const choice = policy.choice === "yes" || policy.choice === "no" ? policy.choice : "ask";
 
-    const reason = classify(state, { hpThreshold, expectMenu, baselineMap: null });
+    const reason = classify(state, { expectMenu, baselineMap: null });
 
     // null => controls unlocked and no interrupt: dialog cleared (or nothing
     // was locked to begin with). Hand back control cleanly.
@@ -127,7 +123,7 @@ export function decideDialogAction(state, policy = {}, context, classify = class
         return { kind: "press", button: buttonForChoice(choice), reason: `mash ${buttonForChoice(choice)} (choice=${choice})` };
     }
 
-    // Anything else (battle_started / warp_completed / hp_low / unexpected_menu
+    // Anything else (battle_started / warp_completed / unexpected_menu
     // / unknown_state) is the model's to handle — surface verbatim, same
     // vocabulary as every other macro.
     return { kind: "escalate", stopReason: reason, reason: `dialog interrupted: ${reason}` };
@@ -142,7 +138,7 @@ export function decideDialogAction(state, policy = {}, context, classify = class
  * polls B1's getState(), asks the pure `decideDialogAction` for the next press,
  * executes it through B3's inputExecutor (serialized + frame-accurate), and
  * returns a D1 `makeOutcome(...)` envelope — escalating exactly when the core
- * says to (battle/menu/hp/unknown mid-mash, or CHOICE_REQUIRED when the budget
+ * says to (battle/menu/unknown mid-mash, or CHOICE_REQUIRED when the budget
  * runs out before the dialog clears).
  *
  * See the module docstring for the yes/no-detection runtime gap: this clears
@@ -152,7 +148,6 @@ export function decideDialogAction(state, policy = {}, context, classify = class
  * @param {DialogPolicy} [policy]
  * @param {object} [options]
  * @param {number} [options.maxSteps=60] Step budget (one step == one press).
- * @param {number} [options.hpThreshold=0.2]
  * @param {number} [options.pressSettleFrames=4] Frames to settle after each tap.
  * @param {() => Promise<object>} [options.pollState] Snapshot source (defaults
  *        to B1's fast poll).
@@ -163,7 +158,6 @@ export function decideDialogAction(state, policy = {}, context, classify = class
 export async function advanceDialogLive(policy = {}, options = {}) {
     const {
         maxSteps = DEFAULT_MAX_STEPS,
-        hpThreshold = DEFAULT_HP_THRESHOLD,
         pressSettleFrames = DEFAULT_PRESS_SETTLE_FRAMES,
         pollState = () => import("../gamestate/getState.js").then((m) => m.getState({ includeMap: false, includeBag: false })),
         io,
@@ -188,7 +182,7 @@ export async function advanceDialogLive(policy = {}, options = {}) {
         const decision = decideDialogAction(
             state,
             policy,
-            { pressesUsed, maxPresses: maxSteps, hpThreshold, expectMenu: false }
+            { pressesUsed, maxPresses: maxSteps, expectMenu: false }
         );
 
         if (decision.kind === "done") {
