@@ -1,26 +1,31 @@
-"""State→intent SFT environment (E2 after-lane).
+"""Agent-trace distillation SFT environment (E3/E4).
 
-Self-contained freesolo environment for the (state, intent) lane. This folder
-is published INDEPENDENTLY of the wiki-QA lane (`finetune/`) so the two envs
-never share a push source — `flash env push .` from here uploads ONLY the
-intent data, and the QA folder's `train.jsonl` can never leak into this env
-(the contamination that previously put 558 QA rows in the frlg-state-intent
-snapshot).
+Self-contained freesolo environment for the (live game state, tool_call) lane.
+This folder is published INDEPENDENTLY of the wiki-QA lane (`finetune/`) and the
+state-intent lane (`finetune-state-intent/`) so no env's push source ever
+mixes with another's — `flash env push .` from here uploads ONLY this lane's
+data.
 
-- trains on dataset/train.jsonl ({input: state, output: <intent+rationale JSON>})
-- uses system_message.txt (E2's SYSTEM_PROMPT, copied from the QA lane's
-  system_message_intent.txt) so train/inference framing match the eval
-  (finetune-state-intent/intentEval.js), which defaults to the same file.
-- rewards TOOL-NAME match, not raw substring. The QA lane's substring reward
-  is fine for short wiki-QA golds but brittle here: the gold is a JSON object
-  whose rationale wording and arg key-order vary, so an exact-substring check
-  would under-reward correct intents. This reward parses the model's response
-  JSON and the gold JSON and scores 1.0 iff intent.name matches (the headline
-  metric the eval measures too).
+Unlike the other two lanes, this dataset is genuine behavior distillation: the
+gold `tool_call` is what a LIVE gemini-3.5-flash run actually chose while
+playing (llminteract/traceLogger.js -> staticdata/extractAgentTraces.js ->
+buildAgentDataset.js), filtered to outcome.status == "ok" turns only so the
+student never learns gemini's mistakes (invalid_args / failed / interrupted /
+budget_exhausted turns are excluded upstream — see
+staticdata/extractAgentTraces.js's header for the exact rule, including that
+this drops every low-health interrupt).
+
+- trains on dataset/train.jsonl ({input: state, output: <tool_call+commentary JSON>})
+- uses system_message.txt (the D1 tool-interface doc framed for a live state
+  prompt) so train/inference framing match the eval (agentTraceEval.js),
+  which defaults to the same file.
+- rewards TOOL-NAME match, not raw substring, for the same reason as the
+  intent lane: the gold is a JSON object whose commentary wording and arg
+  key-order vary, so an exact-substring check would under-reward correct calls.
 
 flash loads `load_environment()` from this file directly — no file-swapping
 needed. Push with:
-    flash env push --name frlg-state-intent .
+    flash env push --name frlg-agent-traces .
 then paste the returned id into configs/sft.toml's [environment] id.
 """
 
@@ -75,22 +80,22 @@ def _first_json_object(s: str) -> dict | None:
     return None
 
 
-def intent_name(text: str) -> str | None:
+def tool_call_name(text: str) -> str | None:
     obj = _first_json_object(text)
-    intent = (obj or {}).get("intent") if isinstance(obj, dict) else None
-    if isinstance(intent, dict):
-        return intent.get("name")
+    call = (obj or {}).get("tool_call") if isinstance(obj, dict) else None
+    if isinstance(call, dict):
+        return call.get("name")
     return None
 
 
-def intent_name_reward(example: TaskExample, response_text: str) -> RewardResult:
-    expected_name = intent_name(str(example.output or ""))
-    got_name = intent_name(response_text or "")
+def tool_name_reward(example: TaskExample, response_text: str) -> RewardResult:
+    expected_name = tool_call_name(str(example.output or ""))
+    got_name = tool_call_name(response_text or "")
     score = 1.0 if expected_name and got_name == expected_name else 0.0
     return RewardResult(score=score, threshold=1.0)
 
 
-class IntentEnv(EnvironmentSingleTurn):
+class AgentTraceEnv(EnvironmentSingleTurn):
     dataset = load_jsonl(DEFAULT_DATASET_PATH)
 
     def build_prompt_messages(self, example: TaskExample, prompt_text: str):
@@ -101,11 +106,11 @@ class IntentEnv(EnvironmentSingleTurn):
         return msgs
 
     def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
-        return intent_name_reward(example, response_text)
+        return tool_name_reward(example, response_text)
 
 
-def load_environment(dataset_path: str | None = None, **kwargs) -> IntentEnv:
-    env = IntentEnv()
+def load_environment(dataset_path: str | None = None, **kwargs) -> AgentTraceEnv:
+    env = AgentTraceEnv()
     if dataset_path:
         env.dataset = load_jsonl(dataset_path)
     return env

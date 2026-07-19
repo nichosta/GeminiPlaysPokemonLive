@@ -95,11 +95,15 @@ async function defaultDeps() {
  * Coerce a `destination` arg into the documented `{location}` / `{map?,x,y}`
  * shape. Live runs against small/cheap models show they frequently ignore the
  * nested-object schema and send a bare string instead — a plain location name
- * ("Pallet Town"), a "x,y" coordinate pair ("12,11"), or a "map,x,y" triple
- * ("MAP_PALLET_TOWN,12,11"). Rather than hard-failing on the shape mismatch
- * (which just burns a turn on the same invalid_args error repeatedly — models
- * do not reliably recover from it), interpret these as the doc-shape the
- * model evidently meant. Anything already object-shaped passes through
+ * ("Pallet Town"), a "x,y" coordinate pair ("12,11"), a "map,x,y" triple
+ * ("MAP_PALLET_TOWN,12,11"), or the same coordinate pair wrapped in brackets
+ * ("[2, 4]", "(21, 34)" — observed live 2026-07-19, this shape previously fell
+ * through to the location branch and failed "could not resolve destination",
+ * and the model gave up retrying goto and fell back to manually pressing
+ * directional buttons instead). Rather than hard-failing on the shape
+ * mismatch (which just burns a turn on the same invalid_args error repeatedly
+ * — models do not reliably recover from it), interpret these as the doc-shape
+ * the model evidently meant. Anything already object-shaped passes through
  * untouched.
  * @param {*} destination
  * @returns {*} the original value, or a normalized `{location}` / `{map,x,y}` object
@@ -107,7 +111,18 @@ async function defaultDeps() {
 function normalizeGotoDestination(destination) {
     if (typeof destination !== "string") return destination;
     const trimmed = destination.trim();
-    const parts = trimmed.split(",").map((p) => p.trim());
+    // Strip one layer of wrapping brackets/parens before the coordinate parse
+    // (a bracket-wrapped non-coordinate string still falls through to the
+    // location branch below using the ORIGINAL trimmed text, untouched).
+    let unwrapped = trimmed;
+    if (trimmed.length >= 2) {
+        const first = trimmed[0];
+        const last = trimmed[trimmed.length - 1];
+        if ((first === "[" && last === "]") || (first === "(" && last === ")")) {
+            unwrapped = trimmed.slice(1, -1).trim();
+        }
+    }
+    const parts = unwrapped.split(",").map((p) => p.trim());
     if (parts.length === 2 && parts.every((p) => /^-?\d+$/.test(p))) {
         return { x: Number(parts[0]), y: Number(parts[1]) };
     }

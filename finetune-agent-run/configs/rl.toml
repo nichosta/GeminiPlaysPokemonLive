@@ -1,0 +1,18 @@
+model = "Qwen/Qwen3.5-9B"
+algorithm = "grpo"
+
+# Environment: upload this project folder with
+# `flash env push --name frlg-agent-traces .`, then paste the returned id below.
+[environment]
+id = "thundr/frlg-agent-traces-run"
+
+[train]
+# Warm-start GRPO from the SFT run's adapter once one exists (see TRAINING.md's
+# "SFT is a great warm start for GRPO"): uncomment and set to the SFT run id,
+# and do NOT set lora_rank alongside it (the source adapter's rank is authoritative).
+# init_from_adapter = "<sft-run-id>"
+epochs = 1
+max_examples = 254
+lora_rank = 32
+# GPU and HF artifacts are managed automatically by the platform: the GPU is
+# the cheapest fitting managed class, and artifacts live in a private environment-scoped repo.

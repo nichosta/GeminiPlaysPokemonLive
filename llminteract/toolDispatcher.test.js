@@ -149,6 +149,23 @@ function makeDeps({ gotoLiveImpl, states }) {
     check("goto coerces \"map,x,y\" string -> {map,x,y}",
         captured?.map === "MAP_PALLET_TOWN" && captured?.x === 12 && captured?.y === 11,
         JSON.stringify(captured));
+
+    // Bracket-wrapped coordinate pairs (observed live 2026-07-19: this shape
+    // previously fell through to {location: "[2, 4]"} and failed "could not
+    // resolve destination", which repeatedly drove the model to abandon goto
+    // for manual directional presses instead).
+    captured = null;
+    await dispatchTool("goto", { destination: "[2, 4]" }, deps);
+    check("goto coerces \"[x, y]\" string -> {x,y}", captured?.x === 2 && captured?.y === 4, JSON.stringify(captured));
+
+    captured = null;
+    await dispatchTool("goto", { destination: "(21, 34)" }, deps);
+    check("goto coerces \"(x, y)\" string -> {x,y}", captured?.x === 21 && captured?.y === 34, JSON.stringify(captured));
+
+    captured = null;
+    await dispatchTool("goto", { destination: "[Pewter Gym]" }, deps);
+    check("goto leaves a non-coordinate bracketed string as a location (brackets preserved)",
+        captured?.location === "[Pewter Gym]", JSON.stringify(captured));
 }
 
 // 5. goto throws -> failed (not a crash)

@@ -344,8 +344,16 @@ function extractToolCall(message) {
  * @returns {Promise<void>}
  */
 async function runGameLoop() {
-    chatHistory = await loadHistoryFromFile(HISTORY_FILE_PATH, "Main");
-    summaryHistory = await loadHistoryFromFile(SUMMARY_HISTORY_FILE_PATH, "Summary");
+    // Default is a fresh session every run (no chat_history.json /
+    // summary_history.json carried over); pass --keep to resume the previous
+    // conversation from disk instead.
+    const keepSession = process.argv.includes('--keep');
+    if (keepSession) {
+        chatHistory = await loadHistoryFromFile(HISTORY_FILE_PATH, "Main");
+        summaryHistory = await loadHistoryFromFile(SUMMARY_HISTORY_FILE_PATH, "Summary");
+    } else {
+        console.log("Starting a new session (pass --keep to resume from chat_history.json / summary_history.json).");
+    }
     // Each turn contributes user+assistant+tool = 3 history messages; a "turn"
     // here is one user/model exchange, so divide by the messages per turn.
     let turnCounter = Math.floor(chatHistory.length / 3);

@@ -25,7 +25,7 @@ The tool call must be against this frozen interface (D1 v1.1.0):
   args:
     strategy — string enum:["default","highest_damage","type_effective","conserve_pp","level_grind","flee"]
     max_steps — integer
-- press: ESCAPE HATCH. Send a raw button sequence when no higher-level tool fits (odd menus, cutscene prompts, minigames, dialog advancement). Prefer the structured tools above; every press call is a candidate for a missing macro.
+- press: ESCAPE HATCH. Send a raw button sequence when no higher-level tool fits (odd menus, cutscene prompts, minigames, dialog advancement). Prefer the structured tools above; every press call is a candidate for a missing macro. NEVER use press with directional buttons to walk around the overworld — that is goto's job. If goto fails, retry goto with a corrected destination; do not take over navigation by hand.
   args:
     buttons (required) — array enum:["a","b","l","r","start","select","up","down","left","right"]
     max_steps — integer

@@ -1,0 +1,26 @@
+model = "Qwen/Qwen3.5-9B"
+algorithm = "opd"   # on-policy distillation from a managed Fireworks teacher (default GLM 5.2)
+
+# IMPORTANT: OPD's teacher is one of freesolo's managed models (glm-5.2 default,
+# deepseek-v4-pro, kimi-k2.6) — NOT gemini. The actual "distill gemini's real
+# play into qwen" mechanism for this lane is SFT (configs/sft.toml) against the
+# static (state, tool_call) pairs already harvested from live gemini traces
+# (staticdata/extractAgentTraces.js). Only reach for this config if you
+# specifically want a DIFFERENT distillation source layered on top — per
+# TRAINING.md, vet the managed teacher on this task first (roll it through
+# agentTraceEval.js on the held-out split) before trusting an OPD run; it will
+# not exceed a teacher weaker than gemini at this task.
+
+# Environment: upload this project folder with
+# `flash env push --name frlg-agent-traces .`, then paste the returned id below.
+[environment]
+id = "thundr/frlg-agent-traces-run"
+
+[train]
+epochs = 1
+max_examples = 254
+lora_rank = 16  # OPD over-sharpens on this small a model faster at rank 32 (see TRAINING.md)
+# teacher_model = "glm-5.2"   # teacher to distil from: glm-5.2 (default) |
+#                             # deepseek-v4-pro | kimi-k2.6 (key stays managed)
+# GPU and HF artifacts are managed automatically by the platform: the GPU is
+# the cheapest fitting managed class, and artifacts live in a private environment-scoped repo.

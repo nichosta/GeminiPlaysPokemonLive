@@ -1,0 +1,39 @@
+# Agent-trace distillation SFT lane (E3/E4). Trains on the (state, tool_call)
+# pairs in dataset/train.jsonl (254 rows from buildAgentDataset.js) so the
+# deployed adapter emits D1 tool calls the way gemini-3.5-flash actually played
+# the game live — the task agentTraceEval.js measures before/after/gemini.
+#
+# This config lives in its OWN freesolo env folder (finetune-agent/), published
+# separately from the wiki-QA lane (finetune/) and the state-intent lane
+# (finetune-state-intent/). No folder shares a push source with another.
+#
+# Qwen3.5-9B: freesolo has no Qwen3, so 9B is the smallest exact match to the
+# "before" baseline (OpenRouter qwen/qwen3.5-9b), matching the other lanes'
+# choice for apples-to-apples before/after comparison.
+model = "Qwen/Qwen3.5-9B"
+algorithm = "sft"
+
+# Environment: this lane trains on dataset/train.jsonl with the agent-trace
+# system message (system_message.txt) and a tool-name reward. flash loads
+# `load_environment()` from environment.py directly — no file-swapping. Push
+# with `flash env push --name frlg-agent-traces .` from this folder, then paste
+# the returned id below and `flash train configs/sft.toml`. Re-push after ANY
+# edit to environment.py, system_message.txt, or dataset/.
+[environment]
+id = "thundr/frlg-agent-traces-run"
+
+[train]
+epochs = 3
+# Complementary ~78% of agent_traces.jsonl (held-out eval = the other 72, never
+# trained on — see dataset/eval_index.json). Do NOT train on all 326 or the
+# before/after comparison is contaminated.
+max_examples = 254
+# Measured with tiktoken (cl100k_base): system message (882 tok) + the longest
+# single row (state + output) totals 2248 tokens. 4096 clears that with ~1.8x
+# headroom without the cost jump a bigger bin would add (flash packs into
+# max_context_tokens-sized bins regardless of real sequence length, per
+# TRAINING.md). Re-measure if the dataset changes materially (e.g. after a
+# fresh extraction run with more/longer traces).
+max_context_tokens = 4096
+lora_rank = 32
+# GPU and HF artifacts are managed automatically by the platform.
